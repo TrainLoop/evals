@@ -1,4 +1,4 @@
-# TrainLoop Evals
+# TrainLoop Evals (ALPHA)
 
 TrainLoop Evals is a framework for collecting and evaluating LLM outputs. The core tenants of this are
 
@@ -6,7 +6,7 @@ TrainLoop Evals is a framework for collecting and evaluating LLM outputs. The co
 - *Vendor Independence* – everything stored as newline-delimited JSON; no databases required.
 - *Meet developers where they are* – accepts our simple declarative flow or existing bespoke loops.
 - *Type-safe, In-code Tests* – all code present in codebase
-- *Composable, Extensible System* – helper generators (trainloop add ...) mimic shadcn patterns.
+- *Composable, Extensible System* – helper generators mimic shadcn patterns. (`trainloop add` coming soon!)
 
 ## Demo
 
@@ -22,7 +22,7 @@ TrainLoop Evals is a framework for collecting and evaluating LLM outputs. The co
    pipx install trainloop-cli
    trainloop init
    ```
-3. Set `TRAINLOOP_DATA_FOLDER` – this is where the SDKs write events.
+3. Set the data path where your data will be written or use the default (inside the trainloop folder) – this is where the SDKs write events.
 4. Instrument your app:
    - **Node**: `NODE_OPTIONS="--require=trainloop-evals-sdk" <your start script>`
    - **Python**: `from trainloop_evals import collect; collect(<your config path>)`
