@@ -1,0 +1,6 @@
+name: evals
+description: A simple deployment for the TrainLoop Evaluation UI
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm

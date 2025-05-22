@@ -1,0 +1,54 @@
+{
+  "name": "trainloop-evals-sdk",
+  "version": "0.3.16",
+  "description": "TrainLoop Evaluations - header-based request tagging and zero-touch collection",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./register": {
+      "require": "./dist/register.js",
+      "import": "./dist/register.js",
+      "types": "./dist/register.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "dev": "concurrently -k -n TSC,YALC \"npm run build:watch\" \"chokidar dist -c 'yalc push'\"",
+    "build:watch": "tsc -w -p tsconfig.json"
+  },
+  "keywords": [
+    "llm",
+    "evaluation",
+    "trainloop",
+    "openai",
+    "anthropic",
+    "observability"
+  ],
+  "author": "TrainLoop <team@trainloop.ai>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.18.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.15.17",
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.4.5",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

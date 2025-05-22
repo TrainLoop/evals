@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "trainloop-evals-sdk"
+version = "0.3.16"
+description = "TrainLoop Evaluations SDK for data collection and evaluation"
+authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
+readme = "README.md"
+packages = [{ include = "trainloop_evals" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.31.0"
+pyyaml = "^6.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
+black = "^23.3.0"
+mypy = "^1.5.0"
+httpx = "^0.28.1"
+requests = "^2.32.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

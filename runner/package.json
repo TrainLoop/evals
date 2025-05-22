@@ -1,0 +1,16 @@
+{
+  "name": "trainloop-studio-runner",
+  "version": "0.3.16",
+  "private": true,
+  "description": "Bundled TrainLoop Studio runner",
+  "bin": {
+    "trainloop-studio": "bin/run.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/",
+    "_bundle/"
+  ]
+}

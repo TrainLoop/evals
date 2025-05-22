@@ -1,0 +1,25 @@
+{
+  "name": "trainloop-evals",
+  "private": false,
+  "description": "TrainLoop Evaluation Framework",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trainloop/evals"
+  },
+  "scripts": {
+    "bump": "pipx run scripts/bump/bump_version.py",
+    "build": "pipx run scripts/build.py",
+    "build:docker": "pipx run scripts/build.py --skip-studio",
+    "build:studio": "pipx run scripts/build.py --skip-docker",
+    "publish": "pipx run scripts/publish.py",
+    "publish:sdk": "pipx run scripts/publish.py --skip-cli --skip-studio",
+    "publish:cli": "pipx run scripts/publish.py --skip-sdk --skip-studio",
+    "publish:studio": "pipx run scripts/publish.py --skip-sdk --skip-cli",
+    "pulumi:bump": "pipx run scripts/bump/bump_pulumi.py",
+    "pulumi:destroy": "cd infra && pulumi destroy",
+    "dev": "cd ui && npm run dev"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

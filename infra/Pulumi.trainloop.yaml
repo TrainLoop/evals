@@ -1,0 +1,10 @@
+config:
+  aws:region: us-west-2
+  appImage: ghcr.io/trainloop/evals
+  appVersion: 0.3.16
+  # Change these to your desired values
+  subdomain: evals
+  hostedZoneDomain: trainloop.ai
+  # S3 bucket configuration
+  s3MountEnabled: true
+  s3MountPath: /mnt/s3data
