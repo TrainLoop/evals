@@ -1,12 +1,16 @@
-# TrainLoop Evals (ALPHA)
+# 🤖📊 TrainLoop Evals (ALPHA)
 
-TrainLoop Evals is a framework for collecting and evaluating LLM outputs. The core tenants of this are
+TrainLoop Evals is a framework for automating the collection and evaluation of LLM outputs. The core tenants of this are
 
 - *Simplicity First* – one environment variable, one function call, one folder of JSON files.
 - *Vendor Independence* – everything stored as newline-delimited JSON; no databases required.
 - *Meet developers where they are* – accepts our simple declarative flow or existing bespoke loops.
 - *Type-safe, In-code Tests* – all code present in codebase
 - *Composable, Extensible System* – helper generators mimic shadcn patterns. (`trainloop add` coming soon!)
+
+<p align="center">
+  <img src="images/drake_evals.png" alt="Evals Meme" width="300" height="auto" />
+</p>
 
 ## Demo
 
