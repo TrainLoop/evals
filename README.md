@@ -9,7 +9,7 @@ TrainLoop Evals is a framework for automating the collection and evaluation of L
 - *Composable, Extensible System* – helper generators mimic shadcn patterns. (`trainloop add` coming soon!)
 
 <p align="center">
-  <img src="images/drake_evals.png" alt="Evals Meme" width="300" height="auto" />
+  <img src="images/drake_evals.png" alt="Evals Meme" width="400" height="auto" />
 </p>
 
 ## Demo
