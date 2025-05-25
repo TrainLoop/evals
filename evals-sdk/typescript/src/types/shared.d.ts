@@ -42,7 +42,7 @@ export type RegistryEntry = {
 };
 
 export type Registry = {
-    schema: 1;
+    schema: number;
     files: {
         [file: string]: {
             [line: string]: RegistryEntry;
