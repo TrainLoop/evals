@@ -19,13 +19,15 @@ def cli():
     """
     ctx = click.get_current_context()
     if ctx.invoked_subcommand is None:
-        studio_cmd()
+        studio_cmd(config_path=None, local_tar_path=None)
 
 
 @cli.command("studio")
-def studio():
+@click.option("--config", help="Path to the trainloop config file.")
+@click.option("--local", help="Path to a local studio tar file.")
+def studio(config, local):
     """Launch the TrainLoop Studio UI for visualizing and analyzing your evaluation data."""
-    studio_cmd()
+    studio_cmd(config_path=config, local_tar_path=local)
 
 
 @cli.command("init")
