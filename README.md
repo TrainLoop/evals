@@ -20,26 +20,132 @@ TrainLoop Evals is a framework for automating the collection and evaluation of L
 
 ## Getting started
 
-1. We rely on `pipx` to install the CLI. If you don't have it, follow the [instructions](https://pipx.pypa.io/stable/).
-2. Install the CLI and create a workspace:
+### Prerequisites
+
+We rely on `pipx` to install the CLI. If you don't have it, follow the [instructions](https://pipx.pypa.io/stable/).
+
+### Installation
+
+Install the TrainLoop CLI using pipx:
+
+```bash
+pipx install trainloop-cli
+```
+
+Alternatively, you can install with pip:
+
+```bash
+pip install trainloop-cli
+```
+
+Or run directly without installation:
+
+```bash
+pipx run trainloop-cli --help
+```
+
+### Quick Start
+
+1. **Create a workspace:**
    ```bash
-   pipx install trainloop-cli
    trainloop init
    ```
-3. Set the data path where your data will be written or use the default (inside the trainloop folder) – this is where the SDKs write events.
-4. Instrument your app:
+
+2. **Set the data path** where your data will be written or use the default (inside the trainloop folder) – this is where the SDKs write events.
+
+3. **Instrument your app:**
    - **Node**: `NODE_OPTIONS="--require=trainloop-evals-sdk" <your start script>`
    - **Python**: `from trainloop_evals import collect; collect(<your config path>)`
 
-5. Write metrics and suites in `trainloop/eval/`
-6. Run the evals and open the UI:
+4. **Write metrics and suites** in `trainloop/eval/`
+
+5. **Run the evals:**
    ```bash
    trainloop eval
    ```
-7. Visualize eval results and data in the Studio UI.
+
+6. **Visualize results** in the Studio UI:
    ```bash
    trainloop studio
    ```
+
+## CLI Reference
+
+The TrainLoop CLI provides three main commands for managing your evaluation workflow:
+
+### `trainloop init`
+
+Scaffolds data/ and eval/ directories, creates sample metrics and suites.
+
+```bash
+trainloop init
+```
+
+This command creates a `trainloop/` workspace with the following structure:
+- `trainloop/data/` - Where event and result data is stored
+- `trainloop/eval/` - Where metrics and test suites are defined
+- `trainloop.config.yaml` - Configuration file
+
+### `trainloop eval`
+
+Discovers suites, applies metrics to new events, and appends verdicts to data/results/.
+
+```bash
+trainloop eval [OPTIONS]
+```
+
+**Options:**
+- `--suite <suite_name>` - Run only the specified suite instead of all suites
+
+**Examples:**
+```bash
+# Run all evaluation suites
+trainloop eval
+
+# Run only a specific suite
+trainloop eval --suite my_test_suite
+```
+
+### `trainloop studio`
+
+Launches the TrainLoop Studio UI for visualizing and analyzing your evaluation data.
+
+```bash
+trainloop studio [OPTIONS]
+```
+
+**Options:**
+- `--config <path>` - Path to the trainloop config file (overrides auto-discovery)
+- `--local <path>` - Path to a local studio tar file (for development)
+
+**Examples:**
+```bash
+# Launch studio with auto-discovery (default behavior)
+trainloop studio
+
+# Use custom config file
+trainloop studio --config /path/to/trainloop.config.yaml
+
+# Use local development build
+trainloop studio --local /path/to/trainloop-studio-runner-0.4.0.tgz
+
+# Combine both options
+trainloop studio --config /custom/config.yaml --local /local/build.tgz
+
+```
+
+### Default Behavior
+
+Running `trainloop` without any command automatically launches the Studio UI:
+
+```bash
+trainloop  # Same as: trainloop studio
+```
+
+### Global Options
+
+- `--version` - Show the version and exit
+- `-h, --help` - Show help message and exit
 
 ## About the TrainLoop Folder
 
