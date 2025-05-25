@@ -1,5 +1,6 @@
 import { DuckDBInstance } from '@duckdb/node-api';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 let cached: DuckDBInstance | null = null;
 // Flag to track if views are being initialized to prevent concurrent initializations
@@ -7,18 +8,71 @@ let isInitializingViews = false;
 // Flag to track if views have been successfully initialized
 let viewsInitialized = false;
 
+function findJsonlFiles(dir: string, pattern?: string): string[] {
+  if (!existsSync(dir)) return [];
+
+  try {
+    if (pattern === 'nested') {
+      // For results directory: look in subdirectories
+      const files: string[] = [];
+      const subdirs = readdirSync(dir).filter(item => {
+        const fullPath = join(dir, item);
+        return statSync(fullPath).isDirectory();
+      });
+
+      for (const subdir of subdirs) {
+        const subdirPath = join(dir, subdir);
+        const jsonlFiles = readdirSync(subdirPath)
+          .filter(file => file.endsWith('.jsonl'))
+          .map(file => join(subdirPath, file));
+        files.push(...jsonlFiles);
+      }
+      return files;
+    } else {
+      // For events directory: look directly in the directory
+      return readdirSync(dir)
+        .filter(file => file.endsWith('.jsonl'))
+        .map(file => join(dir, file));
+    }
+  } catch (err) {
+    console.warn(`Warning: Could not read directory ${dir}:`, err);
+    return [];
+  }
+}
+
 export async function getDuckDB(): Promise<DuckDBInstance> {
   if (cached) return cached;
 
   const ROOT = process.env.TRAINLOOP_DATA_FOLDER!;
 
   if (!ROOT) {
-    throw new Error("TRAINLOOP_DATA_FOLDER environment variable is not set");
+    console.error('❌ ERROR: TRAINLOOP_DATA_FOLDER environment variable is not set');
+    process.exit(1);
   }
 
-  // Check that this folder exists
-  if (!existsSync(`${ROOT}`)) {
-    throw new Error("Data folder does not exist");
+  // Check that the data folder exists
+  if (!existsSync(ROOT)) {
+    console.error(`❌ ERROR: Data folder does not exist at path: ${ROOT}`);
+    console.error('Please check your TRAINLOOP_DATA_FOLDER environment variable');
+    process.exit(1);
+  }
+
+  console.log(`✅ Using data folder at path: ${ROOT}`);
+
+  // Validate directory structure
+  const eventsDir = join(ROOT, 'events');
+  const resultsDir = join(ROOT, 'results');
+
+  if (!existsSync(eventsDir)) {
+    console.error(`❌ ERROR: Events directory does not exist at path: ${eventsDir}`);
+    console.error('Please ensure your data folder has the correct structure');
+    process.exit(1);
+  }
+
+  if (!existsSync(resultsDir)) {
+    console.error(`❌ ERROR: Results directory does not exist at path: ${resultsDir}`);
+    console.error('Please ensure your data folder has the correct structure');
+    process.exit(1);
   }
 
   const db = await DuckDBInstance.fromCache(`${ROOT}/tl.duckdb`);
@@ -47,42 +101,49 @@ async function initViews(db: DuckDBInstance, ROOT: string) {
     return;
   }
 
+  const conn = await db.connect();
+
   try {
-    // Attempt to initialize views with retries
-    await initializeWithRetry(db, ROOT);
-    // Mark views as initialized if we get here without errors
-    viewsInitialized = true;
-  } catch (err) {
-    console.error('Failed to initialize views after retries:', err);
-  } finally {
-    // Reset flag when done
-    isInitializingViews = false;
-  }
-}
-
-async function initializeWithRetry(db: DuckDBInstance, ROOT: string, maxRetries = 3) {
-  let retries = 0;
-
-  while (retries < maxRetries) {
-    const conn = await db.connect();
+    // First install and load extensions
     try {
-      // First try to install and load extensions
-      try {
-        await conn.run(`INSTALL json; LOAD json;`);
-      } catch (err) {
-        // Extensions already loaded, continue
-      }
+      await conn.run(`INSTALL json; LOAD json;`);
+    } catch (err) {
+      // Extensions already loaded, continue
+    }
 
-      // First check if views already exist to avoid unnecessary recreation
-      const viewCheckReader = await conn.runAndReadAll(
-        `SELECT name FROM sqlite_master WHERE type='view' AND name IN ('events', 'results')`
-      );
-      const existingViews = viewCheckReader.getRowObjects() as any[];
-      const hasEventsView = existingViews.some(row => row.name === 'events');
-      const hasResultsView = existingViews.some(row => row.name === 'results');
+    // Check for existing views to avoid unnecessary recreation
+    const viewCheckReader = await conn.runAndReadAll(
+      `SELECT name FROM sqlite_master WHERE type='view' AND name IN ('events', 'results', 'registry')`
+    );
+    const existingViews = viewCheckReader.getRowObjects();
+    const hasEventsView = existingViews.some(row => row.name === 'events');
+    const hasResultsView = existingViews.some(row => row.name === 'results');
+    const hasRegistryView = existingViews.some(row => row.name === 'registry');
 
-      // Only create events view if it doesn't exist or we need to recreate it
-      if (!hasEventsView) {
+    // Check for JSONL files in events directory
+    const eventsFiles = findJsonlFiles(join(ROOT, 'events'));
+
+    if (!hasEventsView) {
+      if (eventsFiles.length === 0) {
+        console.log('⚠️  No JSONL files found in events directory - creating empty events view');
+        await conn.run(`
+          CREATE VIEW events AS
+          SELECT
+            NULL::INTEGER AS rowid,
+            NULL::VARCHAR AS tag,
+            NULL::VARCHAR AS model,
+            NULL::TIMESTAMP AS durationMs,
+            NULL::TIMESTAMP AS startTimeMs,
+            NULL::TIMESTAMP AS endTimeMs,
+            NULL::JSON AS input,
+            NULL::JSON AS output,
+            NULL::JSON AS modelParams,
+            NULL::VARCHAR AS url,
+            NULL::JSON AS location
+          WHERE 1=0
+        `);
+      } else {
+        console.log(`✅ Found ${eventsFiles.length} JSONL files in events directory - creating events view`);
         await conn.run(`
           CREATE VIEW events AS
           SELECT
@@ -100,9 +161,29 @@ async function initializeWithRetry(db: DuckDBInstance, ROOT: string, maxRetries 
           FROM read_json_auto('${ROOT}/events/*.jsonl');
         `);
       }
+    }
 
-      // Only create results view if it doesn't exist
-      if (!hasResultsView) {
+    // Check for JSONL files in results directory (nested structure)
+    const resultsFiles = findJsonlFiles(join(ROOT, 'results'), 'nested');
+
+    if (!hasResultsView) {
+      if (resultsFiles.length === 0) {
+        console.log('⚠️  No JSONL files found in results directory - creating empty results view');
+        await conn.run(`
+          CREATE VIEW results AS
+          SELECT
+            NULL::INTEGER AS rowid,
+            NULL::VARCHAR AS ts,
+            NULL::VARCHAR AS suite,
+            NULL::VARCHAR AS metric,
+            NULL::JSON AS sample,
+            NULL::BOOLEAN AS passed,
+            NULL::DOUBLE AS score,
+            NULL::VARCHAR AS reason
+          WHERE 1=0
+        `);
+      } else {
+        console.log(`✅ Found ${resultsFiles.length} JSONL files in results directory - creating results view`);
         await conn.run(`
           CREATE VIEW results AS
           SELECT
@@ -113,21 +194,39 @@ async function initializeWithRetry(db: DuckDBInstance, ROOT: string, maxRetries 
           FROM read_json_auto('${ROOT}/results/*/*.jsonl', filename=true);
         `);
       }
-
-      // If we get here, views were created or already existed
-      return;
-    } catch (err) {
-      console.error(`View initialization attempt ${retries + 1} failed:`, err);
-      retries++;
-
-      // Wait a bit before retrying to allow other operations to complete
-      if (retries < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, 100 * retries));
-      }
-    } finally {
-      conn.closeSync();
     }
-  }
 
-  throw new Error('Failed to initialize views after maximum retries');
+    // Handle registry
+    const registryPath = join(ROOT, '_registry.json');
+
+    if (!hasRegistryView) {
+      if (existsSync(registryPath)) {
+        console.log('✅ Found _registry.json - creating registry view');
+        await conn.run(`
+          CREATE VIEW registry AS
+          SELECT * FROM read_json_auto('${registryPath}');
+        `);
+      } else {
+        console.log('⚠️  No _registry.json found - creating empty registry view');
+        await conn.run(`
+          CREATE VIEW registry AS
+          SELECT
+            NULL::INTEGER AS schema,
+            NULL::JSON AS files
+          WHERE 1=0
+        `);
+      }
+    }
+
+    // Mark views as initialized if we get here without errors
+    viewsInitialized = true;
+    console.log('✅ Database views initialized successfully');
+  } catch (err) {
+    console.error('❌ Failed to initialize database views:', err);
+    process.exit(1);
+  } finally {
+    // Reset flag when done
+    isInitializingViews = false;
+    conn.closeSync();
+  }
 }

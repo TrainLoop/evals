@@ -43,6 +43,10 @@ export async function listEvents({ offset = 0, limit = 50, filters }: ListEvents
     const rows = reader.getRowObjects() as any[]
     // Convert BigInt values to Number to make them JSON serializable
     return convertBigIntsToNumbers(rows)
+  } catch (err) {
+    // If the events table is empty or there's an error, return empty array
+    console.warn('Warning: Failed to fetch events, returning empty array:', err)
+    return []
   } finally {
     conn.closeSync()
   }
@@ -57,6 +61,10 @@ export async function getEvent(id: number) {
     const rows = reader.getRowObjects() as any[]
     if (rows.length === 0) return null
     return convertBigIntsToNumbers(rows)[0]
+  } catch (err) {
+    // If there's an error fetching the event, return null
+    console.warn(`Warning: Failed to fetch event with id ${id}:`, err)
+    return null
   } finally {
     conn.closeSync()
   }

@@ -33,7 +33,25 @@ export interface ResultsTable {
     reason: string | null;
 }
 
+export type RegistryEntry = {
+    lineNumber: string;
+    tag: string;
+    firstSeen: string;   // ISO-8601 UTC
+    lastSeen: string;
+    count: number;
+};
+
+export type Registry = {
+    schema: number;
+    files: {
+        [file: string]: {
+            [line: string]: RegistryEntry;
+        };
+    };
+};
+
 export interface Database {
     events: EventsTable;
     results: ResultsTable;
+    registry: Registry;
 }

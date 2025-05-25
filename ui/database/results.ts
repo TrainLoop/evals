@@ -34,6 +34,10 @@ export async function listResults({ ts, suite, offset = 0, limit = 50 }: ListRes
     const reader = await conn.runAndReadAll(query, queryParams)
     const rows = reader.getRowObjects()
     return convertBigIntsToNumbers(rows)
+  } catch (err) {
+    // If the results table is empty or there's an error, return empty array
+    console.warn('Warning: Failed to fetch results, returning empty array:', err)
+    return []
   } finally {
     conn.closeSync()
   }
@@ -46,6 +50,10 @@ export async function getResult(id: string) {
     const reader = await conn.runAndReadAll('SELECT * FROM results WHERE rowid = $id', { id } as Record<string, any>)
     const rows = reader.getRowObjects()
     return convertBigIntsToNumbers(rows)[0]
+  } catch (err) {
+    // If there's an error fetching the result, return null
+    console.warn(`Warning: Failed to fetch result with id ${id}:`, err)
+    return null
   } finally {
     conn.closeSync()
   }
