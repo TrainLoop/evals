@@ -86,16 +86,26 @@ export async function getDuckDB(): Promise<DuckDBInstance> {
 }
 
 async function initViews(db: DuckDBInstance, ROOT: string) {
-  // Only one thread should initialize views at a time
+  // If already initialized, just return
+  if (viewsInitialized) {
+    return;
+  }
+
+  // If currently initializing, wait for it to complete
   if (isInitializingViews) {
-    // Another process is already initializing views, just return
+    // Wait for initialization to complete (poll every 100ms, max 10 seconds)
+    let attempts = 0;
+    while (isInitializingViews && attempts < 100) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
     return;
   }
 
   // Set flag to prevent concurrent initializations
   isInitializingViews = true;
 
-  // If views are already initialized, just return
+  // Double-check after setting the flag
   if (viewsInitialized) {
     isInitializingViews = false;
     return;

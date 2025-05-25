@@ -18,33 +18,30 @@ export async function listEvents({ offset = 0, limit = 50, filters }: ListEvents
   const conn = await db.connect()
   try {
     const clauses: string[] = []
-    const params: Record<string, unknown> = {}
+    
     if (filters?.from !== undefined && filters?.to !== undefined) {
-      clauses.push('startTimeMs BETWEEN $from AND $to')
-      params.from = filters.from
-      params.to = filters.to
+      clauses.push(`startTimeMs BETWEEN ${filters.from} AND ${filters.to}`)
     }
-    if (filters?.tags && filters.tags.length) {
-      clauses.push(`tag IN (${filters.tags.map((_, i) => `$tag${i}`).join(',')})`)
-      filters.tags.forEach((t, i) => (params[`tag${i}`] = t))
+    if (filters?.tags?.length) {
+      const tagsList = filters.tags.map(tag => `'${tag.replace(/'/g, "''")}'`).join(',')
+      clauses.push(`tag IN (${tagsList})`)
     }
-    if (filters?.models && filters.models.length) {
-      clauses.push(`model IN (${filters.models.map((_, i) => `$model${i}`).join(',')})`)
-      filters.models.forEach((m, i) => (params[`model${i}`] = m))
+    if (filters?.models?.length) {
+      const modelsList = filters.models.map(model => `'${model.replace(/'/g, "''")}'`).join(',')
+      clauses.push(`model IN (${modelsList})`)
     }
     if (filters?.durationLt !== undefined) {
-      clauses.push('durationMs < $dur')
-      params.dur = filters.durationLt
+      clauses.push(`durationMs < ${filters.durationLt}`)
     }
-    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
-    const sql = `SELECT * FROM events ${where} ORDER BY startTimeMs DESC LIMIT ${limit} OFFSET ${offset}`
-    // Cast params to the correct DuckDBValue type expected by the DuckDB API
-    const reader = await conn.runAndReadAll(sql, params as Record<string, any>)
-    const rows = reader.getRowObjects() as any[]
-    // Convert BigInt values to Number to make them JSON serializable
+
+    const whereClause = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
+    const query = `SELECT * FROM events ${whereClause} ORDER BY startTimeMs DESC LIMIT ${limit} OFFSET ${offset}`
+    
+    const reader = await conn.runAndReadAll(query)
+    const rows = reader.getRowObjects()
     return convertBigIntsToNumbers(rows)
   } catch (err) {
-    // If the events table is empty or there's an error, return empty array
+    // If there's an error (e.g., empty table), return empty array
     console.warn('Warning: Failed to fetch events, returning empty array:', err)
     return []
   } finally {
@@ -56,8 +53,8 @@ export async function getEvent(id: number) {
   const db = await getDuckDB()
   const conn = await db.connect()
   try {
-    // Cast params to the correct DuckDBValue type expected by the DuckDB API
-    const reader = await conn.runAndReadAll('SELECT * FROM events WHERE rowid = $id', { id } as Record<string, any>)
+    const query = `SELECT * FROM events WHERE rowid = ${id}`
+    const reader = await conn.runAndReadAll(query)
     const rows = reader.getRowObjects() as any[]
     if (rows.length === 0) return null
     return convertBigIntsToNumbers(rows)[0]

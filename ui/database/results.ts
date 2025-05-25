@@ -8,30 +8,23 @@ export interface ListResultsOptions {
   limit?: number
 }
 
-export async function listResults({ ts, suite, offset = 0, limit = 50 }: ListResultsOptions) {
+export async function listResults({ offset = 0, limit = 50, ts, suite }: ListResultsOptions) {
   const db = await getDuckDB()
   const conn = await db.connect()
   try {
-    let query = 'SELECT * FROM results'
-    const conditions: string[] = []
-    const queryParams: { [key: string]: string } = {}
-
+    const clauses: string[] = []
+    
     if (ts) {
-      conditions.push('ts = $ts')
-      queryParams.ts = ts
+      clauses.push(`ts = '${ts.replace(/'/g, "''")}'`) // Basic SQL injection protection
     }
     if (suite) {
-      conditions.push('suite = $suite')
-      queryParams.suite = suite
+      clauses.push(`suite = '${suite.replace(/'/g, "''")}'`) // Basic SQL injection protection
     }
 
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ')
-    }
-
-    query += ` ORDER BY passed ASC, ts DESC, suite DESC LIMIT ${limit} OFFSET ${offset}`
-
-    const reader = await conn.runAndReadAll(query, queryParams)
+    const whereClause = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : ''
+    const query = `SELECT * FROM results ${whereClause} ORDER BY passed ASC, ts DESC, suite DESC LIMIT ${limit} OFFSET ${offset}`
+    
+    const reader = await conn.runAndReadAll(query)
     const rows = reader.getRowObjects()
     return convertBigIntsToNumbers(rows)
   } catch (err) {
