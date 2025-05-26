@@ -51,13 +51,43 @@ def resolve_data_folder_path(
 
 
 def load_config_into_env(trainloop_config_path: str | None = None) -> None:
+    """
+    Load TrainLoop configuration into environment variables.
+
+    Priority order:
+    1. Existing environment variables (highest priority)
+    2. Config file values (fallback)
+    3. Fail if critical variables are missing from both sources
+
+    Config path resolution:
+    1. trainloop_config_path parameter
+    2. TRAINLOOP_CONFIG_PATH environment variable
+    3. Auto-discovery (trainloop/trainloop.config.yaml or ./trainloop.config.yaml)
+    """
     root = Path.cwd()
     config_file = "trainloop.config.yaml"
 
+    # Check which environment variables are already set
+    data_folder_set = "TRAINLOOP_DATA_FOLDER" in os.environ
+    host_allowlist_set = "TRAINLOOP_HOST_ALLOWLIST" in os.environ
+    log_level_set = "TRAINLOOP_LOG_LEVEL" in os.environ
+
+    # If all variables are already set, no need to load config
+    if data_folder_set and host_allowlist_set and log_level_set:
+        _log.debug(
+            "All TrainLoop environment variables already set, skipping config file"
+        )
+        return
+
+    # Determine config path - prioritize parameter, then env var, then auto-discovery
+    config_path_source = trainloop_config_path or os.environ.get(
+        "TRAINLOOP_CONFIG_PATH"
+    )
+
     resolved_config_path = None
-    if trainloop_config_path:
-        # Path was provided - could be absolute or relative
-        path = Path(trainloop_config_path)
+    if config_path_source:
+        # Path was provided via parameter or environment variable
+        path = Path(config_path_source)
 
         if path.is_absolute():
             # Use the absolute path directly
@@ -74,7 +104,7 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
             else:
                 resolved_config_path = (root / path).resolve()
     else:
-        # No path provided - look for trainloop folder in current directory
+        # No path provided - auto-discover config file
         trainloop_dir = root / "trainloop"
         if trainloop_dir.exists() and trainloop_dir.is_dir():
             resolved_config_path = trainloop_dir / config_file
@@ -82,22 +112,46 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
             # Fallback to looking in the current directory
             resolved_config_path = root / config_file
 
-    if not resolved_config_path.exists():
-        _log.warning("TrainLoop config file not found at %s!", resolved_config_path)
-        return
+    # Try to load config file
+    config_data = None
+    if resolved_config_path and resolved_config_path.exists():
+        try:
+            data: TrainloopConfig = yaml.safe_load(
+                resolved_config_path.read_text(encoding="utf-8")
+            )
+            config_data = data.get("trainloop", {})
+            _log.debug(f"Loaded TrainLoop config from {resolved_config_path}")
+        except Exception as e:
+            _log.warning(f"Failed to load config file {resolved_config_path}: {e}")
+    else:
+        _log.debug(f"TrainLoop config file not found at {resolved_config_path}")
 
-    data: TrainloopConfig = yaml.safe_load(
-        resolved_config_path.read_text(encoding="utf-8")
-    )
-    tl = data.get("trainloop", {})
-    # Set data folder path in environment variables
-    data_folder = tl.get("data_folder", "")
-    resolved_path = resolve_data_folder_path(data_folder, resolved_config_path, root)
-    os.environ.setdefault("TRAINLOOP_DATA_FOLDER", resolved_path)
-    os.environ.setdefault(
-        "TRAINLOOP_HOST_ALLOWLIST",
-        ",".join(tl.get("host_allowlist", DEFAULT_HOST_ALLOWLIST)),
-    )
-    os.environ.setdefault(
-        "TRAINLOOP_LOG_LEVEL", str(tl.get("log_level", "info")).upper()
-    )
+    # Set environment variables, prioritizing existing values
+    if not data_folder_set:
+        if config_data and "data_folder" in config_data:
+            data_folder = config_data["data_folder"]
+            resolved_path = resolve_data_folder_path(
+                data_folder, resolved_config_path, root
+            )
+            os.environ["TRAINLOOP_DATA_FOLDER"] = resolved_path
+        else:
+            raise ValueError(
+                "TRAINLOOP_DATA_FOLDER not set in environment and not found in config file. "
+                "Please set the environment variable or provide a valid config file."
+            )
+
+    if not host_allowlist_set:
+        if config_data and "host_allowlist" in config_data:
+            host_allowlist = ",".join(config_data["host_allowlist"])
+            os.environ["TRAINLOOP_HOST_ALLOWLIST"] = host_allowlist
+        else:
+            # Use default host allowlist if not set anywhere
+            os.environ["TRAINLOOP_HOST_ALLOWLIST"] = ",".join(DEFAULT_HOST_ALLOWLIST)
+
+    if not log_level_set:
+        if config_data and "log_level" in config_data:
+            log_level = str(config_data["log_level"]).upper()
+            os.environ["TRAINLOOP_LOG_LEVEL"] = log_level
+        else:
+            # Use default log level if not set anywhere
+            os.environ["TRAINLOOP_LOG_LEVEL"] = "WARN"
