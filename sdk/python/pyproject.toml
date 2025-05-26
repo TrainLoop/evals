@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "trainloop-evals-sdk"
+name = "trainloop-llm-logging"
 version = "0.4.0"
 description = "TrainLoop Evaluations SDK for data collection and evaluation"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]

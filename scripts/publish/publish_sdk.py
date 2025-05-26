@@ -52,7 +52,7 @@ class SdkPublisher:
         # Set up paths
         self.script_dir = Path(__file__).resolve().parents[1]
         self.project_root = self.script_dir.parent
-        self.sdk_dir = self.project_root / "evals-sdk"
+        self.sdk_dir = self.project_root / "sdk"
         self.python_sdk_dir = self.sdk_dir / "python"
         self.ts_sdk_dir = self.sdk_dir / "typescript"
         self.version_file = self.project_root / "VERSION"
@@ -135,7 +135,9 @@ class SdkPublisher:
             ["poetry", "version", "-s"], capture_output=True, text=True, check=True
         )
         py_version = result.stdout.strip()
-        log_success(f"Python SDK published to PyPI: trainloop-evals-sdk v{py_version}")
+        log_success(
+            f"Python SDK published to PyPI: trainloop-llm-logging v{py_version}"
+        )
 
     def publish_typescript_sdk(self):
         """Publish TypeScript SDK to npm"""
@@ -190,7 +192,7 @@ class SdkPublisher:
             ts_version = package_json.get("version")
 
         log_success(
-            f"TypeScript SDK published to npm: trainloop-evals-sdk v{ts_version}"
+            f"TypeScript SDK published to npm: trainloop-llm-logging v{ts_version}"
         )
 
     def main(self, args):
@@ -213,8 +215,8 @@ class SdkPublisher:
 
         log_success("SDK publishing completed successfully!")
         version = self.get_version()
-        log_info(f"Python SDK: trainloop-evals-sdk v{version}")
-        log_info(f"TypeScript SDK: trainloop-evals-sdk v{version}")
+        log_info(f"Python SDK: trainloop-llm-logging v{version}")
+        log_info(f"TypeScript SDK: trainloop-llm-logging v{version}")
 
 
 if __name__ == "__main__":

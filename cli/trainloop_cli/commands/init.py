@@ -73,30 +73,32 @@ def install_appropriate_sdk(project_dir: Path):
             dev_dependencies = package_data.get("devDependencies", {})
 
             if (
-                "trainloop-evals-sdk" not in dependencies
-                and "trainloop-evals-sdk" not in dev_dependencies
+                "trainloop-llm-logging" not in dependencies
+                and "trainloop-llm-logging" not in dev_dependencies
             ):
                 # Try to install the SDK using npm
                 print(
-                    "\nDetected Node.js project, installing trainloop-evals-sdk package..."
+                    "\nDetected Node.js project, installing trainloop-llm-logging package..."
                 )
                 try:
                     subprocess.run(
-                        ["npm", "install", "trainloop-evals-sdk@latest"],
+                        ["npm", "install", "trainloop-llm-logging@latest"],
                         cwd=project_dir,
                         capture_output=True,
                         text=True,
                         check=True,
                     )
-                    print("Successfully installed trainloop-evals-sdk package")
+                    print("Successfully installed trainloop-llm-logging package")
                 except subprocess.CalledProcessError as e:
-                    print(f"Failed to install trainloop-evals-sdk package: {e.stderr}")
                     print(
-                        "Please manually install with: npm install trainloop-evals-sdk"
+                        f"Failed to install trainloop-llm-logging package: {e.stderr}"
+                    )
+                    print(
+                        "Please manually install with: npm install trainloop-llm-logging"
                     )
             else:
                 print(
-                    "trainloop-evals-sdk package is already installed in package.json"
+                    "trainloop-llm-logging package is already installed in package.json"
                 )
 
         except (json.JSONDecodeError, IOError) as e:
@@ -108,17 +110,17 @@ def install_appropriate_sdk(project_dir: Path):
             with open(requirements_txt, "r", encoding="utf-8") as f:
                 requirements = f.read()
 
-            if "trainloop-evals-sdk" not in requirements:
+            if "trainloop-llm-logging" not in requirements:
                 # Add the SDK to requirements.txt
                 print(
-                    "\nDetected Python project, adding trainloop-evals-sdk to requirements.txt..."
+                    "\nDetected Python project, adding trainloop-llm-logging to requirements.txt..."
                 )
                 with open(requirements_txt, "a", encoding="utf-8") as f:
-                    f.write("\n# TrainLoop evaluation SDK\ntrainloop-evals-sdk\n")
-                print("Added trainloop-evals-sdk to requirements.txt")
+                    f.write("\n# TrainLoop evaluation SDK\ntrainloop-llm-logging\n")
+                print("Added trainloop-llm-logging to requirements.txt")
                 print("Please run: pip install -r requirements.txt")
             else:
-                print("trainloop-evals-sdk is already in requirements.txt")
+                print("trainloop-llm-logging is already in requirements.txt")
 
         except IOError as e:
             print(f"Error reading/writing requirements.txt: {e}")
@@ -126,7 +128,7 @@ def install_appropriate_sdk(project_dir: Path):
     else:
         # Create a new requirements.txt file if no project type detected
         print(
-            "\nNo package.json or requirements.txt found. Please add trainloop-evals-sdk to your project dependencies."
+            "\nNo package.json or requirements.txt found. Please add trainloop-llm-logging to your project dependencies."
         )
 
 

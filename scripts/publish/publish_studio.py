@@ -184,8 +184,8 @@ def main():
         # Add note about SDK and CLI availability
         f.write("---\n")
         f.write("**Note:** Corresponding SDK and CLI versions are available via:\n")
-        f.write(f"- Python SDK: `pip install trainloop-evals-sdk=={version}`\n")
-        f.write(f"- TypeScript SDK: `npm install trainloop-evals-sdk@{version}`\n")
+        f.write(f"- Python SDK: `pip install trainloop-llm-logging=={version}`\n")
+        f.write(f"- TypeScript SDK: `npm install trainloop-llm-logging@{version}`\n")
         f.write(f"- CLI: `pip install trainloop-cli=={version}`\n")
         f.write(
             f"- Studio: `npx --yes https://github.com/trainloop/evals/releases/download/v{version}/trainloop-studio-runner-{version}.tgz` or `trainloop studio` if cli is installed\n"

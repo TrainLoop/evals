@@ -5,14 +5,14 @@ Patches Node HTTP libraries so every LLM request is logged for evaluation.
 ## Install
 
 ```bash
-npm install trainloop-evals-sdk
+npm install trainloop-llm-logging
 ```
 
 ## Usage
 
 ```bash
-export TRAINLOOP_DATA_FOLDER=./trainloop/data
-NODE_OPTIONS="--require=trainloop-evals-sdk" node app.js
+export TRAINLOOP_DATA_FOLDER=./trainloop/data # optional, otherwise will use the path at trainloop/trainloop.config.yaml
+NODE_OPTIONS="--require=trainloop-llm-logging" next dev
 ```
 
 Tag individual calls when needed:
