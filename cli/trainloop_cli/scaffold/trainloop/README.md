@@ -55,7 +55,7 @@ pip install trainloop-llm-logging  # tiny wrapper around the Node collector
 ```
 
 ```python
-from trainloop_evals import collect
+from trainloop_llm_logging import collect
 collect("some/path/to/trainloop.config.yaml")  # must be called exactly once, e.g. in your app entrypoint
 
 response = client.chat.completions.create(

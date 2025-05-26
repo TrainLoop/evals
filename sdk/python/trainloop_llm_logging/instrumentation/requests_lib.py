@@ -1,4 +1,3 @@
-# trainloop_evals/instrumentation/requests_lib.py
 """
 Instrumentation for the *requests* library to intercept and log HTTP calls for
 TrainLoop evaluations.  Monkey-patches Session.request to capture data while
@@ -52,7 +51,7 @@ def install(exporter: FileExporter) -> None:
         captured: List[bytes] = []
         _raw: _Urllib3Resp = resp.raw  # requests' .raw is urllib3.HTTPResponse
 
-        class TeeRaw(_Urllib3Resp):  # type: ignore[misc]
+        class TeeRaw(_Urllib3Resp):
             """Proxy around urllib3.HTTPResponse that duplicates every byte."""
 
             def __init__(self, inner: _Urllib3Resp):

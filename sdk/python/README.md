@@ -11,7 +11,7 @@ pip install trainloop-llm-logging
 ## Quick example
 
 ```python
-from trainloop_evals import collect, trainloop_tag
+from trainloop_llm_logging import collect, trainloop_tag
 collect()  # patch HTTP clients
 openai.chat.completions.create(..., trainloop_tag("my-tag"))
 ```
