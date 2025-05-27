@@ -4,7 +4,7 @@ trainloop-bump-version - bump VERSION everywhere, update CHANGELOG, commit, tag,
 
 usage:
   python scripts/bump_version.py (major|minor|patch)
-  
+
 The script expects a release file to exist at releases/<new_version>.md
 """
 from __future__ import annotations
@@ -88,11 +88,11 @@ def prepend_changelog(ver: str) -> None:
     """Add a changelog entry that links to the release file."""
     date = datetime.date.today().isoformat()
     entry = f"## {ver} ({date})\n[Release Notes](releases/{ver}.md)\n\n"
-    
+
     if not CHANGELOG.exists():
         CHANGELOG.write_text("# Changelog\n\n" + entry)
         return
-    
+
     lines = CHANGELOG.read_text().splitlines(keepends=True)
     if lines and lines[0].lower().startswith("#"):
         new = "".join(lines[:1]) + "\n" + entry + "".join(lines[1:])
@@ -101,13 +101,32 @@ def prepend_changelog(ver: str) -> None:
     CHANGELOG.write_text(new)
 
 
-def get_release_message(ver: str) -> str:
-    """Read the release message from releases/<version>.md file."""
+def get_release_message(ver: str) -> tuple[str, str]:
+    """
+    Read the release message from releases/<version>.md file.
+    Returns (full_message, summary) tuple.
+    """
     release_file = RELEASES_DIR / f"{ver}.md"
     if not release_file.exists():
-        sys.exit(f"Release file not found: {release_file}\n"
-                f"Please create the release notes at {release_file} before bumping the version.")
-    return release_file.read_text().strip()
+        sys.exit(
+            f"Release file not found: {release_file}\n"
+            f"Please create the release notes at {release_file} before bumping the version."
+        )
+
+    content = release_file.read_text().strip()
+
+    # Extract summary from the first line if it starts with "Summary:"
+    lines = content.split("\n")
+    summary = None
+    if lines and lines[0].startswith("Summary:"):
+        summary = lines[0].replace("Summary:", "").strip()
+
+    if not summary:
+        sys.exit(
+            f"Release file {release_file} must start with 'Summary: <message>' line"
+        )
+
+    return content, summary
 
 
 def get_commit_message(msg: str) -> str:
@@ -119,11 +138,11 @@ def get_commit_message(msg: str) -> str:
     # Remove markdown formatting for commit message
     msg = msg.strip()
     # Get first line
-    first_line = msg.split('\n')[0]
+    first_line = msg.split("\n")[0]
     # Remove common markdown elements
-    first_line = re.sub(r'^\W+', '', first_line)  # Remove leading symbols
-    first_line = re.sub(r'\*\*(.+?)\*\*', r'\1', first_line)  # Remove bold
-    first_line = re.sub(r'`(.+?)`', r'\1', first_line)  # Remove code formatting
+    first_line = re.sub(r"^\W+", "", first_line)  # Remove leading symbols
+    first_line = re.sub(r"\*\*(.+?)\*\*", r"\1", first_line)  # Remove bold
+    first_line = re.sub(r"`(.+?)`", r"\1", first_line)  # Remove code formatting
     return first_line.strip()
 
 
@@ -143,12 +162,14 @@ def main() -> None:
         new_major, new_minor, new_patch = major, minor + 1, 0
     elif args.part == "patch":
         new_major, new_minor, new_patch = major, minor, patch + 1
-    
+    else:
+        raise ValueError(f"Invalid part: {args.part}")
+
     new_ver = f"{new_major}.{new_minor}.{new_patch}"
-    
-    # Check if release file exists
-    full_message = get_release_message(new_ver)
-    commit_msg = get_commit_message(full_message)
+
+    # Check if release file exists and get summary
+    _, summary = get_release_message(new_ver)
+    commit_msg = summary  # Use the summary as commit message
 
     # Now actually bump the version
     ver = bump(args.part)
@@ -173,6 +194,7 @@ def main() -> None:
     files_to_add = [
         "VERSION",
         "CHANGELOG.md",
+        RELEASES_DIR.relative_to(ROOT) / f"{ver}.md",  # Add release file
         UI_PKG.relative_to(ROOT),
         TS_PKG.relative_to(ROOT),
         RUNNER_PKG.relative_to(ROOT),

@@ -5,11 +5,14 @@ This script handles version bumping, changelog updates, git commits, tagging, an
 ## Usage
 
 ### Step 1: Create Release Notes
-Before bumping the version, create a release notes file in the `releases/` directory:
+Before bumping the version, create a release notes file in the `releases/` directory.
+The file **must** start with a `Summary:` line that briefly describes the release.
 
 ```bash
 # For example, if bumping to 0.5.0, create releases/0.5.0.md
 cat > releases/0.5.0.md << EOF
+Summary: Major SDK refactoring with comprehensive testing infrastructure
+
 **Major SDK Refactoring and Testing Infrastructure**
 
 The changes in this release include:
@@ -47,10 +50,20 @@ npm run bump major
 ## How It Works
 
 1. **Pre-check**: The script calculates the new version and checks if `releases/<new_version>.md` exists
-2. **Version Update**: Updates all package.json and pyproject.toml files
-3. **Lock Files**: Regenerates npm lock files
-4. **Changelog**: Adds an entry to CHANGELOG.md that links to the release notes file
-5. **Git Operations**: Commits, tags, and pushes the changes
+2. **Summary Extraction**: Reads the `Summary:` line from the release file for the commit message
+3. **Version Update**: Updates all package.json and pyproject.toml files
+4. **Lock Files**: Regenerates npm lock files
+5. **Changelog**: Adds an entry to CHANGELOG.md that links to the release notes file
+6. **Git Operations**: Commits all changes including the release file, tags, and pushes
+
+## Release File Format
+
+The release file **must** start with a Summary line:
+```markdown
+Summary: Brief description of the release
+
+[Rest of your detailed release notes in markdown format]
+```
 
 ## Example Changelog Output
 
@@ -69,6 +82,7 @@ The changelog will contain links to the full release notes:
 ## Important Notes
 
 - The release file **must** exist before running the bump script
-- The first line of the release file (cleaned of markdown) is used for the git commit message
+- The release file **must** start with `Summary: <message>`
+- The summary is used for the git commit message and tag
+- Release files are committed as part of the version bump
 - Release files should be markdown formatted for best readability
-- The release files are checked into version control
