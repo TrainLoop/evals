@@ -75,10 +75,9 @@ describe('store', () => {
     });
 
     it('should handle file write errors gracefully', () => {
-      // Create a read-only events directory to cause write errors
-      const eventsDir = path.join(tempDir, 'events');
-      fs.mkdirSync(eventsDir, { recursive: true });
-      fs.chmodSync(eventsDir, 0o444); // read-only
+      // Create a file at the events path to cause a conflict
+      const eventsPath = path.join(tempDir, 'events');
+      fs.writeFileSync(eventsPath, 'not a directory'); // This will cause mkdirSync to fail
 
       const samples = [
         createCollectedSample({ tag: 'test-tag' })
@@ -87,8 +86,8 @@ describe('store', () => {
       // Function should handle write errors gracefully (may still throw in this implementation)
       expect(() => saveSamples(tempDir, samples)).toThrow();
 
-      // Restore permissions for cleanup
-      fs.chmodSync(eventsDir, 0o755);
+      // Cleanup
+      fs.unlinkSync(eventsPath);
     });
 
     it('should create unique filenames based on timestamp', () => {
