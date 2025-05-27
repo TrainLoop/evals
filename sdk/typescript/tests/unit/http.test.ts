@@ -222,7 +222,12 @@ describe('http instrumentation', () => {
     it('should track timing', (done) => {
       patchHttp(http as any, mockExporter);
 
-      jest.spyOn(utils, 'drain').mockResolvedValue('{}');
+      // Mock drain to return response body after a delay to ensure measurable time
+      jest.spyOn(utils, 'drain').mockImplementation(() => {
+        return new Promise((resolve) => {
+          setTimeout(() => resolve('{}'), 5); // 5ms delay to ensure durationMs > 0
+        });
+      });
 
       const req = http.request({ host: 'api.openai.com' }, () => {
         setTimeout(() => {
