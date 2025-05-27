@@ -5,22 +5,29 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to run tests on'
+        description: "Branch to run tests on"
         required: false
-        default: 'main'
-  
+        default: "main"
+
   # Run full matrix daily to catch compatibility issues
   schedule:
-    - cron: '0 0 * * *'  # Every day at midnight
-  
-  # Also run on release branches
+    - cron: "0 0 * * *" # Every day at midnight
+
+  # Run on PR open (not on subsequent commits)
+  pull_request:
+    types: [opened]
+    paths:
+      - "sdk/**"
+      - ".github/workflows/sdk-tests.yml"
+
+  # Also run on release branches and merge to main
   push:
     branches:
-      - 'release/**'
-      - 'main'
+      - "release/**"
+      - "main"
     paths:
-      - 'sdk/**'
-      - '.github/workflows/sdk-tests.yml'
+      - "sdk/**"
+      - ".github/workflows/sdk-tests.yml"
 
 jobs:
   test-python:
@@ -32,40 +39,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: latest
           virtualenvs-create: true
           virtualenvs-in-project: true
-      
+
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
           path: sdk/python/.venv
           key: venv-${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-      
+
       - name: Install dependencies
         run: poetry install --no-interaction --no-root
-      
+
       - name: Install project
         run: poetry install --no-interaction
-      
+
       - name: Run tests with coverage
         run: poetry run pytest --cov --cov-report=xml --cov-report=term-missing -v
-      
+
       # - name: Upload coverage reports
       #   uses: codecov/codecov-action@v4
       #   if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -85,29 +92,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        node-version: ['18.x', '20.x', '22.x']
-    
+        os: [ubuntu-latest, macos-latest]
+        node-version: ["20.x", "22.x"]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: sdk/typescript/package-lock.json
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build TypeScript
         run: npm run build
-      
+
       - name: Run tests with coverage
         run: npm run test:coverage
-      
+
       # - name: Upload coverage reports
       #   uses: codecov/codecov-action@v4
       #   if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20.x'
