@@ -1,0 +1,112 @@
+name: SDK Tests
+
+# Fast SDK tests that run on every PR and push to main
+# For comprehensive cross-platform testing, manually run sdk-tests.yml
+
+on:
+  pull_request:
+    paths:
+      - "sdk/**"
+      - ".github/workflows/sdk-tests-lean.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "sdk/**"
+      - ".github/workflows/sdk-tests-lean.yml"
+
+jobs:
+  test-python:
+    name: Python SDK Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: sdk/python/.venv
+          key: venv-${{ runner.os }}-python-3.11-${{ hashFiles('sdk/python/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-python-3.11-
+            venv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run linting
+        run: |
+          poetry run ruff check .
+          poetry run mypy .
+        continue-on-error: true
+
+      - name: Run tests with coverage
+        run: poetry run pytest --cov --cov-report=xml --cov-report=term-missing -v
+
+      # - name: Upload coverage reports
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     file: ./sdk/python/coverage.xml
+      #     flags: python-sdk
+      #     name: python-sdk-coverage
+      #     fail_ci_if_error: false
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  test-typescript:
+    name: TypeScript SDK Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/typescript
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      # - name: Upload coverage reports
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     file: ./sdk/typescript/coverage/lcov.info
+      #     flags: typescript-sdk
+      #     name: typescript-sdk-coverage
+      #     fail_ci_if_error: false
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
