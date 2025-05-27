@@ -86,6 +86,8 @@ export function updateRegistry(
     const entry = fileBlock[lineNumber];
     if (entry) {
         // Update existing entry
+        entry.tag = tag;
+        entry.lineNumber = lineNumber;
         entry.lastSeen = now;
         entry.count++;
     } else {
