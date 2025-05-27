@@ -6,8 +6,8 @@ This document describes how to run tests for both Python and TypeScript SDKs.
 
 Both SDKs have comprehensive test suites covering:
 - **Unit tests**: Test individual components in isolation
-- **Integration tests**: Test components working together
-- **Edge case tests**: Test boundary conditions and error scenarios
+- **Integration tests**: Test components working together (WIP)
+- **Edge case tests**: Test boundary conditions and error scenarios (WIP)
 
 ## Python SDK Testing
 
