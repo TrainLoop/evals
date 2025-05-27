@@ -5,12 +5,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { LLMCallData, CollectedSample } from '../src/types/shared';
-
+import { patchFetch } from '../src/instrumentation/fetch';
+import { patchHttp } from '../src/instrumentation/http';
+import http from "http";
+import https from "https";
+import { FileExporter } from '../src/exporter';
 /**
  * Create a temporary directory for tests
  */
 export function createTempDir(prefix: string = 'trainloop-test-'): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+export function instrumentAll(exporter: FileExporter) {
+  patchHttp(http, exporter);
+  patchHttp(https, exporter);
+  patchFetch(exporter);
 }
 
 /**
