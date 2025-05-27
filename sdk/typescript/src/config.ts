@@ -1,7 +1,7 @@
 import fs from "fs";
 import yaml from "js-yaml";
 import path from "path";
-import { DEFAULT_HOST_ALLOWLIST } from ".";
+import { DEFAULT_HOST_ALLOWLIST } from "./constants";
 import { TrainloopConfig } from "./types/shared";
 
 export const loadConfig = () => {

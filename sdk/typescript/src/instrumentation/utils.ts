@@ -89,7 +89,7 @@ export function getAndRemoveHeader<T extends Headers | Record<string, string> | 
  * Escapes raw CR/LF characters that appear *inside* a quoted string.
  * (Outside strings, line breaks are perfectly legal JSON formatting.)
  */
-function escapeBareNewlinesInStrings(src: string): string {
+export function escapeBareNewlinesInStrings(src: string): string {
     let out = "";
     let inString = false;
     let escapeNext = false;
