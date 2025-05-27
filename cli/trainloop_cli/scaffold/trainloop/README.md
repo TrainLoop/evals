@@ -25,20 +25,20 @@ trainloop/
 1. **Install the SDK** (already done by `trainloop init` if it detected `package.json`):
 
 ```bash
-npm install trainloop-evals-sdk --save
+npm install trainloop-llm-logging --save
 ```
 2. **Start your app with one flag - no code edits required:**
 
 ```bash
 # This reads the data folder path from the trainloop config
-NODE_OPTIONS="--require=trainloop-evals-sdk" \
+NODE_OPTIONS="--require=trainloop-llm-logging" \
 npx next dev               # or node server.js / vite / etc.
 ```
 
 3. **Tag individual requests** so you can write targeted tests later:
 
 ```ts
-import { trainloopTag } from "trainloop-evals-sdk";
+import { trainloopTag } from "trainloop-llm-logging";
 
 await openai.chat.completions.create(
   { model: "gpt-4o", messages },
@@ -51,11 +51,11 @@ await openai.chat.completions.create(
 Install the Python SDK and initialise once at startup:
 
 ```bash
-pip install trainloop-evals-sdk  # tiny wrapper around the Node collector
+pip install trainloop-llm-logging  # tiny wrapper around the Node collector
 ```
 
 ```python
-from trainloop_evals import collect
+from trainloop_llm_logging import collect
 collect("some/path/to/trainloop.config.yaml")  # must be called exactly once, e.g. in your app entrypoint
 
 response = client.chat.completions.create(

@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "trainloop-evals-sdk"
+name = "trainloop-llm-logging"
 version = "0.4.0"
-description = "TrainLoop Evaluations SDK for data collection and evaluation"
+description = "TrainLoop LLM Logging SDK for data collection"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
 readme = "README.md"
-packages = [{ include = "trainloop_evals" }]
+packages = [{ include = "trainloop_llm_logging" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"

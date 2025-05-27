@@ -1,5 +1,5 @@
 """
-TrainLoop Evals SDK
+TrainLoop LLM Logging SDK
 -------------------
 Public surface:
 
@@ -9,7 +9,7 @@ Public surface:
 
 Import this once, early in your program:
 
-    import trainloop_evals as tl
+    import trainloop_llm_logging as tl
     tl.collect()
 
 Everything else happens automatically.

@@ -51,11 +51,28 @@ pipx run trainloop-cli --help
    trainloop init
    ```
 
-2. **Set the data path** where your data will be written or use the default (inside the trainloop folder) – this is where the SDKs write events.
+2. **Set the data path** where your data will be written. You can do this via `TRAINLOOP_DATA_FOLDER` environment variable or by setting it in your `trainloop.config.yaml` file under the `data_folder` key. The environment variable takes precedence.
 
 3. **Instrument your app:**
-   - **Node**: `NODE_OPTIONS="--require=trainloop-evals-sdk" <your start script>`
-   - **Python**: `from trainloop_evals import collect; collect(<your config path>)`
+
+### **Node**
+1. Set the `TRAINLOOP_DATA_FOLDER` environment variable to the path where you want the data to be written.
+2. Add `NODE_OPTIONS="--require=trainloop-llm-logging"` to your start script.
+**Example**:
+```bash
+TRAINLOOP_DATA_FOLDER=/path/to/data NODE_OPTIONS="--require=trainloop-llm-logging" node index.js
+```
+
+### **Python**
+1. Either set the `TRAINLOOP_DATA_FOLDER` environment variable to the path where you want the data to be written or set it in your `trainloop.config.yaml` file.
+2. Add `from trainloop_llm_logging import collect; collect("../trainloop/trainloop.config.yaml")` to the entrypoint of your application.
+
+**Example**:
+```python
+from trainloop_llm_logging import collect
+
+collect("../trainloop/trainloop.config.yaml")
+```
 
 4. **Write metrics and suites** in `trainloop/eval/`
 
@@ -68,6 +85,12 @@ pipx run trainloop-cli --help
    ```bash
    trainloop studio
    ```
+
+## About the TrainLoop Folder
+
+The TrainLoop folder is where all your TrainLoop-specific files live and is created via `trainloop init`. It is structured by default as a data directory, evals directory, and config file.
+
+You can find more information about it in [the Scaffold README](cli/trainloop_cli/scaffold/trainloop/README.md).
 
 ## CLI Reference
 
@@ -147,26 +170,21 @@ trainloop  # Same as: trainloop studio
 - `--version` - Show the version and exit
 - `-h, --help` - Show help message and exit
 
-## About the TrainLoop Folder
-
-The TrainLoop folder is where all your TrainLoop-specific files live and is created via `trainloop init`. It is structured by default as a data directory, evals directory, and config file.
-
-You can find more information about it in [the Scaffold README](cli/scaffold/trainloop/README.md).
 
 ## About this repository
 The repository is split into several packages:
 
 - **cli/** – command line tool to scaffold workspaces, run suites and launch the Studio.
-- **evals-sdk/typescript/** – Node SDK that logs LLM calls automatically.
-- **evals-sdk/python/** – Python SDK for the same purpose.
+- **sdk/typescript/** – Node SDK that logs LLM calls automatically.
+- **sdk/python/** – Python SDK for the same purpose.
 - **ui/** and **runner/** – TrainLoop Studio web interface and its small runner.
 - **infra/** – Pulumi config to deploy the Studio demo.
 
 ## More information
 
 - [CLI README](cli/README.md)
-- [TypeScript SDK](evals-sdk/typescript/README.md)
-- [Python SDK](evals-sdk/python/README.md)
+- [TypeScript SDK](sdk/typescript/README.md)
+- [Python SDK](sdk/python/README.md)
 - [Studio UI](ui/README.md)
 - [Studio Runner](runner/README.md)
 - [Infrastructure](infra/README.md)

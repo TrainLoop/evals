@@ -21,10 +21,10 @@ SEMVER = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 
 # places that carry a version field
 UI_PKG = ROOT / "ui" / "package.json"
-TS_PKG = ROOT / "evals-sdk" / "typescript" / "package.json"
+TS_PKG = ROOT / "sdk" / "typescript" / "package.json"
 RUNNER_PKG = ROOT / "runner" / "package.json"
 CLI_PYPROJECT = ROOT / "cli" / "pyproject.toml"
-SDK_PYPROJECT = ROOT / "evals-sdk" / "python" / "pyproject.toml"
+SDK_PYPROJECT = ROOT / "sdk" / "python" / "pyproject.toml"
 
 
 def sh(cmd: str):

@@ -1,4 +1,3 @@
-# trainloop_evals/instrumentation/http_client_lib.py
 """
 Instrumentation for Python's http.client to intercept and log HTTP calls for
 TrainLoop evaluations.  Monkey-patches HTTPConnection.request to capture

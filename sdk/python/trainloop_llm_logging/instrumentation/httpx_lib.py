@@ -1,4 +1,3 @@
-# trainloop_evals/instrumentation/httpx_lib.py
 """
 httpx instrumentation (sync + async) that:
  • keeps streaming 100 % intact for the caller
