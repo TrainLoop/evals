@@ -4,6 +4,7 @@ import click
 from trainloop_cli.commands.init import init_command as init_cmd
 from trainloop_cli.commands.eval import eval_command as eval_cmd
 from trainloop_cli.commands.studio import studio_command as studio_cmd
+from trainloop_cli.commands.add import add_command
 
 
 @click.group(
@@ -41,6 +42,57 @@ def init():
 def run_eval(suite):
     """Discover suites, apply metrics to new events, append verdicts to data/results/."""
     eval_cmd(suite=suite)
+
+
+@cli.command("add")
+@click.argument(
+    "component_type", type=click.Choice(["metric", "suite"]), required=False
+)
+@click.argument("name", required=False)
+@click.option("--force", is_flag=True, help="Overwrite existing components")
+@click.option("--version", help="Use a specific version (default: current CLI version)")
+@click.option(
+    "--list", "list_components", is_flag=True, help="List available components"
+)
+@click.option(
+    "--registry",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to local registry directory (for development)",
+)
+def add(component_type, name, force, version, list_components, registry):
+    """Add metrics or suites from the TrainLoop registry.
+
+    Examples:
+        trainloop add --list                # List all metrics and suites
+        trainloop add metric --list         # List all metrics
+        trainloop add suite --list          # List all suites
+        trainloop add metric always_pass    # Install the always_pass metric
+        trainloop add suite sample          # Install the sample suite
+
+        # Use local registry for development
+        trainloop add --registry /path/to/registry --list
+        trainloop add --registry /path/to/registry metric always_pass
+    """
+
+    # Handle listing mode
+    if list_components:
+        if not component_type:
+            # List both metrics and suites
+            add_command("metric", None, force, version, True, registry)
+            click.echo()  # Add a blank line between metrics and suites
+            add_command("suite", None, force, version, True, registry)
+        else:
+            # List specific component type
+            add_command(component_type, None, force, version, True, registry)
+    else:
+        # Installation mode - require both component_type and name
+        if not component_type or not name:
+            click.echo(
+                "Error: Both component type and name are required when not using --list"
+            )
+            click.echo("Try 'trainloop add --help' for more information.")
+            raise click.Abort()
+        add_command(component_type, name, force, version, False, registry)
 
 
 def main():
