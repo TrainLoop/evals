@@ -6,11 +6,12 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Dict, List, Optional
+from importlib import import_module
+import types
 import click
 import tomli
 import yaml
 from packaging import version as version_package
-from importlib import import_module
 
 
 def get_current_version() -> str:
@@ -142,7 +143,9 @@ def rewrite_imports(content: str) -> str:
     return "\n".join(filtered_lines)
 
 
-def install_metric(name: str, version: str, force: bool = False, registry_path: Optional[str] = None) -> bool:
+def install_metric(
+    name: str, version: str, force: bool = False, registry_path: Optional[str] = None
+) -> bool:
     """Install a metric from the registry."""
     trainloop_dir = get_trainloop_dir()
     metrics_dir = trainloop_dir / "eval" / "metrics"
@@ -184,7 +187,9 @@ def install_metric(name: str, version: str, force: bool = False, registry_path: 
     return True
 
 
-def install_suite(name: str, version: str, force: bool = False, registry_path: Optional[str] = None) -> None:
+def install_suite(
+    name: str, version: str, force: bool = False, registry_path: Optional[str] = None
+) -> None:
     """Install a suite and its dependencies from the registry."""
     trainloop_dir = get_trainloop_dir()
     suites_dir = trainloop_dir / "eval" / "suites"
@@ -251,16 +256,18 @@ def update_metrics_init(metrics_dir: Path, metric_name: str) -> None:
         init_file.write_text("\n".join(lines) + "\n")
 
 
-def list_available(component_type: str, version: str, registry_path: Optional[str] = None) -> List[Dict]:
+def list_available(
+    component_type: str, version: str, registry_path: Optional[str] = None
+) -> List[Dict]:
     """List available components from the registry."""
     components = []
-    
+
     if registry_path:
         # Use local registry - directly scan the directory
         component_dir = Path(registry_path) / f"{component_type}s"
         if not component_dir.exists():
             return []
-            
+
         for item_dir in component_dir.iterdir():
             if item_dir.is_dir() and not item_dir.name.startswith("_"):
                 config_file = item_dir / "config.py"
@@ -269,31 +276,46 @@ def list_available(component_type: str, version: str, registry_path: Optional[st
                         # Read and parse the config file
                         config_content = config_file.read_text()
                         config_data = parse_metadata(config_content)
-                        components.append({
+                        component_info = {
                             "name": config_data.get("name", item_dir.name),
                             "description": config_data.get("description", ""),
                             "tags": config_data.get("tags", []),
-                        })
+                        }
+                        # Include dependencies for suites
+                        if component_type == "suite" and "dependencies" in config_data:
+                            component_info["dependencies"] = config_data["dependencies"]
+                        components.append(component_info)
                     except Exception as e:
-                        click.echo(f"Warning: Failed to parse {item_dir.name}/config.py: {e}", err=True)
+                        click.echo(
+                            f"Warning: Failed to parse {item_dir.name}/config.py: {e}",
+                            err=True,
+                        )
     else:
         # Fetch from GitHub - use the index
         index_path = f"registry/{component_type}s/index.py"
         try:
             index_content = fetch_content(index_path, version, registry_path)
-            
-            # Execute the index to get components
-            import types
+
             index_module = types.ModuleType("index")
             index_module.__dict__["Path"] = Path
             index_module.__dict__["import_module"] = import_module
             index_module.__dict__["sys"] = sys
-            
+
             exec(index_content, index_module.__dict__)
             components = index_module.__dict__.get("components", [])
+
+            # Add GitHub URLs for each component
+            for comp in components:
+                comp["github_url"] = (
+                    f"https://github.com/TrainLoop/evals/tree/v{version}/registry/{component_type}s/{comp['name']}"
+                )
+
         except Exception:
             # Fallback for development
-            local_path = Path(__file__).parent.parent.parent.parent / f"registry/{component_type}s"
+            local_path = (
+                Path(__file__).parent.parent.parent.parent
+                / f"registry/{component_type}s"
+            )
             if local_path.exists():
                 for item_dir in local_path.iterdir():
                     if item_dir.is_dir() and not item_dir.name.startswith("_"):
@@ -302,14 +324,24 @@ def list_available(component_type: str, version: str, registry_path: Optional[st
                             try:
                                 config_content = config_file.read_text()
                                 config_data = parse_metadata(config_content)
-                                components.append({
+                                component_info = {
                                     "name": config_data.get("name", item_dir.name),
                                     "description": config_data.get("description", ""),
                                     "tags": config_data.get("tags", []),
-                                })
+                                    "github_url": f"https://github.com/TrainLoop/evals/tree/v{version}/registry/{component_type}s/{item_dir.name}",
+                                }
+                                # Include dependencies for suites
+                                if (
+                                    component_type == "suite"
+                                    and "dependencies" in config_data
+                                ):
+                                    component_info["dependencies"] = config_data[
+                                        "dependencies"
+                                    ]
+                                components.append(component_info)
                             except Exception:
                                 pass
-    
+
     return components
 
 
@@ -343,9 +375,20 @@ def add_command(
 
         click.echo(f"Available {component_type}s:")
         for comp in components:
-            click.echo(f"  - {comp['name']}: {comp['description']}")
-            if comp.get("tags"):
-                click.echo(f"    Tags: {', '.join(comp['tags'])}")
+            click.echo(f"\n  {comp['name']}: {comp['description']}")
+
+            # Show dependencies for suites
+            if component_type == "suite" and "dependencies" in comp:
+                deps = comp["dependencies"]
+                if deps:
+                    click.echo(f"    Dependencies: {', '.join(deps)}")
+                else:
+                    click.echo("    Dependencies: none")
+
+            # Show GitHub URL if not using local registry
+            if not registry_path and "github_url" in comp:
+                click.echo(f"    Source: {comp['github_url']}")
+
         return
 
     # Installation mode - name is required
