@@ -4,6 +4,7 @@ import click
 from trainloop_cli.commands.init import init_command as init_cmd
 from trainloop_cli.commands.eval import eval_command as eval_cmd
 from trainloop_cli.commands.studio import studio_command as studio_cmd
+from trainloop_cli.commands.add import add_command as add_cmd
 
 
 @click.group(
@@ -41,6 +42,19 @@ def init():
 def run_eval(suite):
     """Discover suites, apply metrics to new events, append verdicts to data/results/."""
     eval_cmd(suite=suite)
+
+
+@click.command("add")
+@click.argument("component_type", type=click.Choice(["metric", "suite"]))
+@click.argument("name")
+@click.option("--force", is_flag=True, help="Overwrite existing components")
+@click.option("--version", help="Use a specific version (default: current CLI version)")
+@click.option(
+    "--list", "list_components", is_flag=True, help="List available components"
+)
+def add(component_type, name, force, version, list_components):
+    """Add metrics or suites from the TrainLoop registry."""
+    add_cmd(component_type, name, force, version, list_components)
 
 
 def main():
