@@ -25,8 +25,10 @@ for metric_dir in metrics_dir.iterdir():
                         "description": module.config.description,
                         "tags": module.config.tags,
                     })
-            except ImportError:
-                pass  # Skip metrics that can't be imported
+            except ImportError as e:
+                print(f"Failed to import metrics.{metric_dir.name}.config: {e}")
+            except Exception as e:
+                print(f"Error processing {metric_dir.name}: {e}")
 
 # Clean up sys.path
 sys.path.pop(0)

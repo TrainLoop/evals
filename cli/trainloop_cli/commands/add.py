@@ -5,11 +5,12 @@ import sys
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 import click
 import tomli
 import yaml
 from packaging import version as version_package
+from importlib import import_module
 
 
 def get_current_version() -> str:
@@ -35,6 +36,20 @@ def fetch_from_github(path: str, version: str) -> str:
             raise click.ClickException(f"Component not found at version {version}")
         else:
             raise click.ClickException(f"Failed to fetch from GitHub: {e}")
+
+
+def fetch_content(path: str, version: str, registry_path: Optional[str] = None) -> str:
+    """Fetch content from either local registry or GitHub."""
+    if registry_path:
+        # Use local registry
+        local_path = Path(registry_path) / path
+        if not local_path.exists():
+            raise click.ClickException(f"File not found in local registry: {path}")
+        with open(local_path, "r", encoding="utf-8") as f:
+            return f.read()
+    else:
+        # Fetch from GitHub
+        return fetch_from_github(path, version)
 
 
 def parse_metadata(content: str) -> dict:
@@ -93,7 +108,7 @@ def get_trainloop_dir() -> Path:
             return Path(data_folder).parent
 
     raise click.ClickException(
-        "No trainloop directory found. Please run 'trainloop init' first."
+        "No trainloop directory found. Please run 'trainloop init' first or run this command in the trainloop directory."
     )
 
 
@@ -127,7 +142,7 @@ def rewrite_imports(content: str) -> str:
     return "\n".join(filtered_lines)
 
 
-def install_metric(name: str, version: str, force: bool = False) -> bool:
+def install_metric(name: str, version: str, force: bool = False, registry_path: Optional[str] = None) -> bool:
     """Install a metric from the registry."""
     trainloop_dir = get_trainloop_dir()
     metrics_dir = trainloop_dir / "eval" / "metrics"
@@ -141,7 +156,7 @@ def install_metric(name: str, version: str, force: bool = False) -> bool:
 
     # Fetch metadata
     metadata_path = f"registry/metrics/{name}/config.py"
-    metadata_content = fetch_from_github(metadata_path, version)
+    metadata_content = fetch_content(metadata_path, version, registry_path)
     metadata = parse_metadata(metadata_content)
 
     # Check version compatibility
@@ -154,7 +169,7 @@ def install_metric(name: str, version: str, force: bool = False) -> bool:
 
     # Fetch implementation
     impl_path = f"registry/metrics/{name}/{name}.py"
-    impl_content = fetch_from_github(impl_path, version)
+    impl_content = fetch_content(impl_path, version, registry_path)
 
     # Rewrite imports for target environment
     impl_content = rewrite_imports(impl_content)
@@ -169,7 +184,7 @@ def install_metric(name: str, version: str, force: bool = False) -> bool:
     return True
 
 
-def install_suite(name: str, version: str, force: bool = False) -> None:
+def install_suite(name: str, version: str, force: bool = False, registry_path: Optional[str] = None) -> None:
     """Install a suite and its dependencies from the registry."""
     trainloop_dir = get_trainloop_dir()
     suites_dir = trainloop_dir / "eval" / "suites"
@@ -183,7 +198,7 @@ def install_suite(name: str, version: str, force: bool = False) -> None:
 
     # Fetch metadata
     metadata_path = f"registry/suites/{name}/config.py"
-    metadata_content = fetch_from_github(metadata_path, version)
+    metadata_content = fetch_content(metadata_path, version, registry_path)
     metadata = parse_metadata(metadata_content)
 
     # Check version compatibility
@@ -200,12 +215,12 @@ def install_suite(name: str, version: str, force: bool = False) -> None:
 
     for dep in dependencies:
         click.echo(f"Installing dependency: {dep}")
-        if install_metric(dep, version, force):
+        if install_metric(dep, version, force, registry_path):
             installed_deps.append(dep)
 
     # Fetch suite implementation
     impl_path = f"registry/suites/{name}/{name}.py"
-    impl_content = fetch_from_github(impl_path, version)
+    impl_content = fetch_content(impl_path, version, registry_path)
 
     # Rewrite imports for target environment
     impl_content = rewrite_imports(impl_content)
@@ -236,66 +251,112 @@ def update_metrics_init(metrics_dir: Path, metric_name: str) -> None:
         init_file.write_text("\n".join(lines) + "\n")
 
 
-def list_available(component_type: str, version: str) -> List[Dict]:
+def list_available(component_type: str, version: str, registry_path: Optional[str] = None) -> List[Dict]:
     """List available components from the registry."""
-    index_path = f"registry/{component_type}/index.py"
-
-    try:
-        index_content = fetch_from_github(index_path, version)
-        # Parse the Python module to extract components
-        tree = ast.parse(index_content)
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and target.id == "components":
-                        # Found the components list
-                        components = []
-                        if isinstance(node.value, ast.List):
-                            for item in node.value.elts:
-                                if isinstance(item, ast.Call):
-                                    # Extract component info from constructor call
-                                    component_data = {}
-                                    for keyword in item.keywords:
-                                        key = keyword.arg
-                                        value = ast.literal_eval(keyword.value)
-                                        component_data[key] = value
-                                    components.append(component_data)
-                        return components
-        return []
-    except (urllib.error.URLError, SyntaxError):
-        # Fallback: return empty list if can't fetch or parse
-        return []
+    components = []
+    
+    if registry_path:
+        # Use local registry - directly scan the directory
+        component_dir = Path(registry_path) / f"{component_type}s"
+        if not component_dir.exists():
+            return []
+            
+        for item_dir in component_dir.iterdir():
+            if item_dir.is_dir() and not item_dir.name.startswith("_"):
+                config_file = item_dir / "config.py"
+                if config_file.exists():
+                    try:
+                        # Read and parse the config file
+                        config_content = config_file.read_text()
+                        config_data = parse_metadata(config_content)
+                        components.append({
+                            "name": config_data.get("name", item_dir.name),
+                            "description": config_data.get("description", ""),
+                            "tags": config_data.get("tags", []),
+                        })
+                    except Exception as e:
+                        click.echo(f"Warning: Failed to parse {item_dir.name}/config.py: {e}", err=True)
+    else:
+        # Fetch from GitHub - use the index
+        index_path = f"registry/{component_type}s/index.py"
+        try:
+            index_content = fetch_content(index_path, version, registry_path)
+            
+            # Execute the index to get components
+            import types
+            index_module = types.ModuleType("index")
+            index_module.__dict__["Path"] = Path
+            index_module.__dict__["import_module"] = import_module
+            index_module.__dict__["sys"] = sys
+            
+            exec(index_content, index_module.__dict__)
+            components = index_module.__dict__.get("components", [])
+        except Exception:
+            # Fallback for development
+            local_path = Path(__file__).parent.parent.parent.parent / f"registry/{component_type}s"
+            if local_path.exists():
+                for item_dir in local_path.iterdir():
+                    if item_dir.is_dir() and not item_dir.name.startswith("_"):
+                        config_file = item_dir / "config.py"
+                        if config_file.exists():
+                            try:
+                                config_content = config_file.read_text()
+                                config_data = parse_metadata(config_content)
+                                components.append({
+                                    "name": config_data.get("name", item_dir.name),
+                                    "description": config_data.get("description", ""),
+                                    "tags": config_data.get("tags", []),
+                                })
+                            except Exception:
+                                pass
+    
+    return components
 
 
 def add_command(
-    component_type: str, name: str, force: bool, version: str, list_components: bool
+    component_type: str,
+    name: Optional[str] = None,
+    force: Optional[bool] = False,
+    version: Optional[str] = None,
+    list_components: Optional[bool] = False,
+    registry_path: Optional[str] = None,
 ):
     """Add metrics or suites from the TrainLoop registry.
 
-    Examples:
-        trainloop add metric always_pass
-        trainloop add suite sample
-        trainloop add metric --list
+    Args:
+        component_type: Type of component (metric or suite)
+        name: Name of the component to install (optional when listing)
+        force: Overwrite existing components
+        version: Use a specific version (default: current CLI version)
+        list_components: List available components instead of installing
+        registry_path: Path to local registry directory (for development)
     """
-    if version is None:
+    # Get current version if not specified
+    if not version:
         version = get_current_version()
 
     if list_components:
-        available = list_available(f"{component_type}s", version)
-        if available:
-            click.echo(f"Available {component_type}s:")
-            for comp in available:
-                click.echo(f"  - {comp}")
-        else:
-            click.echo(f"No {component_type}s found in registry")
+        components = list_available(component_type, version, registry_path)
+        if not components:
+            click.echo(f"No {component_type}s available at version {version}")
+            return
+
+        click.echo(f"Available {component_type}s:")
+        for comp in components:
+            click.echo(f"  - {comp['name']}: {comp['description']}")
+            if comp.get("tags"):
+                click.echo(f"    Tags: {', '.join(comp['tags'])}")
         return
 
-    try:
-        if component_type == "metric":
-            install_metric(name, version, force)
-        else:  # suite
-            install_suite(name, version, force)
-    except click.ClickException as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+    # Installation mode - name is required
+    if not name:
+        click.echo(f"Error: Name is required when installing a {component_type}")
+        raise click.Abort()
+
+    if component_type == "metric":
+        success = install_metric(name, version, force, registry_path)
+        if success:
+            click.echo(f"Successfully installed metric: {name}")
+    elif component_type == "suite":
+        install_suite(name, version, force, registry_path)
+        click.echo(f"Successfully installed suite: {name}")
