@@ -124,23 +124,7 @@ def rewrite_imports(content: str) -> str:
     for old, new in replacements.items():
         content = content.replace(old, new)
 
-    # Also remove TYPE_CHECKING imports as they're not needed in the target
-    lines = content.split("\n")
-    filtered_lines = []
-    skip_next = False
-
-    for i, line in enumerate(lines):
-        if "from typing import TYPE_CHECKING" in line:
-            continue
-        if "if TYPE_CHECKING:" in line:
-            skip_next = True
-            continue
-        if skip_next and line.strip().startswith("from"):
-            skip_next = False
-            continue
-        filtered_lines.append(line)
-
-    return "\n".join(filtered_lines)
+    return content
 
 
 def install_metric(
@@ -158,7 +142,12 @@ def install_metric(
         return False
 
     # Fetch metadata
-    metadata_path = f"registry/metrics/{name}/config.py"
+    if registry_path:
+        # For local registry, don't include "registry/" prefix
+        metadata_path = f"metrics/{name}/config.py"
+    else:
+        # For GitHub, include the full path
+        metadata_path = f"registry/metrics/{name}/config.py"
     metadata_content = fetch_content(metadata_path, version, registry_path)
     metadata = parse_metadata(metadata_content)
 
@@ -171,7 +160,10 @@ def install_metric(
         )
 
     # Fetch implementation
-    impl_path = f"registry/metrics/{name}/{name}.py"
+    if registry_path:
+        impl_path = f"metrics/{name}/{name}.py"
+    else:
+        impl_path = f"registry/metrics/{name}/{name}.py"
     impl_content = fetch_content(impl_path, version, registry_path)
 
     # Rewrite imports for target environment
@@ -179,9 +171,6 @@ def install_metric(
 
     # Write to target
     target_file.write_text(impl_content)
-
-    # Update __init__.py
-    update_metrics_init(metrics_dir, name)
 
     click.echo(f"✓ Installed metric '{name}'")
     return True
@@ -202,7 +191,12 @@ def install_suite(
         return
 
     # Fetch metadata
-    metadata_path = f"registry/suites/{name}/config.py"
+    if registry_path:
+        # For local registry, don't include "registry/" prefix
+        metadata_path = f"suites/{name}/config.py"
+    else:
+        # For GitHub, include the full path
+        metadata_path = f"registry/suites/{name}/config.py"
     metadata_content = fetch_content(metadata_path, version, registry_path)
     metadata = parse_metadata(metadata_content)
 
@@ -224,7 +218,10 @@ def install_suite(
             installed_deps.append(dep)
 
     # Fetch suite implementation
-    impl_path = f"registry/suites/{name}/{name}.py"
+    if registry_path:
+        impl_path = f"suites/{name}/{name}.py"
+    else:
+        impl_path = f"registry/suites/{name}/{name}.py"
     impl_content = fetch_content(impl_path, version, registry_path)
 
     # Rewrite imports for target environment
@@ -234,26 +231,6 @@ def install_suite(
     target_file.write_text(impl_content)
 
     click.echo(f"✓ Installed suite '{name}' with {len(installed_deps)} dependencies")
-
-
-def update_metrics_init(metrics_dir: Path, metric_name: str) -> None:
-    """Update the metrics __init__.py to include the new metric."""
-    init_file = metrics_dir / "__init__.py"
-
-    if not init_file.exists():
-        # Create a new __init__.py
-        init_file.write_text(f"from .{metric_name} import {metric_name}\n")
-        return
-
-    content = init_file.read_text()
-    import_line = f"from .{metric_name} import {metric_name}"
-
-    if import_line not in content:
-        # Add the import
-        lines = content.strip().split("\n")
-        lines.append(import_line)
-        lines.sort()  # Keep imports sorted
-        init_file.write_text("\n".join(lines) + "\n")
 
 
 def list_available(
