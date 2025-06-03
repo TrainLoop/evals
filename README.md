@@ -185,6 +185,7 @@ The repository is split into several packages:
 - [CLI README](cli/README.md)
 - [TypeScript SDK](sdk/typescript/README.md)
 - [Python SDK](sdk/python/README.md)
+- [Go SDK](sdk/go/trainloop-llm-logging/README.md)
 - [Studio UI](ui/README.md)
 - [Studio Runner](runner/README.md)
 - [Infrastructure](infra/README.md)

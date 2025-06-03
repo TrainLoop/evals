@@ -1,6 +1,6 @@
-# TrainLoop Evals SDK (TypeScript)
+# TrainLoop Evals SDK (TypeScript/JavaScript)
 
-Patches Node HTTP libraries so every LLM request is logged for evaluation.
+Patches Node HTTP libraries so every LLM request is logged for evaluation. Works with both TypeScript and JavaScript projects.
 
 ## Install
 
@@ -17,7 +17,17 @@ NODE_OPTIONS="--require=trainloop-llm-logging" next dev
 
 Tag individual calls when needed:
 
+**TypeScript:**
 ```ts
+import { trainloopTag } from 'trainloop-llm-logging';
+
+openai.chat.completions.create(..., { headers: { ...trainloopTag("checkout") } })
+```
+
+**JavaScript:**
+```js
+const { trainloopTag } = require('trainloop-llm-logging');
+
 openai.chat.completions.create(..., { headers: { ...trainloopTag("checkout") } })
 ```
 
