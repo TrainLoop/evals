@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/store"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/types"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/utils"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/store"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/types"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/utils"
 )
 
 var log = logger.CreateLogger("trainloop-exporter")

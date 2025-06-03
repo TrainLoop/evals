@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/exporter"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/types"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/utils"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/exporter"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/types"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/utils"
 )
 
 var originalDefaultTransport http.RoundTripper

@@ -1,4 +1,4 @@
-module github.com/trainloop/sdk/go/trainloop-llm-logging
+module github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging
 
 go 1.20
 

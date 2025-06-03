@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/types"
+
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/types"
 )
 
 var log = logger.CreateLogger("trainloop-store")
@@ -51,14 +52,12 @@ func UpdateRegistry(dataDir string, loc types.LLMCallLocation, tag string) {
 		reg.Files = make(map[string]map[string]types.RegistryEntry)
 	}
 
-
 	if loc.File == "" { // Sanitize location
 		loc.File = "unknown"
 	}
 	if loc.LineNumber == "" {
 		loc.LineNumber = "0"
 	}
-
 
 	if _, ok := reg.Files[loc.File]; !ok {
 		reg.Files[loc.File] = make(map[string]types.RegistryEntry)

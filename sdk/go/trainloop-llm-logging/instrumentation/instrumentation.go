@@ -3,8 +3,8 @@ package instrumentation
 import (
 	"sync"
 
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/exporter"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/exporter"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
 )
 
 var tlLog = logger.CreateLogger("trainloop-instrumentation")

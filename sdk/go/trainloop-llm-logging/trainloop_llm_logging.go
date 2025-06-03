@@ -5,11 +5,11 @@ import (
 	"os"
 	"sync"
 
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/instrumentation"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/config"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/exporter"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/trainloop/sdk/go/trainloop-llm-logging/internal/utils"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/instrumentation"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/config"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/exporter"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/utils"
 )
 
 var (
