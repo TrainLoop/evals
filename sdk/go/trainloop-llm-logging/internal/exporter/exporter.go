@@ -122,7 +122,7 @@ func (e *FileExporter) export() {
 
 		sample := types.CollectedSample{
 			DurationMs:  durationMs,
-			Tag:         tag,
+			Tag:         llmCall.Tag,
 			Input:       parsedRequest.Messages,
 			Output:      parsedResponse,
 			Model:       parsedRequest.Model,
