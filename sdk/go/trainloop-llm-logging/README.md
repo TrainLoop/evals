@@ -4,14 +4,11 @@ Automatically capture LLM calls from Go applications so they can be graded later
 
 ## Installation
 
-To use this SDK in your Go project:
-
-1.  Place the SDK source code (the `trainloop-sdk-go` directory containing `trainloop_llm_logging.go`, `types/`, `exporter/`, etc.) into your project, for example, under a `pkg/` or `internal/` directory, or as a local module.
-2.  If you've placed it as a local module or in a way that Go modules can find it, run:
 ```bash
-go mod tidy
+go get github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging
 ```
-    This will add the necessary dependencies (like `gopkg.in/yaml.v3`) to your `go.mod` file.
+
+This will add the TrainLoop SDK to your `go.mod` file and download the necessary dependencies.
 
 ## Quick Example
 
@@ -26,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	trainloop "github.com/trainloop/sdk/go/trainloop-llm-logging"
+	trainloop "github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging"
 )
 
 func main() {
@@ -98,7 +95,7 @@ To distinguish between different LLM calls in your application, you can add a ta
 ```go
 import (
 	"net/http"
-	trainloop "github.com/trainloop/sdk/go/trainloop-llm-logging"
+	trainloop "github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging"
 )
 
 // ...
