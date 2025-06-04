@@ -49,7 +49,10 @@ Lightweight "LLM Judge" helper for TrainLoop metrics.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any, TypedDict
+import os
+import uuid
+import datetime
 import json
 from pathlib import Path
 import asyncio
@@ -58,6 +61,9 @@ import logging
 from functools import lru_cache
 import yaml
 import litellm
+
+from ._trace_helpers import ensure_trace_dir, write_trace_log
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -85,6 +91,14 @@ Your response should be in the following format:
 """
 
 
+class JudgmentDetails(TypedDict):
+    verdict: int
+    yes_count: int
+    no_count: int
+    all_yes_final_votes: List[Optional[bool]]
+    all_no_final_votes: List[Optional[bool]]
+
+
 def make_prompt(claim: str, template: str = DEFAULT_TEMPLATE) -> str:
     """
     Render the final prompt sent to each LLM sample.
@@ -110,10 +124,11 @@ class _JudgeEngine:
     """
 
     def __init__(self, cfg: Dict):
-        self.models = cfg.get("models", ["openai/gpt-4o"])
-        self.k = cfg.get("calls_per_model_per_claim", 3)
-        self.temperature = cfg.get("temperature", 0.7)
-        self.template = cfg.get("template", DEFAULT_TEMPLATE)
+        self.models: List[str] = cfg.get("models", ["openai/gpt-4o"])
+        self.k: int = cfg.get("calls_per_model_per_claim", 3)
+        self.temperature: float = cfg.get("temperature", 0.7)
+        self.template: str = cfg.get("template", DEFAULT_TEMPLATE)
+        self.resolved_cfg: Dict[str, Any] = cfg
 
         # Ensure models is a list
         if isinstance(self.models, str):
@@ -145,108 +160,157 @@ class _JudgeEngine:
             ):
                 # Return the exception instance for API key errors
                 logger.error(f"API key error for {model} during LLM call: {e}")
-                return e  # Return the original exception or a specific one
-
-            # For other errors, log and return the exception as well
-            logger.warning(f"LLM call failed for {model}: {e}")
+            else:  # For other errors, log and return the exception as well
+                logger.warning(f"LLM call failed for {model}: {e}")
             return e
 
-    def _extract_verdict(self, response: str) -> Optional[bool]:
-        """Extract true/false verdict from LLM response."""
-        if not response:
-            return None
+    def _extract_verdict(
+        self, llm_output: Union[str, Exception]
+    ) -> Tuple[Optional[bool], Optional[str], Optional[str]]:
+        """Extract true/false verdict and reasoning from LLM response."""
+        if isinstance(llm_output, Exception):
+            return None, None, str(llm_output)  # Return error message
 
-        # Look for result section
-        result_match = re.search(
-            r"<result>\s*(.*?)\s*</result>", response, re.IGNORECASE | re.DOTALL
+        response_text = llm_output  # It's a string here
+        if not response_text:
+            return None, None, "Empty response from LLM."  # Return error message
+
+        reasoning_text: Optional[str] = None
+        verdict: Optional[bool] = None
+
+        reasoning_match = re.search(
+            r"<reasoning>\s*(.*?)\s*</reasoning>",
+            response_text,
+            re.IGNORECASE | re.DOTALL,
         )
-        if result_match:
-            result_text = result_match.group(1).lower().strip()
-        else:
-            # Fallback: look for true/false or yes/no anywhere in the response
-            result_text = response.lower()
+        if reasoning_match:
+            reasoning_text = reasoning_match.group(1).strip()
 
-        # Check for positive indicators
-        if any(word in result_text for word in ["true", "yes", "correct", "valid"]):
-            return True
-        # Check for negative indicators
-        elif any(
-            word in result_text for word in ["false", "no", "incorrect", "invalid"]
+        result_section_match = re.search(
+            r"<result>\s*(.*?)\s*</result>", response_text, re.IGNORECASE | re.DOTALL
+        )
+
+        text_to_parse_for_verdict = response_text  # Default to full response
+        if result_section_match:
+            text_to_parse_for_verdict = result_section_match.group(1).lower().strip()
+
+        if any(
+            word in text_to_parse_for_verdict
+            for word in ["true", "yes", "correct", "valid"]
         ):
-            return False
+            verdict = True
+        elif any(
+            word in text_to_parse_for_verdict
+            for word in ["false", "no", "incorrect", "invalid"]
+        ):
+            verdict = False
 
-        return None
+        return verdict, reasoning_text, None
 
     async def _get_model_votes(
-        self, model: str, yes_prompt: str, no_prompt: str
-    ) -> Tuple[List[bool], List[bool]]:
+        self,
+        model: str,
+        yes_prompt: str,
+        no_prompt: str,
+        trace_events: Optional[List[Dict[str, Any]]],
+        trace_id: str,
+    ) -> Tuple[
+        List[Optional[bool]], List[Optional[bool]]
+    ]:  # Return type is List of verdicts
         """Get k votes from a single model for both claims."""
         yes_tasks = [self._call_llm(model, yes_prompt) for _ in range(self.k)]
         no_tasks = [self._call_llm(model, no_prompt) for _ in range(self.k)]
 
-        raw_yes_responses = await asyncio.gather(
-            *yes_tasks, return_exceptions=False
-        )  # Let gather raise if needed for unhandled cases
-        raw_no_responses = await asyncio.gather(*no_tasks, return_exceptions=False)
+        raw_yes_responses = await asyncio.gather(*yes_tasks, return_exceptions=True)
+        raw_no_responses = await asyncio.gather(*no_tasks, return_exceptions=True)
 
-        yes_responses = []
-        no_responses = []
-        exceptions_encountered = []
+        yes_verdicts: List[Optional[bool]] = []
+        no_verdicts: List[Optional[bool]] = []
 
-        for resp in raw_yes_responses:
-            if isinstance(resp, Exception):
-                exceptions_encountered.append(resp)
-            else:
-                yes_responses.append(resp)
+        # Process and trace yes_claim responses
+        for i, resp_content_or_exc in enumerate(raw_yes_responses):
+            parsed_verdict, reasoning, error_msg = self._extract_verdict(
+                resp_content_or_exc
+            )
+            yes_verdicts.append(parsed_verdict)
+            if trace_events is not None:
+                event_data = {
+                    "trace_id": trace_id,
+                    "timestamp": datetime.datetime.now(
+                        datetime.timezone.utc
+                    ).isoformat(),
+                    "type": "llm_response_evaluation",
+                    "model": model,
+                    "claim_type": "yes",
+                    "attempt_k_index": i,
+                }
+                if error_msg:  # This includes LLM call errors or parsing issues
+                    event_data.update({"status": "failure", "error_message": error_msg})
+                else:
+                    event_data.update(
+                        {
+                            "status": "success",
+                            "raw_response": str(resp_content_or_exc),
+                            "parsed_verdict": parsed_verdict,
+                            "reasoning_text": reasoning,
+                        }
+                    )
+                trace_events.append(event_data)
 
-        for resp in raw_no_responses:
-            if isinstance(resp, Exception):
-                exceptions_encountered.append(resp)
-            else:
-                no_responses.append(resp)
+        # Process and trace no_claim responses
+        for i, resp_content_or_exc in enumerate(raw_no_responses):
+            parsed_verdict, reasoning, error_msg = self._extract_verdict(
+                resp_content_or_exc
+            )
+            no_verdicts.append(parsed_verdict)
+            if trace_events is not None:
+                event_data = {
+                    "trace_id": trace_id,
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                    "type": "llm_response_evaluation",
+                    "model": model,
+                    "claim_type": "no",
+                    "attempt_k_index": i,
+                }
+                if error_msg:
+                    event_data.update({"status": "failure", "error_message": error_msg})
+                else:
+                    event_data.update(
+                        {
+                            "status": "success",
+                            "raw_response": str(resp_content_or_exc),
+                            "parsed_verdict": parsed_verdict,
+                            "reasoning_text": reasoning,
+                        }
+                    )
+                trace_events.append(event_data)
 
-        if exceptions_encountered:
-            for exc in exceptions_encountered:
-                # Log all exceptions encountered during the gather phase
-                logger.error(
-                    f"Exception during LLM call processing: {type(exc).__name__}: {exc}"
-                )
-            # Re-raise the first encountered exception to signal an error upstream
-            # Convert to ValueError if it's an API key error, as expected by tests
-            first_exc = exceptions_encountered[0]
-            error_msg = str(first_exc).lower()
-            if any(
-                key_err in error_msg
-                for key_err in [
-                    "api key",
-                    "api_key",
-                    "authentication",
-                    "unauthorized",
-                    "invalid key",
-                    "no api key",
-                    "missing api key",
-                ]
-            ):
-                raise ValueError(
-                    f"API key error encountered: {first_exc}"
-                ) from first_exc
-            raise ValueError(f"LLM call failed: {first_exc}") from first_exc
+        all_responses = raw_yes_responses + raw_no_responses
+        critical_error = next(
+            (r for r in all_responses if isinstance(r, Exception) and r), None
+        )
+        if critical_error:
+            # This specific error is re-raised to halt if keys are definitively bad.
+            raise ValueError(
+                f"Critical API key error encountered with {model}: {critical_error}"
+            ) from critical_error
 
-        yes_votes = [self._extract_verdict(resp) for resp in yes_responses]
-        no_votes = [self._extract_verdict(resp) for resp in no_responses]
+        return yes_verdicts, no_verdicts
 
-        return yes_votes, no_votes
-
+    # MODIFIED to return discarded_count and accept List[Optional[bool]]
     def _apply_xor_sanity(
-        self, yes_votes: List[bool], no_votes: List[bool]
-    ) -> Tuple[List[bool], List[bool]]:
+        self, yes_votes: List[Optional[bool]], no_votes: List[Optional[bool]]
+    ) -> Tuple[
+        List[Optional[bool]], List[Optional[bool]], int
+    ]:  # Added int for discarded_count
         """Apply XOR sanity check: discard samples that answer both claims the same."""
-        filtered_yes = []
-        filtered_no = []
+        filtered_yes: List[Optional[bool]] = []
+        filtered_no: List[Optional[bool]] = []
+        discarded_count = 0
 
         for y, n in zip(yes_votes, no_votes):
             if y is None or n is None:
-                # Keep samples where at least one is None (abstention)
+                # Keep samples where at least one is None (abstention/error)
                 filtered_yes.append(y)
                 filtered_no.append(n)
             elif y != n:
@@ -256,74 +320,148 @@ class _JudgeEngine:
             else:
                 # Discard samples where y == n (both True or both False)
                 logger.warning(
-                    "Discarding sample where both claims answered the same (unreliable judge)"
+                    f"Discarding sample (yes_vote={y}, no_vote={n}) due to XOR sanity fail."
                 )
-                continue
+                discarded_count += 1
 
-        return filtered_yes, filtered_no
+        return filtered_yes, filtered_no, discarded_count
 
-    def yes_no(self, yes_prompt: str, no_prompt: str) -> int:
-        """
-        Evaluate the two prompts and return pass/fail.
-
-        pass   → 1 if YES wins, 0 if NO wins or tie/abstain
-        """
-        # Run async evaluation using asyncio.run()
-        return asyncio.run(self._async_yes_no(yes_prompt, no_prompt))
-
-    async def _async_yes_no(self, yes_prompt: str, no_prompt: str) -> int:
+    async def _async_yes_no(
+        self,
+        yes_prompt: str,
+        no_prompt: str,
+        trace_events: Optional[List[Dict[str, Any]]],
+        trace_id: str,
+    ) -> JudgmentDetails:
         """Async implementation of yes_no."""
-        all_yes_votes = []
-        all_no_votes = []
+        all_yes_final_votes: List[Optional[bool]] = []
+        all_no_final_votes: List[Optional[bool]] = []
 
         # Collect votes from all models
         for model in self.models:
-            yes_votes, no_votes = await self._get_model_votes(
-                model, yes_prompt, no_prompt
+            input_yes_verdicts, input_no_verdicts = await self._get_model_votes(
+                model,
+                yes_prompt,
+                no_prompt,
+                trace_events,
+                trace_id,
             )
 
             # Apply XOR sanity check per model
-            yes_votes, no_votes = self._apply_xor_sanity(yes_votes, no_votes)
+            output_yes_verdicts, output_no_verdicts, discarded_pairs = (
+                self._apply_xor_sanity(input_yes_verdicts, input_no_verdicts)
+            )
+
+            if trace_events is not None:
+                trace_events.append(
+                    {
+                        "trace_id": trace_id,
+                        "timestamp": datetime.datetime.now(
+                            datetime.timezone.utc
+                        ).isoformat(),
+                        "type": "model_verdicts_after_xor",
+                        "model": model,
+                        "input_yes_verdicts_for_model": input_yes_verdicts,
+                        "input_no_verdicts_for_model": input_no_verdicts,
+                        "output_yes_verdicts_after_xor": output_yes_verdicts,
+                        "output_no_verdicts_after_xor": output_no_verdicts,
+                        "discarded_pairs_count": discarded_pairs,
+                    }
+                )
 
             # If no votes after xor sanity check, skip this model
-            if not yes_votes or not no_votes:
+            if (
+                not output_yes_verdicts
+                and not output_no_verdicts
+                and (input_yes_verdicts or input_no_verdicts)
+            ):  # Check if there were input votes
                 logger.warning(
-                    f"No votes after XOR sanity check for model {model}. Skipping."
+                    f"All votes for model {model} were discarded by XOR sanity check."
                 )
-                continue
 
-            all_yes_votes.extend(yes_votes)
-            all_no_votes.extend(no_votes)
+            all_yes_final_votes.extend(output_yes_verdicts)
+            all_no_final_votes.extend(output_no_verdicts)
 
-        # Count votes (None values are abstentions)
-        yes_count = sum(1 for v in all_yes_votes if v is True)
-        no_count = sum(1 for v in all_no_votes if v is True)
+        # Count votes (None values are abstentions/errors, True is a vote for the claim)
+        yes_count = sum(1 for v in all_yes_final_votes if v is True)
+        no_count = sum(
+            1 for v in all_no_final_votes if v is True
+        )  # Count where "NO claim is true"
 
-        # Check if all models abstained
-        total_votes = len([v for v in all_yes_votes + all_no_votes if v is not None])
-        if total_votes == 0:
+        # Check if all models abstained or had votes discarded
+        # total_votes = len([v for v in all_yes_final_votes + all_no_final_votes if v is not None])
+        final_verdict = 1 if yes_count > no_count else 0
+
+        if not any(v is not None for v in all_yes_final_votes + all_no_final_votes):
             logger.warning(
-                f"All models in the panel ({', '.join(self.models)}) abstained from voting"
+                f"All models in the panel ({', '.join(self.models)}) abstained or had all votes discarded. "
+                f"Trace ID: {trace_id}. Final verdict: {final_verdict} (yes_count={yes_count}, no_count={no_count})"
             )
-            return 0
+            # Default to 0
 
-        # Determine winner
-        return 1 if yes_count > no_count else 0
+        return {
+            "verdict": final_verdict,
+            "yes_count": yes_count,
+            "no_count": no_count,
+            "all_yes_final_votes": all_yes_final_votes,
+            "all_no_final_votes": all_no_final_votes,
+        }
+
+    def yes_no(
+        self,
+        yes_prompt: str,
+        no_prompt: str,
+        trace_events: Optional[List[Dict[str, Any]]],
+        trace_id: str,
+    ) -> JudgmentDetails:
+        """
+        Evaluate the two prompts and return pass/fail.
+        Pass → 1 if YES wins, 0 if NO wins or tie/abstain
+        """
+        # Run async evaluation using asyncio.run()
+        return asyncio.run(
+            self._async_yes_no(yes_prompt, no_prompt, trace_events, trace_id)
+        )
 
 
 # ─────────── 3. SINGLETON ENGINE LOADER ──────────────────── #
 
 
-def _find_config_file() -> Optional[Path]:
-    """Find trainloop.config.yaml by searching up from current directory."""
-    current = Path.cwd()
+def _find_config_file_path_for_judge() -> Optional[Path]:
+    """Find trainloop.config.yaml, checking TRAINLOOP_CONFIG_PATH env var first."""
+    env_config_path_str = os.getenv("TRAINLOOP_CONFIG_PATH")
+    if env_config_path_str:
+        env_config_path = Path(env_config_path_str)
+        if env_config_path.is_file():
+            return env_config_path
+        else:
+            logger.warning(
+                f"TRAINLOOP_CONFIG_PATH ('{env_config_path_str}') not found. Trying default locations."
+            )
 
-    while current != current.parent:
+    cwd = Path.cwd()
+    # Check common locations relative to CWD
+    default_paths = [
+        cwd / "trainloop.config.yaml",  # If running from 'trainloop' dir
+        cwd / "trainloop" / "trainloop.config.yaml",  # If running from project root
+    ]
+    for path_candidate in default_paths:
+        if path_candidate.is_file():
+            return path_candidate
+
+    # Fallback: Search upwards from current directory
+    current = cwd
+    for _ in range(5):  # Limit search depth
         config_path = current / "trainloop.config.yaml"
-        if config_path.exists():
+        if config_path.is_file():  # Changed from exists() to is_file()
             return config_path
+        if current.parent == current:  # Reached filesystem root
+            break
         current = current.parent
 
+    logger.warning(
+        "Judge config file 'trainloop.config.yaml' not found in standard locations or via TRAINLOOP_CONFIG_PATH."
+    )
     return None
 
 
@@ -341,7 +479,7 @@ def _load_cfg(override: Optional[Dict]) -> Dict:
     }
 
     # Try to load from YAML
-    config_path = _find_config_file()
+    config_path = _find_config_file_path_for_judge()
     if config_path:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -373,10 +511,7 @@ def _engine(cfg_override_str: Optional[str]) -> _JudgeEngine:
     since dicts are not hashable.
     """
     # Convert string back to dict (or None)
-    cfg_override = None
-    if cfg_override_str:
-        cfg_override = json.loads(cfg_override_str)
-
+    cfg_override = json.loads(cfg_override_str) if cfg_override_str else None
     cfg = _load_cfg(cfg_override)
     return _JudgeEngine(cfg)
 
@@ -395,19 +530,75 @@ def assert_true(
     Returns:
         1 if `yes_claim` wins the panel vote
         0 if `no_claim` wins or tie/abstain
-
-    Example:
-        verdict = assert_true(
-            "This is something a dog would do.",
-            "This is not something a dog would do."
-        )
     """
-    # Convert cfg to string for caching (None becomes None)
-    cfg_str = None
-    if cfg is not None:
-        cfg_str = json.dumps(cfg, sort_keys=True)
+    trace_id = str(uuid.uuid4())
+    trace_events: List[Dict[str, Any]] = []
 
+    # Uses TRAINLOOP_DATA_FOLDER internally now
+    trace_dir = ensure_trace_dir()
+
+    cfg_str = json.dumps(cfg, sort_keys=True) if cfg is not None else None
     engine = _engine(cfg_str)
+
     yes_prompt = make_prompt(yes_claim, engine.template)
     no_prompt = make_prompt(no_claim, engine.template)
-    return engine.yes_no(yes_prompt, no_prompt)
+
+    # Default structure for judgment_details in case of early exit or if tracing is off
+    judgment_details: JudgmentDetails = {
+        "verdict": 0,
+        "yes_count": 0,
+        "no_count": 0,
+        "all_yes_final_votes": [],
+        "all_no_final_votes": [],
+    }
+
+    try:
+        if trace_dir:
+            trace_events.append(
+                {
+                    "trace_id": trace_id,
+                    "timestamp": datetime.datetime.now(
+                        datetime.timezone.utc
+                    ).isoformat()
+                    + "Z",
+                    "type": "judge_request_details",
+                    "yes_claim": yes_claim,
+                    "no_claim": no_claim,
+                    "judge_config": engine.resolved_cfg,
+                    "yes_prompt": yes_prompt,
+                    "no_prompt": no_prompt,
+                }
+            )
+
+        # Pass trace_events and trace_id for detailed logging
+        judgment_details = engine.yes_no(
+            yes_prompt,
+            no_prompt,
+            trace_events if trace_dir else None,  # Pass None if tracing is off
+            trace_id,
+        )
+
+    finally:  # Ensure final judgment event and trace log writing occurs
+        if trace_dir:  # Only log if tracing is active
+            trace_events.append(
+                {
+                    "trace_id": trace_id,
+                    "timestamp": datetime.datetime.now(
+                        datetime.timezone.utc
+                    ).isoformat()
+                    + "Z",
+                    "type": "final_judgment",
+                    "all_contributing_yes_verdicts": judgment_details[
+                        "all_yes_final_votes"
+                    ],
+                    "all_contributing_no_verdicts": judgment_details[
+                        "all_no_final_votes"
+                    ],
+                    "yes_vote_count": judgment_details["yes_count"],
+                    "no_vote_count": judgment_details["no_count"],
+                    "final_verdict_returned": judgment_details["verdict"],
+                }
+            )
+            write_trace_log(trace_id, trace_events, trace_dir)
+
+    return judgment_details["verdict"]

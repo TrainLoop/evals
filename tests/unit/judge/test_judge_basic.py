@@ -74,7 +74,7 @@ class TestJudgeBasic:
         assert "true" in prompt.lower()
         assert "false" in prompt.lower()
 
-    @mock.patch("trainloop.eval.judge._find_config_file")
+    @mock.patch("trainloop.eval.judge._find_config_file_path_for_judge")
     def test_load_cfg_defaults(self, mock_find_config):
         """Test config loading with defaults when no config file exists."""
         mock_find_config.return_value = None
@@ -85,7 +85,7 @@ class TestJudgeBasic:
         assert cfg["calls_per_model_per_claim"] == 3
         assert cfg["temperature"] == 0.7
 
-    @mock.patch("trainloop.eval.judge._find_config_file")
+    @mock.patch("trainloop.eval.judge._find_config_file_path_for_judge")
     def test_load_cfg_override(self, mock_find_config):
         """Test config loading with override parameters."""
         mock_find_config.return_value = None
