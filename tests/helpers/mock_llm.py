@@ -45,6 +45,7 @@ class MockJudge:
             "not helpful": ["false", "no"],
         }
         self.call_count = 0
+        self.prompt_history = []  # Track prompts to ensure XOR behavior
 
     async def mock_acompletion(
         self, model: str, messages: List[Dict], **kwargs
@@ -54,11 +55,16 @@ class MockJudge:
 
         # Extract the claim from the prompt
         prompt = messages[0]["content"]
+        self.prompt_history.append(prompt)
 
         # Find matching response based on claim content
-        for key, responses in self.responses.items():
+        # Check longer patterns first to avoid false matches
+        sorted_keys = sorted(self.responses.keys(), key=len, reverse=True)
+        
+        for key in sorted_keys:
             if key.lower() in prompt.lower():
                 # Cycle through responses for consistency testing
+                responses = self.responses[key]
                 response_idx = (self.call_count - 1) % len(responses)
                 response = responses[response_idx]
 
@@ -108,6 +114,10 @@ POSITIVE_RESPONSES = {
     "not accurate": ["false", "no", "incorrect", "false"],
     "clear": ["true", "yes", "correct", "true"],
     "not clear": ["false", "no", "incorrect", "false"],
+    "equals 4": ["true", "yes", "correct", "true"],
+    "does not equal 4": ["false", "no", "incorrect", "false"],
+    "clear and accurate": ["true", "yes", "correct", "true"],
+    "NOT provide a clear and accurate": ["false", "no", "incorrect", "false"],
 }
 
 NEGATIVE_RESPONSES = {
