@@ -131,14 +131,22 @@ class _JudgeEngine:
         except Exception as e:
             error_msg = str(e).lower()
             # Check if this is an API key error
-            if any(key_err in error_msg for key_err in [
-                "api key", "api_key", "authentication", "unauthorized", 
-                "invalid key", "no api key", "missing api key"
-            ]):
+            if any(
+                key_err in error_msg
+                for key_err in [
+                    "api key",
+                    "api_key",
+                    "authentication",
+                    "unauthorized",
+                    "invalid key",
+                    "no api key",
+                    "missing api key",
+                ]
+            ):
                 # Return the exception instance for API key errors
                 logger.error(f"API key error for {model} during LLM call: {e}")
-                return e # Return the original exception or a specific one
-            
+                return e  # Return the original exception or a specific one
+
             # For other errors, log and return the exception as well
             logger.warning(f"LLM call failed for {model}: {e}")
             return e
@@ -176,7 +184,9 @@ class _JudgeEngine:
         yes_tasks = [self._call_llm(model, yes_prompt) for _ in range(self.k)]
         no_tasks = [self._call_llm(model, no_prompt) for _ in range(self.k)]
 
-        raw_yes_responses = await asyncio.gather(*yes_tasks, return_exceptions=False) # Let gather raise if needed for unhandled cases
+        raw_yes_responses = await asyncio.gather(
+            *yes_tasks, return_exceptions=False
+        )  # Let gather raise if needed for unhandled cases
         raw_no_responses = await asyncio.gather(*no_tasks, return_exceptions=False)
 
         yes_responses = []
@@ -188,7 +198,7 @@ class _JudgeEngine:
                 exceptions_encountered.append(resp)
             else:
                 yes_responses.append(resp)
-        
+
         for resp in raw_no_responses:
             if isinstance(resp, Exception):
                 exceptions_encountered.append(resp)
@@ -198,16 +208,26 @@ class _JudgeEngine:
         if exceptions_encountered:
             for exc in exceptions_encountered:
                 # Log all exceptions encountered during the gather phase
-                logger.error(f"Exception during LLM call processing: {type(exc).__name__}: {exc}")
+                logger.error(
+                    f"Exception during LLM call processing: {type(exc).__name__}: {exc}"
+                )
             # Re-raise the first encountered exception to signal an error upstream
             # Convert to ValueError if it's an API key error, as expected by tests
             first_exc = exceptions_encountered[0]
             error_msg = str(first_exc).lower()
-            if any(key_err in error_msg for key_err in [
-                "api key", "api_key", "authentication", "unauthorized", 
-                "invalid key", "no api key", "missing api key"
-            ]):
-                 raise ValueError(
+            if any(
+                key_err in error_msg
+                for key_err in [
+                    "api key",
+                    "api_key",
+                    "authentication",
+                    "unauthorized",
+                    "invalid key",
+                    "no api key",
+                    "missing api key",
+                ]
+            ):
+                raise ValueError(
                     f"API key error encountered: {first_exc}"
                 ) from first_exc
             raise ValueError(f"LLM call failed: {first_exc}") from first_exc
@@ -265,6 +285,13 @@ class _JudgeEngine:
             # Apply XOR sanity check per model
             yes_votes, no_votes = self._apply_xor_sanity(yes_votes, no_votes)
 
+            # If no votes after xor sanity check, skip this model
+            if not yes_votes or not no_votes:
+                logger.warning(
+                    f"No votes after XOR sanity check for model {model}. Skipping."
+                )
+                continue
+
             all_yes_votes.extend(yes_votes)
             all_no_votes.extend(no_votes)
 
@@ -275,7 +302,9 @@ class _JudgeEngine:
         # Check if all models abstained
         total_votes = len([v for v in all_yes_votes + all_no_votes if v is not None])
         if total_votes == 0:
-            logger.warning("All models abstained from voting")
+            logger.warning(
+                f"All models in the panel ({', '.join(self.models)}) abstained from voting"
+            )
             return 0
 
         # Determine winner
