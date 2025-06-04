@@ -119,6 +119,7 @@ def rewrite_imports(content: str) -> str:
         "from registry.types import": "from ..types import",
         "from registry.metrics_registry import": "from ..metrics import",
         "from registry.helpers import": "from ..helpers import",
+        "from registry.judge import": "from ..judge import",
     }
 
     for old, new in replacements.items():
