@@ -8,7 +8,7 @@ from unittest.mock import patch
 from pathlib import Path
 import yaml
 import pytest
-from tests.helpers.mock_llm import (
+from ...helpers.mock_llm import (
     mock_judge_calls,
     POSITIVE_RESPONSES,
     NEGATIVE_RESPONSES,
