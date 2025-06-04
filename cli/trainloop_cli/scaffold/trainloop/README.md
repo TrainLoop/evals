@@ -65,6 +65,22 @@ response = client.chat.completions.create(
 )
 ```
 
+## 📊 Running evaluations
+
+Once you've collected data, you can run evaluations:
+
+```bash
+trainloop eval                    # run all metrics and suites
+trainloop eval --tag bubble-sort  # run only on bubble-sort samples
+trainloop eval --suite perf       # run a specific suite
+```
+
+Results are saved to `data/results/` and can be viewed with:
+
+```bash
+trainloop studio  # opens the web UI
+```
+
 ## 🧪 Writing metrics & suites
 
 Create metrics in **`eval/metrics/`**:
@@ -116,6 +132,63 @@ for sample in samples:
 
 The only requirement is that you must declare a variable `results` and it should be an array of `Result` objects.
 
+## 🧑‍⚖️ Using the LLM Judge
+
+TrainLoop includes a built-in LLM judge for evaluating claims about your model outputs. This is useful for metrics that require subjective evaluation or complex reasoning.
+
+### Basic Usage
+
+```python
+from trainloop.judge import assert_true
+
+def my_metric(sample):
+    response = sample["response"]
+    
+    # Define your claims
+    yes_claim = f"The response '{response}' is polite and professional."
+    no_claim = f"The response '{response}' is NOT polite and professional."
+    
+    # Let the judge evaluate (returns 1 for pass, 0 for fail)
+    return assert_true(yes_claim, no_claim)
+```
+
+### Configuration
+
+The judge can be configured in `trainloop.config.yaml`:
+
+```yaml
+trainloop:
+  # ... other trainloop config ...
+  judge:
+    models:
+      - openai/gpt-4o
+      - anthropic/claude-3-sonnet-20240229
+    calls_per_model_per_claim: 3  # Number of calls per model for consistency
+    temperature: 0.7
+```
+
+Or override per-call:
+
+```python
+verdict = assert_true(
+    yes_claim,
+    no_claim,
+    cfg={
+        "models": ["openai/gpt-4o-mini"],
+        "calls_per_model_per_claim": 3,
+        "temperature": 0.5,
+        "template": "Custom prompt template with {claim}"
+    }
+)
+```
+
+### Features
+
+- **Multi-model ensemble**: Use multiple models for more reliable judgments
+- **Self-consistency**: Each model is called k times per claim
+- **XOR sanity check**: Discards samples that answer both claims the same way
+- **Custom templates**: Define your own prompt format for specific evaluation needs
+
 ## 🏃‍♂️ Running evaluations & studio
 
 ```bash
@@ -134,4 +207,3 @@ Use the `--help` flag on any command for detailed options.
 | `TRAINLOOP_HOST_ALLOWLIST` | CSV of host substrings to instrument                  | `api.openai.com,api.anthropic.com` |
 | `TRAINLOOP_LOG_LEVEL`      | `error`, `warn`, `info`, `debug`                      | `info`                             |
 | `TRAINLOOP_CONFIG_PATH`    | Path to the trainloop config file                     | `trainloop/trainloop.config.yaml`  |
-
