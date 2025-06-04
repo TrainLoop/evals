@@ -5,3 +5,10 @@ trainloop:
     - api.openai.com
     - api.anthropic.com
   log_level: warn
+  # Judge Configuration
+  judge:
+    models:
+      - openai/gpt-4.1-2025-04-14
+      - anthropic/claude-sonnet-4-20250514
+    calls_per_model_per_claim: 3
+    temperature: 0.7
