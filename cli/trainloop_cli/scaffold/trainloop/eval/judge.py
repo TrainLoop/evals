@@ -49,7 +49,7 @@ Lightweight "LLM Judge" helper for TrainLoop metrics.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, List, Optional, Tuple, Union
 import json
 from pathlib import Path
 import asyncio
@@ -119,7 +119,7 @@ class _JudgeEngine:
         if isinstance(self.models, str):
             self.models = [self.models]
 
-    async def _call_llm(self, model: str, prompt: str) -> str:
+    async def _call_llm(self, model: str, prompt: str) -> Union[str, Exception]:
         """Make a single LLM call and return the response."""
         try:
             response = await litellm.acompletion(
@@ -129,8 +129,19 @@ class _JudgeEngine:
             )
             return response.choices[0].message.content
         except Exception as e:
+            error_msg = str(e).lower()
+            # Check if this is an API key error
+            if any(key_err in error_msg for key_err in [
+                "api key", "api_key", "authentication", "unauthorized", 
+                "invalid key", "no api key", "missing api key"
+            ]):
+                # Return the exception instance for API key errors
+                logger.error(f"API key error for {model} during LLM call: {e}")
+                return e # Return the original exception or a specific one
+            
+            # For other errors, log and return the exception as well
             logger.warning(f"LLM call failed for {model}: {e}")
-            return ""
+            return e
 
     def _extract_verdict(self, response: str) -> Optional[bool]:
         """Extract true/false verdict from LLM response."""
@@ -165,8 +176,41 @@ class _JudgeEngine:
         yes_tasks = [self._call_llm(model, yes_prompt) for _ in range(self.k)]
         no_tasks = [self._call_llm(model, no_prompt) for _ in range(self.k)]
 
-        yes_responses = await asyncio.gather(*yes_tasks)
-        no_responses = await asyncio.gather(*no_tasks)
+        raw_yes_responses = await asyncio.gather(*yes_tasks, return_exceptions=False) # Let gather raise if needed for unhandled cases
+        raw_no_responses = await asyncio.gather(*no_tasks, return_exceptions=False)
+
+        yes_responses = []
+        no_responses = []
+        exceptions_encountered = []
+
+        for resp in raw_yes_responses:
+            if isinstance(resp, Exception):
+                exceptions_encountered.append(resp)
+            else:
+                yes_responses.append(resp)
+        
+        for resp in raw_no_responses:
+            if isinstance(resp, Exception):
+                exceptions_encountered.append(resp)
+            else:
+                no_responses.append(resp)
+
+        if exceptions_encountered:
+            for exc in exceptions_encountered:
+                # Log all exceptions encountered during the gather phase
+                logger.error(f"Exception during LLM call processing: {type(exc).__name__}: {exc}")
+            # Re-raise the first encountered exception to signal an error upstream
+            # Convert to ValueError if it's an API key error, as expected by tests
+            first_exc = exceptions_encountered[0]
+            error_msg = str(first_exc).lower()
+            if any(key_err in error_msg for key_err in [
+                "api key", "api_key", "authentication", "unauthorized", 
+                "invalid key", "no api key", "missing api key"
+            ]):
+                 raise ValueError(
+                    f"API key error encountered: {first_exc}"
+                ) from first_exc
+            raise ValueError(f"LLM call failed: {first_exc}") from first_exc
 
         yes_votes = [self._extract_verdict(resp) for resp in yes_responses]
         no_votes = [self._extract_verdict(resp) for resp in no_responses]
@@ -204,13 +248,8 @@ class _JudgeEngine:
 
         pass   → 1 if YES wins, 0 if NO wins or tie/abstain
         """
-        # Run async evaluation
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(self._async_yes_no(yes_prompt, no_prompt))
-        finally:
-            loop.close()
+        # Run async evaluation using asyncio.run()
+        return asyncio.run(self._async_yes_no(yes_prompt, no_prompt))
 
     async def _async_yes_no(self, yes_prompt: str, no_prompt: str) -> int:
         """Async implementation of yes_no."""
