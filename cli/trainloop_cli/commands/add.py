@@ -117,7 +117,7 @@ def rewrite_imports(content: str) -> str:
     """Rewrite registry imports to relative imports for the target environment."""
     replacements = {
         "from registry.types import": "from ..types import",
-        "from registry.metrics import": "from ..metrics import",
+        "from registry.metrics_registry import": "from ..metrics import",
         "from registry.helpers import": "from ..helpers import",
     }
 
