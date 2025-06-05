@@ -9,13 +9,11 @@ trainloop/
 ├── data/                 # ← raw & derived artefacts (ignored by git)
 │   ├── events/           #   append‑only JSONL shards, one per 10‑min window
 │   ├── results/          #   evaluation verdicts (one line per test)
+│   ├── judge_traces/     #   consolidated LLM judge trace logs (one JSONL per run)
 │   └── _registry.json    #   call‑site → tag counters
-└── eval/
-    ├── helpers.py        #   tiny DSL (tag, etc.)
-    ├── types.py          #   Sample / Result dataclasses
-    ├── runner.py         #   CLI engine (hidden)
-    ├── metrics/          #   user‑defined primitives
-    └── suites/           #   user‑defined test collections
+└── eval/                 #   Your evaluation code
+    ├── metrics/          #   User‑defined primitives (e.g., is_polite(sample) -> 1/0)
+    └── suites/           #   User‑defined test collections (e.g., core_capabilities.py)
 ```
 
 ## 🚀 Collecting data
@@ -65,13 +63,29 @@ response = client.chat.completions.create(
 )
 ```
 
+## 📊 Running evaluations
+
+Once you've collected data, you can run evaluations:
+
+```bash
+trainloop eval                    # run all metrics and suites
+trainloop eval --tag bubble-sort  # run only on bubble-sort samples
+trainloop eval --suite perf       # run a specific suite
+```
+
+Results are saved to `data/results/` and can be viewed with:
+
+```bash
+trainloop studio  # opens the web UI
+```
+
 ## 🧪 Writing metrics & suites
 
 Create metrics in **`eval/metrics/`**:
 
 ```python
 # eval/metrics/includes_hello.py
-from ..types import Sample
+from trainloop_cli.eval_core.types import Sample
 
 def includes_hello(sample: Sample) -> int:  # return 1 (pass) or 0 (fail)
     if "hello" in sample.output["content"].lower():
@@ -85,8 +99,9 @@ Creating a suite should read like English. For example, if you want to test if b
 
 ```python
 # eval/suites/parsers.py
-from ..helpers import tag
-from ..metrics import does_compile
+from trainloop_cli.eval_core.helpers import tag
+from trainloop_cli.eval_core.types import Result # If using the lower-level API
+from .metrics import does_compile # Assuming does_compile is in eval/metrics/
 
 results = tag("bubble-sort").check(does_compile)
 ```
@@ -104,6 +119,10 @@ Where `check(does_compile, fcn_called_bubble_sort)` is a helper function that ru
 If you don't like the declarative `tag("bubble-sort").check(does_compile)` syntax, you can also use the lower-level API:
 
 ```python
+from trainloop_cli.eval_core.types import Result, Sample # Ensure imports for lower-level API
+from trainloop_cli.eval_core.helpers import tag
+from .metrics import does_compile, fcn_called_bubble_sort # Example user metrics
+
 samples = tag("bubble-sort", raw=True)
 results = [] # REQUIRED: we look for this variable name
 for sample in samples:
@@ -115,6 +134,68 @@ for sample in samples:
 ```
 
 The only requirement is that you must declare a variable `results` and it should be an array of `Result` objects.
+
+## 🧑‍⚖️ Using the LLM Judge
+
+TrainLoop includes a built-in LLM judge for evaluating claims about your model outputs. This is useful for metrics that require subjective evaluation or complex reasoning.
+
+### Basic Usage
+
+```python
+from trainloop_cli.eval_core.judge import assert_true
+
+def my_metric(sample):
+    response = sample["response"]
+    
+    # Define your claims
+    yes_claim = f"The response '{response}' is polite and professional."
+    no_claim = f"The response '{response}' is NOT polite and professional."
+    
+    # Let the judge evaluate (returns 1 for pass, 0 for fail)
+    return assert_true(yes_claim, no_claim)
+```
+
+### Judge Trace Logging
+
+The LLM Judge automatically logs all trace events (LLM calls, intermediate verdicts, final judgments, etc.) for an evaluation run into a single timestamped JSONL file. This file is located in `trainloop/data/judge_traces/` and is named with the format `YYYY-MM-DD_HH-MM-SS.jsonl`. It's created when the judge engine initializes for an evaluation session (e.g., when `trainloop eval` starts) and accumulates all judge-related events for that entire session.
+
+### Configuration
+
+The judge can be configured in `trainloop.config.yaml`:
+
+```yaml
+trainloop:
+  # ... other trainloop config ...
+  judge:
+    models:
+      - openai/gpt-4o
+      - anthropic/claude-3-sonnet-20240229
+    calls_per_model_per_claim: 3  # Number of calls per model for consistency
+    temperature: 0.7
+```
+
+Or override per-call:
+
+```python
+verdict = assert_true(
+    yes_claim,
+    no_claim,
+    cfg={
+        "models": ["openai/gpt-4o-mini"],
+        "calls_per_model_per_claim": 3,
+        "temperature": 0.5,
+        "template": "Custom prompt template with {claim}"
+    }
+)
+```
+
+### Features
+
+- **Multi-model ensemble**: Use multiple models for more reliable judgments
+- **Self-consistency**: Each model is called k times per claim
+- **XOR sanity check**: Discards samples that answer both claims the same way
+- **Custom templates**: Define your own prompt format for specific evaluation needs
+- **LLM Call Count**: For each `assert_true` call, the number of LLM calls made is `len(configured_models) * calls_per_model_per_claim * 2 * len(samples)`.
 
 ## 🏃‍♂️ Running evaluations & studio
 
@@ -134,4 +215,3 @@ Use the `--help` flag on any command for detailed options.
 | `TRAINLOOP_HOST_ALLOWLIST` | CSV of host substrings to instrument                  | `api.openai.com,api.anthropic.com` |
 | `TRAINLOOP_LOG_LEVEL`      | `error`, `warn`, `info`, `debug`                      | `info`                             |
 | `TRAINLOOP_CONFIG_PATH`    | Path to the trainloop config file                     | `trainloop/trainloop.config.yaml`  |
-

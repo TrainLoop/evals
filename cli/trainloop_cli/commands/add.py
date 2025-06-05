@@ -2,12 +2,12 @@
 
 import ast
 import sys
+import types
 import urllib.request
 import urllib.error
 from pathlib import Path
 from typing import Dict, List, Optional
-from importlib import import_module
-import types
+from importlib import metadata, import_module
 import click
 import tomli
 import yaml
@@ -15,14 +15,28 @@ from packaging import version as version_package
 
 
 def get_current_version() -> str:
-    """Get the current CLI version from pyproject.toml."""
+    """Get the current CLI version from installed package metadata."""
+    try:
+        return metadata.version("trainloop-cli")
+    except metadata.PackageNotFoundError:
+        # This might happen if running from source without installation or if package name is wrong
+        # Fallback or raise a more specific error if needed
+        # For now, let's try to read from pyproject.toml as a fallback for local dev
+        try:
+            cli_root = Path(__file__).parent.parent.parent
+            pyproject_path = cli_root.parent / "pyproject.toml"
+            if (
+                not pyproject_path.exists()
+            ):  # if .../cli/ is not project root, try another level up
+                pyproject_path = cli_root.parent.parent / "pyproject.toml"
 
-    cli_root = Path(__file__).parent.parent.parent
-    pyproject_path = cli_root / "pyproject.toml"
-
-    with open(pyproject_path, "rb") as f:
-        data = tomli.load(f)
-        return data["tool"]["poetry"]["version"]
+            if pyproject_path.exists():
+                with open(pyproject_path, "rb", encoding="utf-8") as f:
+                    data = tomli.load(f)
+                    return data["tool"]["poetry"]["version"]
+            return "0.0.0-dev"  # Fallback version if not found
+        except Exception:
+            return "0.0.0-unknown"  # Final fallback
 
 
 def fetch_from_github(path: str, version: str) -> str:
@@ -114,11 +128,13 @@ def get_trainloop_dir() -> Path:
 
 
 def rewrite_imports(content: str) -> str:
-    """Rewrite registry imports to relative imports for the target environment."""
+    """Rewrite registry imports to absolute imports pointing to trainloop_cli.eval_core."""
+
     replacements = {
-        "from registry.types import": "from ..types import",
-        "from registry.metrics import": "from ..metrics import",
-        "from registry.helpers import": "from ..helpers import",
+        "from registry.types import": "from trainloop_cli.eval_core.types import",
+        "from registry.metrics_registry import": "from ..metrics import",
+        "from registry.helpers import": "from trainloop_cli.eval_core.helpers import",
+        "from registry.judge import": "from trainloop_cli.eval_core.judge import",
     }
 
     for old, new in replacements.items():

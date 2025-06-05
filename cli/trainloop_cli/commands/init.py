@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 
-def init_command():
+def init_command(force: bool = False):
     """Scaffold data/ and eval/ directories, create sample metrics and suites."""
     print("Initializing TrainLoop Evaluations...")
 
@@ -22,10 +22,18 @@ def init_command():
 
     # Check if trainloop directory already exists
     if trainloop_dir.exists():
-        print(
-            f"Error: {trainloop_dir} already exists. Please remove it or use a different directory."
-        )
-        sys.exit(1)
+        if force:
+            print(f"Warning: {trainloop_dir} already exists. --force flag detected, removing existing directory.")
+            try:
+                shutil.rmtree(trainloop_dir)
+            except OSError as e:
+                print(f"Error: Could not remove existing directory {trainloop_dir}. {e}")
+                sys.exit(1)
+        else:
+            print(
+                f"Error: {trainloop_dir} already exists. Use --force to overwrite or remove it manually."
+            )
+            sys.exit(1)
 
     # Check if scaffold directory exists
     if not scaffold_dir.exists() or not (scaffold_dir / "trainloop").exists():
@@ -45,15 +53,48 @@ def init_command():
     registry_file = data_dir / "_registry.json"
     registry_file.write_text("{}")
 
-    # Install appropriate SDK based on project type
+    # Create a virtual environment inside the trainloop directory
+    venv_path = trainloop_dir / ".venv"
+    print(f"\nCreating virtual environment in {venv_path}...")
+    try:
+        subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True, capture_output=True, text=True)
+        print(f"Successfully created virtual environment at {venv_path}")
+
+        # Determine pip executable path
+        if sys.platform == "win32":
+            pip_executable = venv_path / "Scripts" / "pip.exe"
+        else:
+            pip_executable = venv_path / "bin" / "pip"
+
+        print(f"Installing trainloop-cli into {venv_path}...")
+        subprocess.run([str(pip_executable), "install", "trainloop-cli"], check=True, capture_output=True, text=True)
+        print("Successfully installed trainloop-cli in the virtual environment.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during virtual environment setup: {e.stderr}")
+        print("Please ensure Python's venv module is available and try again.")
+        # Optionally, you might want to exit or clean up here if this step is critical
+    except FileNotFoundError:
+        print("Error: Python executable not found. Could not create virtual environment.")
+
+    # Install appropriate SDK based on project type (for the main project, not the nested venv)
     install_appropriate_sdk(dest_dir)
 
     # Print the directory tree structure dynamically
     print("\nCreated trainloop directory with the following structure:")
-    print_directory_tree(trainloop_dir)
+    print_directory_tree(trainloop_dir, ignore_dirs={"__pycache__", ".venv"})
 
-    print("\nInitialization complete!")
-    print("\nFollow the instructions in trainloop/README.md to start collecting data.")
+    print("\n✨ Initialization complete! ✨")
+    print(f"\nTrainLoop project created at: {trainloop_dir}")
+    print(f"A dedicated Python venv for evaluations is at: {venv_path}")
+    print("   (trainloop-cli is installed there for custom metric/suite development)")
+
+    print("\n🚀 Next Steps:")
+    print("1. Start collecting data: See `trainloop/README.md`.")
+    print("2. For custom metric/suite development (IDE autocompletion & terminal work):")
+    print(r"   - In your terminal: `source trainloop/.venv/bin/activate` (or `.\trainloop\.venv\Scripts\activate` on Windows)")
+    print("   - For IDEs (e.g., VS Code): Add `./trainloop/.venv/lib/pythonX.Y/site-packages` to your Python interpreter's extra paths.")
+    print("     (Replace X.Y with your Python version, e.g., python3.11)")
+    print("3. Define custom logic: Edit files in `trainloop/eval/metrics/` and `trainloop/eval/suites/`.")
 
 
 def install_appropriate_sdk(project_dir: Path):
@@ -132,7 +173,9 @@ def install_appropriate_sdk(project_dir: Path):
         )
 
 
-def print_directory_tree(directory, prefix="", is_last=True, is_root=True):
+def print_directory_tree(
+    directory, prefix="", is_last=True, is_root=True, ignore_dirs=None
+):
     """Print a directory tree structure.
 
     Args:
@@ -140,21 +183,20 @@ def print_directory_tree(directory, prefix="", is_last=True, is_root=True):
         prefix: Prefix to use for current line (used for recursion)
         is_last: Whether this is the last item in its parent directory
         is_root: Whether this is the root directory
+        ignore_dirs: Set of directory names to ignore (optional)
     """
-    # Define directory and file display names with special descriptions
+    if ignore_dirs is None:
+        ignore_dirs = set()
+
     descriptions = {
         "data": "# git-ignored",
         "events": "# append-only *.jsonl shards of raw calls",
         "results": "# verdicts; one line per test per event",
-        "_registry.json": "",
-        "helpers.py": "# tiny DSL (tag, etc.)",
-        "types.py": "# Sample / Result dataclasses",
-        "runner.py": "# CLI engine",
+        "_registry.json": "# Shows every model call in the system",
         "metrics": "# user-defined primitives",
         "suites": "# user-defined test collections",
     }
 
-    # Get path name for display
     path_name = directory.name
     if is_root:
         print(f"  {path_name}/")
@@ -167,18 +209,21 @@ def print_directory_tree(directory, prefix="", is_last=True, is_root=True):
         print(f"{prefix}{connector}{path_name}/{description}")
         new_prefix = prefix + ("    " if is_last else "│   ")
 
-    # Get all items in the directory and sort them
     items = list(directory.iterdir())
-    dirs = sorted([item for item in items if item.is_dir()])
+    dirs = sorted(
+        [item for item in items if item.is_dir() and item.name not in ignore_dirs]
+    )
     files = sorted([item for item in items if item.is_file()])
 
-    # Process directories first
     for i, dir_path in enumerate(dirs):
         print_directory_tree(
-            dir_path, new_prefix, i == len(dirs) - 1 and len(files) == 0, False
+            dir_path,
+            new_prefix,
+            i == len(dirs) - 1 and len(files) == 0,
+            False,
+            ignore_dirs,
         )
 
-    # Then process files
     for i, file_path in enumerate(files):
         connector = "└── " if i == len(files) - 1 else "├── "
         description = (

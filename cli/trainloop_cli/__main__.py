@@ -32,9 +32,14 @@ def studio(config, local):
 
 
 @cli.command("init")
-def init():
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Overwrite an existing 'trainloop' directory if it exists.",
+)
+def init(force: bool):
     """Scaffold data/ and eval/ directories, create sample metrics and suites."""
-    init_cmd()
+    init_cmd(force=force)
 
 
 @cli.command("eval")
