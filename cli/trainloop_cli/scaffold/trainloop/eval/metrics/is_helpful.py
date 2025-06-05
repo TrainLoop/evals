@@ -63,7 +63,7 @@ def is_helpful(sample: Sample) -> int:
 
     relevance_score = assert_true(relevance_yes, relevance_no, cfg=custom_cfg)
 
-    # Check accuracy 
+    # Check accuracy
     accuracy_yes = f"""
     The information provided in this response is factually accurate and correct.
     
@@ -116,6 +116,6 @@ def is_helpful(sample: Sample) -> int:
 
     # Combine scores - require all aspects to pass for overall helpfulness
     total_score = relevance_score + accuracy_score + completeness_score + clarity_score
-    
+
     # Return 1 only if all 4 aspects pass (total score = 4)
     return 1 if total_score == 4 else 0
