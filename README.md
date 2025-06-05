@@ -111,7 +111,7 @@ This command creates a `trainloop/` workspace with the following structure:
 
 ### `trainloop eval`
 
-Discovers suites, applies metrics to new events, and appends verdicts to data/results/.
+Discovers suites, applies metrics to new events, and appends verdicts to `data/results/`. If the LLM judge is used, it automatically consolidates all trace events for the run into a single timestamped JSONL file in `trainloop/data/judge_traces/`.
 
 ```bash
 trainloop eval [OPTIONS]
@@ -127,6 +127,33 @@ trainloop eval
 
 # Run only a specific suite
 trainloop eval --suite my_test_suite
+```
+
+### `trainloop add`
+
+Adds pre-built metrics and suites from the TrainLoop registry to your project. Components are defined with Python-based `config.py` files for type safety and dynamic discovery.
+
+```bash
+trainloop add [metric|suite] [NAME] [OPTIONS]
+```
+
+**Options:**
+- `--list` - List available metrics and/or suites.
+- `--registry <path>` - Use a local directory as the registry (for development).
+
+**Examples:**
+```bash
+# List all available metrics and suites
+trainloop add --list
+
+# List available metrics
+trainloop add metric --list
+
+# Add a specific metric
+trainloop add metric always_pass
+
+# Add a metric from a local registry path
+trainloop add --registry ../my-local-registry metric custom_metric
 ```
 
 ### `trainloop studio`
@@ -146,15 +173,14 @@ trainloop studio [OPTIONS]
 # Launch studio with auto-discovery (default behavior)
 trainloop studio
 
-# Use custom config file
-trainloop studio --config /path/to/trainloop.config.yaml
+# Use a custom config file
+trainloop studio --config /alt/path/to/trainloop.config.yaml
 
-# Use local development build
-trainloop studio --local /path/to/trainloop-studio-runner-0.4.0.tgz
+# Use a local development build of Studio
+trainloop studio --local /path/to/your/trainloop-studio-runner.tgz
 
 # Combine both options
-trainloop studio --config /custom/config.yaml --local /local/build.tgz
-
+trainloop studio --config /custom/config.yaml --local /local/studio.tgz
 ```
 
 ### Default Behavior

@@ -9,13 +9,11 @@ trainloop/
 ├── data/                 # ← raw & derived artefacts (ignored by git)
 │   ├── events/           #   append‑only JSONL shards, one per 10‑min window
 │   ├── results/          #   evaluation verdicts (one line per test)
+│   ├── judge_traces/     #   consolidated LLM judge trace logs (one JSONL per run)
 │   └── _registry.json    #   call‑site → tag counters
-└── eval/
-    ├── helpers.py        #   tiny DSL (tag, etc.)
-    ├── types.py          #   Sample / Result dataclasses
-    ├── runner.py         #   CLI engine (hidden)
-    ├── metrics/          #   user‑defined primitives
-    └── suites/           #   user‑defined test collections
+└── eval/                 #   Your evaluation code
+    ├── metrics/          #   User‑defined primitives (e.g., is_polite(sample) -> 1/0)
+    └── suites/           #   User‑defined test collections (e.g., core_capabilities.py)
 ```
 
 ## 🚀 Collecting data
@@ -87,7 +85,7 @@ Create metrics in **`eval/metrics/`**:
 
 ```python
 # eval/metrics/includes_hello.py
-from ..types import Sample
+from trainloop_cli.eval_core.types import Sample
 
 def includes_hello(sample: Sample) -> int:  # return 1 (pass) or 0 (fail)
     if "hello" in sample.output["content"].lower():
@@ -101,8 +99,9 @@ Creating a suite should read like English. For example, if you want to test if b
 
 ```python
 # eval/suites/parsers.py
-from ..helpers import tag
-from ..metrics import does_compile
+from trainloop_cli.eval_core.helpers import tag
+from trainloop_cli.eval_core.types import Result # If using the lower-level API
+from .metrics import does_compile # Assuming does_compile is in eval/metrics/
 
 results = tag("bubble-sort").check(does_compile)
 ```
@@ -120,6 +119,10 @@ Where `check(does_compile, fcn_called_bubble_sort)` is a helper function that ru
 If you don't like the declarative `tag("bubble-sort").check(does_compile)` syntax, you can also use the lower-level API:
 
 ```python
+from trainloop_cli.eval_core.types import Result, Sample # Ensure imports for lower-level API
+from trainloop_cli.eval_core.helpers import tag
+from .metrics import does_compile, fcn_called_bubble_sort # Example user metrics
+
 samples = tag("bubble-sort", raw=True)
 results = [] # REQUIRED: we look for this variable name
 for sample in samples:
@@ -139,7 +142,7 @@ TrainLoop includes a built-in LLM judge for evaluating claims about your model o
 ### Basic Usage
 
 ```python
-from trainloop.judge import assert_true
+from trainloop_cli.eval_core.judge import assert_true
 
 def my_metric(sample):
     response = sample["response"]
@@ -151,6 +154,10 @@ def my_metric(sample):
     # Let the judge evaluate (returns 1 for pass, 0 for fail)
     return assert_true(yes_claim, no_claim)
 ```
+
+### Judge Trace Logging
+
+The LLM Judge automatically logs all trace events (LLM calls, intermediate verdicts, final judgments, etc.) for an evaluation run into a single timestamped JSONL file. This file is located in `trainloop/data/judge_traces/` and is named with the format `YYYY-MM-DD_HH-MM-SS.jsonl`. It's created when the judge engine initializes for an evaluation session (e.g., when `trainloop eval` starts) and accumulates all judge-related events for that entire session.
 
 ### Configuration
 
@@ -188,6 +195,7 @@ verdict = assert_true(
 - **Self-consistency**: Each model is called k times per claim
 - **XOR sanity check**: Discards samples that answer both claims the same way
 - **Custom templates**: Define your own prompt format for specific evaluation needs
+- **LLM Call Count**: For each `assert_true` call, the number of LLM calls made is `len(configured_models) * calls_per_model_per_claim * 2 * len(samples)`.
 
 ## 🏃‍♂️ Running evaluations & studio
 
