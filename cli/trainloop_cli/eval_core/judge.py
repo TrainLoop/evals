@@ -144,24 +144,6 @@ class _JudgeEngine:
             )
             return response.choices[0].message.content
         except Exception as e:
-            error_msg = str(e).lower()
-            # Check if this is an API key error
-            if any(
-                key_err in error_msg
-                for key_err in [
-                    "api key",
-                    "api_key",
-                    "authentication",
-                    "unauthorized",
-                    "invalid key",
-                    "no api key",
-                    "missing api key",
-                ]
-            ):
-                # Return the exception instance for API key errors
-                logger.error(f"API key error for {model} during LLM call: {e}")
-            else:  # For other errors, log and return the exception as well
-                logger.warning(f"LLM call failed for {model}: {e}")
             return e
 
     def _extract_verdict(

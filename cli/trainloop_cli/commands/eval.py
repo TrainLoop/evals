@@ -6,9 +6,15 @@ import sys
 import os
 from typing import Optional, List
 from pathlib import Path
+import litellm
 
 from .utils import find_root, load_config_for_cli
 from ..eval_core.runner import run_evaluations
+from ..eval_core.runner import (
+    EMOJI_ROCKET,
+    HEADER_COLOR,
+    RESET_COLOR,
+)
 
 
 def _check_and_reexecute_if_needed() -> None:
@@ -23,7 +29,7 @@ def _check_and_reexecute_if_needed() -> None:
     nested_venv_path = trainloop_dir / ".venv"
 
     if not (nested_venv_path.exists() and nested_venv_path.is_dir()):
-        return # No nested venv, nothing to do
+        return
 
     if sys.platform == "win32":
         venv_python_executable = nested_venv_path / "Scripts" / "python.exe"
@@ -33,7 +39,9 @@ def _check_and_reexecute_if_needed() -> None:
     if not venv_python_executable.exists():
         # This case should ideally not happen if init command worked correctly,
         # but good to have a warning.
-        print(f"Warning: Nested venv at {nested_venv_path} found, but its Python executable {venv_python_executable} is missing.")
+        print(
+            f"Warning: Nested venv at {nested_venv_path} found, but its Python executable {venv_python_executable} is missing."
+        )
         print("Proceeding with current environment.")
         return
 
@@ -51,7 +59,9 @@ def _check_and_reexecute_if_needed() -> None:
             # os.execv replaces the current process, so this line should not be reached.
         except OSError as e:
             print(f"Error re-executing with venv Python: {e}")
-            print("Proceeding with current environment. Note: This might lead to import errors for suites if they rely on packages installed only in the nested venv.")
+            print(
+                "Proceeding with current environment. Note: This might lead to import errors for suites if they rely on packages installed only in the nested venv."
+            )
             # Unlike a successful execv, if it fails, the original process continues.
             # We might want to sys.exit(1) here if re-execution is critical.
 
@@ -67,14 +77,20 @@ def eval_command(suite: Optional[str] = None) -> None:
         trainloop eval                # Run every suite
         trainloop eval --suite foo    # Run only suite 'foo'
     """
+    litellm.suppress_debug_info = True
+
     _check_and_reexecute_if_needed()
 
     try:
         # This call will now raise an error if root is not found (e.g., if silent_on_error was True above and returned None)
         project_root_path = find_root()
-        if project_root_path is None: # Defensive check, find_root should raise if not silent_on_error
+        if (
+            project_root_path is None
+        ):  # Defensive check, find_root should raise if not silent_on_error
             # This specific error message for clarity if find_root's behavior changes
-            raise RuntimeError("Project root could not be determined. Ensure 'trainloop.config.yaml' exists in the project hierarchy.") 
+            raise RuntimeError(
+                "Project root could not be determined. Ensure 'trainloop.config.yaml' exists in the project hierarchy."
+            )
     except RuntimeError as e:
         print(f"Error: {e}")
         # The error message from find_root is usually sufficient, but we add a general hint.
@@ -89,11 +105,15 @@ def eval_command(suite: Optional[str] = None) -> None:
 
     suites_to_run: Optional[List[str]] = [suite] if suite else None
 
-    print(f"Executing evaluations for project at: {project_root_path}")
-    if suites_to_run:
-        print(f"Targeting suite(s): {', '.join(suites_to_run)}")
-    else:
-        print("Targeting all available suites.")
+    target_description = (
+        f"suite(s): {', '.join(suites_to_run)}"
+        if suites_to_run
+        else "all available suites"
+    )
+    print(
+        f"{EMOJI_ROCKET} {HEADER_COLOR}TrainLoop Evals:{RESET_COLOR} Running {target_description} for project {project_root_path}"
+    )
+    print("-" * 40)  # Separator line
 
     exit_code = run_evaluations(project_root_path, suites_to_run)
     sys.exit(exit_code)

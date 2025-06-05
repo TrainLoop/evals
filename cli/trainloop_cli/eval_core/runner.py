@@ -12,6 +12,7 @@ import importlib
 import json
 import pkgutil
 import sys
+from collections import defaultdict, Counter
 from dataclasses import asdict
 from pathlib import Path
 from typing import List, Optional, Dict, Set, Iterator, Tuple
@@ -21,7 +22,17 @@ from .types import Result
 
 # ANSI helpers for console output
 OK = "\033[32m✓\033[0m"
-BAD = "\033[31m✗\033[0m"
+BAD = "\033[31m✗\033[0m"  # Red X
+INFO_COLOR = "\033[94m"  # Blue
+HEADER_COLOR = "\033[95m"  # Magenta
+EMPHASIS_COLOR = "\033[93m"  # Yellow
+RESET_COLOR = "\033[0m"  # Reset
+
+EMOJI_ROCKET = "🚀"
+EMOJI_FOLDER = "📂"
+EMOJI_PLAY = "▶️"
+EMOJI_SAVE = "💾"
+EMOJI_INFO = "ℹ️"
 
 
 def _discover_suites(
@@ -53,6 +64,9 @@ def _discover_suites(
             if filter_names and simple_name not in filter_names:
                 continue
             try:
+                print(
+                    f"\n{EMOJI_PLAY} Processing suite: {EMPHASIS_COLOR}{simple_name}{RESET_COLOR}..."
+                )
                 module = importlib.import_module(suite_module_name)
                 if hasattr(module, "results"):
                     results = getattr(module, "results")
@@ -86,14 +100,14 @@ def _write_results(suite_name: str, results: List[Result], result_dir_for_run: P
         with out_file.open("a", encoding="utf-8") as f:
             for r in results:
                 f.write(json.dumps(asdict(r), default=str) + "\n")
-        print(f"Results for suite '{suite_name}' written to {out_file}")
+        print(f"  {EMOJI_SAVE} {out_file}")
     except IOError as e:
         print(f"Error writing results for suite '{suite_name}' to {out_file}: {e}")
 
 
 def _print_summary(all_results: Dict[str, List[Result]]):
     """Prints a pass/fail summary to the console."""
-    print("\n--- Evaluation Summary ---")
+    print(f"\n{HEADER_COLOR}--- Evaluation Summary ---{RESET_COLOR}")
     if not all_results:
         print("No results to summarize.")
         return
@@ -101,19 +115,40 @@ def _print_summary(all_results: Dict[str, List[Result]]):
     for suite_name, results in all_results.items():
         total = len(results)
         if total == 0:
-            print(f"{suite_name:<30} {BAD} 0/0 (No results collected)")
+            print(
+                f"{EMPHASIS_COLOR}{suite_name:<30}{RESET_COLOR} {BAD} 0/0 (No results collected)"
+            )
             continue
         passed = sum(r.passed for r in results)
         status = OK if passed == total else BAD
-        print(f"{suite_name:<30} {status} {passed}/{total}")
+        print(
+            f"{EMPHASIS_COLOR}{suite_name:<30}{RESET_COLOR} {status} {passed}/{total}"
+        )
 
-        if passed != total:  # print failures
+        if passed != total:  # print grouped failures
+            failure_details: Dict[str, List[str]] = defaultdict(list)
             for r in results:
                 if not r.passed:
-                    # Ensure sample and tag exist, provide defaults if not
-                    sample_tag = getattr(r.sample, "tag", "N/A") if r.sample else "N/A"
                     reason_str = r.reason if r.reason is not None else "Unknown reason"
-                    print(f"  - {r.metric} on {sample_tag}: {reason_str}")
+                    sample_tag_info = (
+                        getattr(r.sample, "tag", "N/A") if r.sample else "N/A"
+                    )
+                    source_description = (r.metric, sample_tag_info)
+                    failure_details[reason_str].append(source_description)
+
+            for reason, sources_list in failure_details.items():
+                print(
+                    f"  - {BAD}{reason}{RESET_COLOR}"
+                )  # Print the unique error reason
+                if not sources_list:
+                    continue
+                source_counts = Counter(sources_list)
+                for source_desc, count in source_counts.items():
+                    metric, tag = source_desc
+                    if count > 1:
+                        print(f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR} [{count} instances])")
+                    else:
+                        print(f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR})")
     print("------------------------")
 
 
@@ -147,8 +182,9 @@ def run_evaluations(
     collected_results: Dict[str, List[Result]] = {}
     any_suites_found = False
 
-    print(f"Starting evaluations. Project root: {project_root_dir}")
-    print(f"Looking for suites in: {suite_dir}")
+    print(
+        f"\n{EMOJI_FOLDER} {HEADER_COLOR}--- Discovering Suites in {suite_dir} ---{RESET_COLOR}"
+    )
     if filter_set:
         print(f"Filtering for suites: {', '.join(filter_set)}")
 
@@ -173,10 +209,10 @@ def run_evaluations(
             print(
                 "To create a suite, add a Python file to this directory defining a 'results' list."
             )
-        # Consider if this should be an error (return 1) or not.
-        # For now, if no suites are found (e.g. new project), it's not an error itself.
-        _print_summary(collected_results)  # Will print 'No results to summarize'
-        return 0  # No suites run, so technically no failures.
+            # Consider if this should be an error (return 1) or not.
+            # For now, if no suites are found (e.g. new project), it's not an error itself.
+            _print_summary(collected_results)  # Will print 'No results to summarize'
+            return 0  # No suites run, so technically no failures.
 
     _print_summary(collected_results)
 

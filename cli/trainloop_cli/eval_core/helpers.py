@@ -11,6 +11,7 @@ from typing import Callable, List
 from pathlib import Path
 
 from .types import Sample, Result, CollectedSampleDict
+from .runner import INFO_COLOR, EMPHASIS_COLOR, RESET_COLOR, EMOJI_INFO
 
 
 # ---------------- tag() loader ---------------- #
@@ -39,7 +40,7 @@ def _read(tag_name: str) -> List[Sample]:
         print(f"Warning: No event files found in {events_dir}")
         return []
 
-    print(f"Scanning {len(jsonl_files)} event file(s) for tag '{tag_name}'...")
+    print(f"  {EMOJI_INFO} Scanning {EMPHASIS_COLOR}{len(jsonl_files)}{RESET_COLOR} event file(s) for tag {EMPHASIS_COLOR}'{tag_name}'{RESET_COLOR}...")
 
     # Process each JSONL file
     for file_path in jsonl_files:
@@ -79,7 +80,7 @@ def _read(tag_name: str) -> List[Sample]:
         except Exception as e:
             print(f"Error reading file {file_path}: {e}")
 
-    print(f"Found {len(out)} samples with tag '{tag_name}'")
+    print(f"  {EMOJI_INFO} Found {EMPHASIS_COLOR}{len(out)}{RESET_COLOR} samples with tag {EMPHASIS_COLOR}'{tag_name}'{RESET_COLOR}")
     return out
 
 
