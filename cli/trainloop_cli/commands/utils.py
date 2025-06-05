@@ -3,12 +3,16 @@ import os
 import yaml
 
 
-def find_root() -> Path:
+def find_root(silent_on_error: bool = False) -> Path | None:
     """Walk upward until we hit trainloop.config.yaml; error if missing."""
     cur = Path.cwd()
     for p in [cur, *cur.parents]:
         if (p / "trainloop.config.yaml").exists():
             return p
+
+    if silent_on_error:
+        return None
+
     raise RuntimeError(
         "❌  trainloop.config.yaml not found. "
         "Run this command inside the trainloop folder "
