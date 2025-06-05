@@ -63,7 +63,7 @@ from dotenv import load_dotenv, find_dotenv
 import yaml
 import litellm
 
-from ._trace_helpers import ensure_trace_dir, write_trace_log
+from ._trace_helpers import ensure_trace_dir
 
 
 # Configure logging
@@ -138,10 +138,20 @@ class _JudgeEngine:
         self.temperature: float = cfg.get("temperature", 0.7)
         self.template: str = cfg.get("template", DEFAULT_TEMPLATE)
         self.resolved_cfg: Dict[str, Any] = cfg
+        self.current_trace_filepath = self.create_trace_filepath()
 
         # Ensure models is a list
         if isinstance(self.models, str):
             self.models = [self.models]
+
+    def create_trace_filepath(self):
+        trace_dir = ensure_trace_dir()
+        if trace_dir:
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            return trace_dir / f"{timestamp}.jsonl"
+
+        logger.warning("Trace directory not found. Trace will not be saved.")
+        return None
 
     async def _call_llm(self, model: str, prompt: str) -> Union[str, Exception]:
         """Make a single LLM call and return the response."""
@@ -526,18 +536,16 @@ def assert_true(
     trace_id = str(uuid.uuid4())
     trace_events: List[Dict[str, Any]] = []
 
-    # Uses TRAINLOOP_DATA_FOLDER internally now
-    trace_dir = ensure_trace_dir()
-
     cfg_str = json.dumps(cfg, sort_keys=True) if cfg is not None else None
     engine = _engine(cfg_str)
 
     yes_prompt = make_prompt(yes_claim, engine.template)
     no_prompt = make_prompt(no_claim, engine.template)
 
-    # Default structure for judgment_details in case of early exit or if tracing is off
+    # Initialize judgment_details with a default structure. This is crucial in case
+    # engine.yes_no raises an exception before assigning to judgment_details.
     judgment_details: JudgmentDetails = {
-        "verdict": 0,
+        "verdict": 0,  # Default to a non-passing verdict
         "yes_count": 0,
         "no_count": 0,
         "all_yes_final_votes": [],
@@ -545,52 +553,71 @@ def assert_true(
     }
 
     try:
-        if trace_dir:
-            trace_events.append(
-                {
-                    "trace_id": trace_id,
-                    "timestamp": datetime.datetime.now(
-                        datetime.timezone.utc
-                    ).isoformat()
-                    + "Z",
-                    "type": "judge_request_details",
-                    "yes_claim": yes_claim,
-                    "no_claim": no_claim,
-                    "judge_config": engine.resolved_cfg,
-                    "yes_prompt": yes_prompt,
-                    "no_prompt": no_prompt,
-                }
-            )
+        # Always append request details if we are tracing (i.e., if trace_events is used)
+        trace_events.append(
+            {
+                "trace_id": trace_id,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                + "Z",
+                "type": "judge_request_details",
+                "yes_claim": yes_claim,
+                "no_claim": no_claim,
+                "judge_config": engine.resolved_cfg,
+                "yes_prompt": yes_prompt,
+                "no_prompt": no_prompt,
+            }
+        )
 
-        # Pass trace_events and trace_id for detailed logging
+        # Pass trace_events list to be populated by engine.yes_no
         judgment_details = engine.yes_no(
             yes_prompt,
             no_prompt,
-            trace_events if trace_dir else None,  # Pass None if tracing is off
+            trace_events,  # Always pass the list, engine.yes_no appends to it
             trace_id,
         )
 
     finally:  # Ensure final judgment event and trace log writing occurs
-        if trace_dir:  # Only log if tracing is active
-            trace_events.append(
-                {
-                    "trace_id": trace_id,
-                    "timestamp": datetime.datetime.now(
-                        datetime.timezone.utc
-                    ).isoformat()
-                    + "Z",
-                    "type": "final_judgment",
-                    "all_contributing_yes_verdicts": judgment_details[
-                        "all_yes_final_votes"
-                    ],
-                    "all_contributing_no_verdicts": judgment_details[
-                        "all_no_final_votes"
-                    ],
-                    "yes_vote_count": judgment_details["yes_count"],
-                    "no_vote_count": judgment_details["no_count"],
-                    "final_verdict_returned": judgment_details["verdict"],
-                }
-            )
-            write_trace_log(trace_id, trace_events, trace_dir)
+        # Append final judgment details to trace_events first
+        # This should happen if judgment_details was successfully populated from the try block
+        # or if it retains its initial default values due to an early error in try.
+        trace_events.append(
+            {
+                "trace_id": trace_id,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+                + "Z",
+                "type": "final_judgment",
+                "all_contributing_yes_verdicts": judgment_details.get(
+                    "all_yes_final_votes", []  # Use .get for safety
+                ),
+                "all_contributing_no_verdicts": judgment_details.get(
+                    "all_no_final_votes", []  # Use .get for safety
+                ),
+                "yes_vote_count": judgment_details.get("yes_count", 0),
+                "no_vote_count": judgment_details.get("no_count", 0),
+                "final_verdict_returned": judgment_details.get("verdict", 0),
+            }
+        )
 
-    return judgment_details["verdict"]
+        # Now, write all accumulated trace events to the consolidated run log file
+        if engine.current_trace_filepath and trace_events:
+            try:
+                # Ensure parent directory exists, though it should have been created by eval.py
+                engine.current_trace_filepath.parent.mkdir(parents=True, exist_ok=True)
+                with open(engine.current_trace_filepath, "a", encoding="utf-8") as f:
+                    for event in trace_events:
+                        json.dump(event, f)
+                        f.write("\n")
+            except Exception as e:
+                logger.error(
+                    f"Failed to write to consolidated trace log {engine.current_trace_filepath}: {e}"
+                )
+        elif trace_events and not engine.current_trace_filepath:
+            # Log a warning if we have events but no consolidated file path to write them to.
+            logger.warning(
+                f"Consolidated trace filepath not set for run. Trace events for {trace_id} will not be saved to a run file."
+            )
+
+    # Return the verdict from judgment_details.
+    # This will be the actual verdict if engine.yes_no completed,
+    # or the default (e.g., 0) if an error occurred before it could be set.
+    return judgment_details.get("verdict", 0)

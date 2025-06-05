@@ -146,9 +146,13 @@ def _print_summary(all_results: Dict[str, List[Result]]):
                 for source_desc, count in source_counts.items():
                     metric, tag = source_desc
                     if count > 1:
-                        print(f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR} [{count} instances])")
+                        print(
+                            f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR} [{count} instances])"
+                        )
                     else:
-                        print(f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR})")
+                        print(
+                            f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR})"
+                        )
     print("------------------------")
 
 
@@ -180,6 +184,7 @@ def run_evaluations(
 
     filter_set = set(suite_filter_names) if suite_filter_names else None
     collected_results: Dict[str, List[Result]] = {}
+
     any_suites_found = False
 
     print(
