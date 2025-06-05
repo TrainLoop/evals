@@ -5,15 +5,11 @@ This demonstrates how to use multiple assert_true calls to evaluate
 different aspects of helpfulness in LLM outputs.
 """
 
-from typing import TYPE_CHECKING
-
 from registry.judge import assert_true
-
-if TYPE_CHECKING:
-    from registry.types import Sample  # For type-checking within the registry project
+from registry.types import Sample
 
 
-def is_helpful(sample: "Sample") -> int:
+def is_helpful(sample: Sample) -> int:
     """
     Evaluates if a response is helpful using multiple judge criteria.
 
