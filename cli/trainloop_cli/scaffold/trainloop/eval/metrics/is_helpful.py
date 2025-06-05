@@ -5,8 +5,8 @@ This demonstrates how to use multiple assert_true calls to evaluate
 different aspects of helpfulness in LLM outputs.
 """
 
-from ..judge import assert_true
-from ..types import Sample
+from trainloop_cli.eval_core.judge import assert_true
+from trainloop_cli.eval_core.types import Sample
 
 
 def is_helpful(sample: Sample) -> int:

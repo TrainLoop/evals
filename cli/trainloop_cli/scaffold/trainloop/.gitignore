@@ -26,6 +26,7 @@ wheels/
 
 # Virtual environment
 venv/
+.venv/
 .env
 
 # Editor directories and files
