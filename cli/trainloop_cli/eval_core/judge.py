@@ -59,6 +59,7 @@ import asyncio
 import re
 import logging
 from functools import lru_cache
+from dotenv import load_dotenv, find_dotenv
 import yaml
 import litellm
 
@@ -123,7 +124,15 @@ class _JudgeEngine:
     • majority aggregation
     """
 
-    def __init__(self, cfg: Dict):
+    def __init__(self, cfg: Dict, env_path: Optional[str] = None):
+        if env_path:
+            logger.info(f"Loading environment variables from {env_path}")
+            env_file_path = find_dotenv(
+                env_path, usecwd=True, raise_error_if_not_found=False
+            )
+            if env_file_path:
+                load_dotenv(dotenv_path=env_file_path, override=True)
+
         self.models: List[str] = cfg.get("models", ["openai/gpt-4o"])
         self.k: int = cfg.get("calls_per_model_per_claim", 3)
         self.temperature: float = cfg.get("temperature", 0.7)
@@ -494,8 +503,9 @@ def _engine(cfg_override_str: Optional[str]) -> _JudgeEngine:
     """
     # Convert string back to dict (or None)
     cfg_override = json.loads(cfg_override_str) if cfg_override_str else None
-    cfg = _load_cfg(cfg_override)
-    return _JudgeEngine(cfg)
+    judge_cfg = _load_cfg(cfg_override)
+    env_path = judge_cfg.get("env_path")
+    return _JudgeEngine(cfg=judge_cfg, env_path=env_path)
 
 
 # ─────────── 4. PUBLIC API  ───────────────────────────────── #
