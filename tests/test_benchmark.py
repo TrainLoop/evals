@@ -8,12 +8,10 @@ import shutil
 import yaml
 import pytest
 
-from trainloop_cli.commands.benchmark import (
-    _load_latest_results,
-    _validate_provider_keys,
-    _save_benchmark_results,
-    BenchmarkResult,
-)
+from trainloop_cli.commands.benchmark.loaders import load_latest_results
+from trainloop_cli.commands.benchmark.validators import validate_provider_keys
+from trainloop_cli.commands.benchmark.storage import save_benchmark_results
+from trainloop_cli.commands.benchmark.types import BenchmarkResult
 from trainloop_cli.eval_core.types import Result, Sample
 
 
@@ -90,7 +88,7 @@ def test_load_latest_results(temp_project: Path, sample_result: Result):
         f.write(json.dumps(result_data) + "\n")
 
     # Load results
-    results = _load_latest_results(temp_project)
+    results = load_latest_results(temp_project)
 
     assert "test_suite" in results
     assert len(results["test_suite"]) == 1
@@ -104,7 +102,7 @@ def test_validate_provider_keys():
     providers = ["openai/gpt-4", "anthropic/claude-3-sonnet-20240229", "unknown/model"]
 
     with patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
-        valid_providers = _validate_provider_keys(providers)
+        valid_providers = validate_provider_keys(providers)
 
         # Should have openai and unknown (unknown providers are assumed valid)
         assert len(valid_providers) == 2
@@ -126,76 +124,81 @@ def test_save_benchmark_results(temp_project: Path, sample_result: Result):
                     "latency_ms": 150,
                     "cost": 0.001,
                     "error": None,
+                    "verdict": 1,
+                    "metric_results": {"test_metric": {"passed": 1, "error": None}},
                 }
             },
             timestamp=datetime.now().isoformat(),
         )
     ]
 
-    output_dir = _save_benchmark_results(
+    output_dir = save_benchmark_results(
         benchmark_results, temp_project, ["openai/gpt-4"]
     )
 
     # Check that files were created
     assert output_dir.exists()
-    assert (output_dir / "metadata.json").exists()
-    assert (output_dir / "results.jsonl").exists()
-
-    # Check metadata
-    with (output_dir / "metadata.json").open() as f:
-        metadata = json.load(f)
-        assert metadata["providers"] == ["openai/gpt-4"]
-        assert metadata["total_samples"] == 1
-
-    # Check results
-    with (output_dir / "results.jsonl").open() as f:
-        line = f.readline()
-        result = json.loads(line)
-        assert "original_result" in result
-        assert "provider_results" in result
-        assert result["provider_results"]["openai/gpt-4"]["response"] == "Test response"
+    
+    # Files are now saved with suite names (based on metric)
+    jsonl_files = list(output_dir.glob("*.jsonl"))
+    assert len(jsonl_files) == 1
+    
+    # Read the JSONL file
+    with jsonl_files[0].open() as f:
+        lines = f.readlines()
+        assert len(lines) == 3  # metadata, result, summary
+        
+        # Check metadata (first line)
+        metadata = json.loads(lines[0])
+        assert metadata["type"] == "metadata"
+        assert metadata["data"]["providers"] == [{"provider": "openai", "model": "gpt-4"}]
+        
+        # Check result (second line)
+        result = json.loads(lines[1])
+        assert result["type"] == "result"
+        assert result["metric"] == "test_metric"
+        assert result["provider_result"]["response"] == "Test response"
+        assert result["provider_result"]["verdict"] == 1
+        
+        # Check summary (third line)
+        summary = json.loads(lines[2])
+        assert summary["type"] == "summary"
+        assert "openai/gpt-4" in summary["data"]["provider_summaries"]
 
 
 @pytest.mark.benchmark
 @pytest.mark.unit
-@pytest.mark.asyncio
-async def test_benchmark_single_result():
-    """Test benchmarking a single result (mocked)."""
-    from trainloop_cli.commands.benchmark import _benchmark_single_result
+def test_benchmark_runner_with_mocked_responses(sample_result: Result):
+    """Test benchmark runner with mocked responses."""
+    from trainloop_cli.commands.benchmark.runner import run_benchmarks
 
-    # Create a sample result
-    sample = Sample(
-        duration_ms=100,
-        tag="test",
-        input=[{"role": "user", "content": "Test"}],
-        output={"content": "Response"},
-        model="gpt-3.5-turbo",
-        model_params={"temperature": 0.7},
-        start_time_ms=1700000000000,
-        end_time_ms=1700000000100,
-        url="https://api.openai.com",
-        location={"tag": "test", "lineNumber": "1"},
-    )
-
-    result = Result(metric="test", sample=sample, passed=1)
-
-    # Mock litellm response
+    # Mock litellm batch_completion
     mock_response = Mock()
     mock_response.choices = [Mock(message=Mock(content="Mocked response"))]
-    mock_response.usage = Mock(prompt_tokens=10, completion_tokens=20)
-
-    with patch("litellm.acompletion", new_callable=AsyncMock) as mock_acompletion:
-        mock_acompletion.return_value = mock_response
-
-        with patch("litellm.completion_cost", return_value=0.001):
-            provider_results = await _benchmark_single_result(
-                result, ["openai/gpt-4"], temperature=0.7, max_tokens=100
+    
+    with patch("trainloop_cli.commands.benchmark.runner.batch_completion") as mock_batch:
+        mock_batch.return_value = [mock_response]
+        
+        with patch("trainloop_cli.commands.benchmark.runner.completion_cost", return_value=0.001):
+            # Mock metrics
+            mock_metric = Mock(return_value=1)  # Pass
+            metrics = {"test_metric": mock_metric}
+            
+            benchmark_results = run_benchmarks(
+                {"test_suite": [sample_result]},
+                ["openai/gpt-4"],
+                metrics,
+                temperature=0.7,
+                max_tokens=100
             )
 
-    assert "openai/gpt-4" in provider_results
-    assert provider_results["openai/gpt-4"]["response"] == "Mocked response"
-    assert provider_results["openai/gpt-4"]["error"] is None
-    assert provider_results["openai/gpt-4"]["cost"] == 0.001
+    assert len(benchmark_results) == 1
+    result = benchmark_results[0]
+    assert "openai/gpt-4" in result.provider_results
+    assert result.provider_results["openai/gpt-4"]["response"] == "Mocked response"
+    assert result.provider_results["openai/gpt-4"]["error"] is None
+    assert result.provider_results["openai/gpt-4"]["cost"] == 0.001
+    assert result.provider_results["openai/gpt-4"]["verdict"] == 1
 
 
 @pytest.mark.benchmark
@@ -205,7 +208,7 @@ def test_benchmark_command_no_results(temp_project: Path):
     # Remove results directory
     shutil.rmtree(temp_project / "data" / "results")
 
-    with patch("trainloop_cli.commands.benchmark.find_root", return_value=temp_project):
+    with patch("trainloop_cli.commands.benchmark.command.find_root", return_value=temp_project):
         with patch("sys.exit") as mock_exit:
             from trainloop_cli.commands.benchmark import benchmark_command
 
