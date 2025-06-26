@@ -9,6 +9,7 @@ trainloop/
 ├── data/                 # ← raw & derived artefacts (ignored by git)
 │   ├── events/           #   append‑only JSONL shards, one per 10‑min window
 │   ├── results/          #   evaluation verdicts (one line per test)
+│   ├── benchmarks/       #   benchmark results comparing providers
 │   ├── judge_traces/     #   consolidated LLM judge trace logs (one JSONL per run)
 │   └── _registry.json    #   call‑site → tag counters
 └── eval/                 #   Your evaluation code
