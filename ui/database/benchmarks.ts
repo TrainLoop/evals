@@ -54,15 +54,17 @@ export async function getBenchmarkRun(id: string): Promise<BenchmarkRun | null> 
       SELECT 
         metric,
         sample->>'$.model' AS provider,
-        passed,
+        COALESCE(CAST(provider_result->>'$.verdict' AS INTEGER), passed) AS passed,
         score,
         reason,
         type,
         provider_result->>'$.latency_ms' AS latency_ms,
         provider_result->>'$.cost' AS cost,
         provider_result->>'$.error' AS error,
+        provider_result->>'$.metric_results' AS metric_results,
         sample->>'$.tag' AS sample_tag,
-        sample->>'$.input' AS input
+        sample->>'$.input' AS input,
+        sample->>'$.output' AS output
       FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
       WHERE type = 'result'
     `
@@ -157,8 +159,8 @@ export async function getBenchmarkComparison(id: string) {
         metric,
         sample->>'$.model' AS provider,
         COUNT(*) AS total,
-        SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) AS passed,
-        ROUND((SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*), 2) AS pass_rate
+        SUM(CASE WHEN COALESCE(CAST(provider_result->>'$.verdict' AS INTEGER), passed) = 1 THEN 1 ELSE 0 END) AS passed,
+        ROUND((SUM(CASE WHEN COALESCE(CAST(provider_result->>'$.verdict' AS INTEGER), passed) = 1 THEN 1 ELSE 0 END) * 100.0) / COUNT(*), 2) AS pass_rate
       FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
       WHERE type = 'result'
       GROUP BY metric, provider
@@ -186,6 +188,55 @@ export async function getBenchmarkComparison(id: string) {
   } catch (err) {
     console.warn(`Warning: Failed to fetch benchmark comparison for ${id}:`, err)
     return { data: [], providers: [] }
+  } finally {
+    conn.closeSync()
+  }
+}
+
+export async function getBenchmarkDetails(id: string, metric?: string) {
+  const db = await getDuckDB()
+  const conn = await db.connect()
+  try {
+    // Get detailed results for a specific metric or all metrics
+    const whereClause = metric 
+      ? `WHERE type = 'result' AND metric = '${metric}'` 
+      : `WHERE type = 'result'`
+    
+    const query = `
+      SELECT 
+        metric,
+        sample->>'$.model' AS provider,
+        COALESCE(CAST(provider_result->>'$.verdict' AS INTEGER), passed) AS verdict,
+        provider_result->>'$.response' AS response,
+        provider_result->>'$.latency_ms' AS latency_ms,
+        provider_result->>'$.cost' AS cost,
+        provider_result->>'$.error' AS error,
+        provider_result->>'$.metric_results' AS metric_results,
+        provider_result->>'$.model_params' AS model_params,
+        reason,
+        sample->>'$.input' AS input,
+        sample->>'$.output' AS output
+      FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
+      ${whereClause}
+      ORDER BY metric, provider
+    `
+    
+    const reader = await conn.runAndReadAll(query)
+    const rows = reader.getRowObjects()
+    
+    return convertBigIntsToNumbers(rows.map(row => ({
+      ...row,
+      verdict: Number(row.verdict),
+      latency_ms: row.latency_ms ? Number(row.latency_ms) : null,
+      cost: row.cost ? Number(row.cost) : null,
+      metric_results: row.metric_results ? JSON.parse(row.metric_results) : null,
+      model_params: row.model_params ? JSON.parse(row.model_params) : null,
+      input: row.input ? JSON.parse(row.input) : null,
+      output: row.output ? JSON.parse(row.output) : null
+    })))
+  } catch (err) {
+    console.warn(`Warning: Failed to fetch benchmark details for ${id}:`, err)
+    return []
   } finally {
     conn.closeSync()
   }
@@ -224,7 +275,7 @@ export async function getBenchmarkSummary(id: string) {
         SELECT 
           sample->>'$.model' AS provider,
           COUNT(*) AS total,
-          SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) AS passed,
+          SUM(CASE WHEN COALESCE(CAST(provider_result->>'$.verdict' AS INTEGER), passed) = 1 THEN 1 ELSE 0 END) AS passed,
           SUM(CASE WHEN provider_result->>'$.error' IS NOT NULL THEN 1 ELSE 0 END) AS errors,
           AVG(CAST(provider_result->>'$.latency_ms' AS DOUBLE)) AS avg_latency_ms,
           SUM(CAST(provider_result->>'$.cost' AS DOUBLE)) AS total_cost

@@ -6,8 +6,10 @@ import sys
 import os
 import json
 import time
+import importlib
+import pkgutil
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from datetime import datetime
 from dataclasses import dataclass, asdict
 import litellm
@@ -44,6 +46,38 @@ class BenchmarkResult:
         str, Dict[str, Any]
     ]  # provider -> {verdict, latency_ms, cost, error}
     timestamp: str
+
+
+def _load_metrics(project_root: Path) -> Dict[str, Callable[[Sample], int]]:
+    """Load all available metrics from the project's eval/metrics directory."""
+    metrics_dir = project_root / "eval" / "metrics"
+    metrics_dict = {}
+    
+    if not metrics_dir.exists():
+        print(f"{BAD} No metrics directory found at {metrics_dir}")
+        return metrics_dict
+    
+    # Ensure project root is on Python path for imports
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    
+    module_prefix = "eval.metrics."
+    
+    # Load all metric modules
+    for info in pkgutil.walk_packages([str(metrics_dir)], module_prefix):
+        try:
+            module = importlib.import_module(info.name)
+            # Look for functions that could be metrics
+            for attr_name in dir(module):
+                attr = getattr(module, attr_name)
+                # Check if it's a callable that could be a metric
+                if callable(attr) and not attr_name.startswith('_'):
+                    # Store the metric function
+                    metrics_dict[attr_name] = attr
+        except Exception as e:
+            print(f"Warning: Could not load metric module {info.name}: {e}")
+    
+    return metrics_dict
 
 
 def _load_latest_results(project_root: Path) -> Dict[str, List[Result]]:
@@ -187,6 +221,7 @@ def _validate_provider_keys(providers: List[str]) -> List[str]:
 def _run_benchmarks(
     results: Dict[str, List[Result]],
     providers: List[str],
+    metrics: Dict[str, Callable[[Sample], int]],
     max_samples: Optional[int] = None,
     temperature: float = 0.7,
     max_tokens: int = 1000,
@@ -264,11 +299,55 @@ def _run_benchmarks(
                             "temperature": temperature,
                             "max_tokens": max_tokens,
                         },
+                        "verdict": 0,  # Failed responses don't pass
+                        "metric_results": {},
                     }
                 else:
                     cost = completion_cost(completion_response=response, model=provider)
+                    response_content = response.choices[0].message.content
+                    
+                    # Create a new Sample with the benchmark response
+                    benchmark_sample = Sample(
+                        duration_ms=int(avg_latency_ms),
+                        tag=original_result.sample.tag,
+                        input=original_result.sample.input,
+                        output={"content": response_content},  # New response from benchmark
+                        model=provider,
+                        model_params={
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                        },
+                        start_time_ms=int(start_time * 1000),
+                        end_time_ms=int(end_time * 1000),
+                        url=original_result.sample.url,
+                        location=original_result.sample.location,
+                    )
+                    
+                    # Evaluate the response using the original metric
+                    metric_name = original_result.metric
+                    metric_func = metrics.get(metric_name)
+                    verdict = 0
+                    metric_results = {}
+                    
+                    if metric_func:
+                        try:
+                            verdict = metric_func(benchmark_sample)
+                            metric_results[metric_name] = {
+                                "passed": verdict,
+                                "error": None
+                            }
+                        except Exception as e:
+                            verdict = 0
+                            metric_results[metric_name] = {
+                                "passed": 0,
+                                "error": str(e)
+                            }
+                    else:
+                        # If metric not found, log warning
+                        print(f"    {EMOJI_WARNING} Metric '{metric_name}' not found in loaded metrics")
+                    
                     provider_result_data = {
-                        "response": response.choices[0].message.content,
+                        "response": response_content,
                         "latency_ms": int(avg_latency_ms),
                         "cost": cost,
                         "error": None,
@@ -276,6 +355,8 @@ def _run_benchmarks(
                             "temperature": temperature,
                             "max_tokens": max_tokens,
                         },
+                        "verdict": verdict,
+                        "metric_results": metric_results,
                     }
 
                 benchmark_results_map[result_key].provider_results[
@@ -300,6 +381,8 @@ def _run_benchmarks(
                         "temperature": temperature,
                         "max_tokens": max_tokens,
                     },
+                    "verdict": 0,
+                    "metric_results": {},
                 }
 
     return list(benchmark_results_map.values())
@@ -368,12 +451,12 @@ def _save_benchmark_results(
                     # Update summaries
                     provider_summaries[provider]["total"] += 1
 
-                    # Determine if passed based on original result and provider success
+                    # Determine if passed based on metric evaluation
                     passed = 0
                     score = 0.0
                     if provider_result["error"] is None:
-                        # If provider succeeded, use original eval result
-                        passed = result.original_result.passed
+                        # Use the verdict from the metric evaluation
+                        passed = provider_result.get("verdict", 0)
                         score = float(passed)  # Convert to score
                         if provider_result["latency_ms"]:
                             provider_summaries[provider][
@@ -390,16 +473,32 @@ def _save_benchmark_results(
                         provider_summaries[provider]["passed"] += 1
 
                     # Create result record matching expected schema
+                    # Determine reason for failure
+                    reason = None
+                    if not passed:
+                        if provider_result["error"]:
+                            reason = f"Provider error: {provider_result['error']}"
+                        else:
+                            # Check metric results for failure reason
+                            metric_results = provider_result.get("metric_results", {})
+                            for metric_name, metric_result in metric_results.items():
+                                if not metric_result.get("passed") and metric_result.get("error"):
+                                    reason = f"Metric '{metric_name}' error: {metric_result['error']}"
+                                    break
+                            if not reason:
+                                reason = f"Failed {result.original_result.metric} evaluation"
+                    
                     result_record = {
                         "type": "result",
                         "metric": result.original_result.metric,
                         "sample": {
                             **asdict(result.original_result.sample),
                             "model": provider,  # Add provider to sample for UI compatibility
+                            "output": {"content": provider_result.get("response", "")},  # Update output with benchmark response
                         },
                         "passed": passed,
                         "score": score,
-                        "reason": result.original_result.reason if not passed else None,
+                        "reason": reason,
                         "provider_result": provider_result,
                     }
                     f.write(json.dumps(result_record, default=str) + "\n")
@@ -594,6 +693,14 @@ def benchmark_command() -> None:
             f"\n{EMOJI_WARNING} Running benchmark with {len(valid_providers)} out of {len(providers)} providers"
         )
 
+    # Load metrics for evaluation
+    print(f"\n{INFO_COLOR}Loading evaluation metrics...{RESET_COLOR}")
+    metrics = _load_metrics(project_root_path)
+    if metrics:
+        print(f"  {OK} Loaded {len(metrics)} metric(s): {', '.join(metrics.keys())}")
+    else:
+        print(f"  {EMOJI_WARNING} No metrics found - results will use pass-through evaluation")
+
     # Run benchmarks
     print(
         f"\n{EMOJI_GRAPH} Starting benchmark across {len(valid_providers)} providers..."
@@ -601,7 +708,7 @@ def benchmark_command() -> None:
 
     try:
         benchmark_results = _run_benchmarks(
-            results, valid_providers, max_samples, temperature, max_tokens
+            results, valid_providers, metrics, max_samples, temperature, max_tokens
         )
     except Exception as e:
         print(f"\n{BAD} Error during benchmarking: {e}")
