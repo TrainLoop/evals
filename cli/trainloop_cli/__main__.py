@@ -5,6 +5,7 @@ from trainloop_cli.commands.init import init_command as init_cmd
 from trainloop_cli.commands.eval import eval_command as eval_cmd
 from trainloop_cli.commands.studio import studio_command as studio_cmd
 from trainloop_cli.commands.add import add_command
+from trainloop_cli.commands.benchmark import benchmark_command as benchmark_cmd
 
 
 @click.group(
@@ -98,6 +99,12 @@ def add(component_type, name, force, version, list_components, registry):
             click.echo("Try 'trainloop add --help' for more information.")
             raise click.Abort()
         add_command(component_type, name, force, version, False, registry)
+
+
+@cli.command("benchmark")
+def benchmark():
+    """Compare evaluation results across multiple LLM providers."""
+    benchmark_cmd()
 
 
 def main():

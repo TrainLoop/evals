@@ -3,9 +3,7 @@ Unit tests for the TrainLoop judge functionality.
 """
 
 import os
-import sys
 import tempfile
-from pathlib import Path
 from unittest import mock
 
 from unittest.mock import patch
@@ -17,14 +15,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Add the CLI directory to the path so we can import from eval.judge
-cli_dir = (
-    Path(__file__).parent.parent.parent.parent / "cli" / "trainloop_cli" / "scaffold"
-)
-sys.path.insert(0, str(cli_dir))
-
-# pylint: disable=wrong-import-position,import-error
-from trainloop.eval.judge import (
+# Import directly from the core implementation
+from trainloop_cli.eval_core.judge import (
     assert_true,
     make_prompt,
     _load_cfg,
@@ -74,7 +66,7 @@ class TestJudgeBasic:
         assert "true" in prompt.lower()
         assert "false" in prompt.lower()
 
-    @mock.patch("trainloop.eval.judge._find_config_file_path_for_judge")
+    @mock.patch("trainloop_cli.eval_core.judge._find_config_file_path_for_judge")
     def test_load_cfg_defaults(self, mock_find_config):
         """Test config loading with defaults when no config file exists."""
         mock_find_config.return_value = None
@@ -85,7 +77,7 @@ class TestJudgeBasic:
         assert cfg["calls_per_model_per_claim"] == 3
         assert cfg["temperature"] == 0.7
 
-    @mock.patch("trainloop.eval.judge._find_config_file_path_for_judge")
+    @mock.patch("trainloop_cli.eval_core.judge._find_config_file_path_for_judge")
     def test_load_cfg_override(self, mock_find_config):
         """Test config loading with override parameters."""
         mock_find_config.return_value = None
@@ -349,7 +341,7 @@ class TestJudgeIntegration:
         except ValueError as e:
             pytest.fail(f"Real API test with custom config failed: {e}")
 
-    @patch("cli.trainloop_cli.scaffold.trainloop.eval.judge.litellm.acompletion")
+    @patch("trainloop_cli.eval_core.judge.litellm.acompletion")
     def test_error_handling_and_setup_guidance(
         self, mock_litellm_acompletion_for_auth_error
     ):

@@ -9,6 +9,7 @@ trainloop/
 ├── data/                 # ← raw & derived artefacts (ignored by git)
 │   ├── events/           #   append‑only JSONL shards, one per 10‑min window
 │   ├── results/          #   evaluation verdicts (one line per test)
+│   ├── benchmarks/       #   benchmark results comparing providers
 │   ├── judge_traces/     #   consolidated LLM judge trace logs (one JSONL per run)
 │   └── _registry.json    #   call‑site → tag counters
 └── eval/                 #   Your evaluation code
@@ -196,6 +197,32 @@ verdict = assert_true(
 - **XOR sanity check**: Discards samples that answer both claims the same way
 - **Custom templates**: Define your own prompt format for specific evaluation needs
 - **LLM Call Count**: For each `assert_true` call, the number of LLM calls made is `len(configured_models) * calls_per_model_per_claim * 2 * len(samples)`.
+
+## 🏎️ Benchmarking LLM Providers
+
+TrainLoop supports benchmarking multiple LLM providers to compare performance, quality, and cost. Configure providers in `trainloop.config.yaml`:
+
+```yaml
+trainloop:
+  # ... other config ...
+  benchmark:
+    env_path: "../.env.benchmark"  # Optional: separate env file for benchmark API keys
+    providers:
+      - name: openai
+        models:
+          - gpt-4o
+          - gpt-4o-mini
+      - name: anthropic
+        models:
+          - claude-3-5-sonnet-20241022
+          - claude-3-5-haiku-20241022
+    temperature: 0.7
+    max_tokens: 1000
+    timeout: 60  # seconds
+    parallel_requests: 5
+```
+
+The benchmark configuration is optional.
 
 ## 🏃‍♂️ Running evaluations & studio
 

@@ -1,4 +1,7 @@
+"""Utilities for CLI commands."""
+
 from pathlib import Path
+from typing import Dict, Any, Optional
 import os
 import yaml
 
@@ -61,3 +64,54 @@ def load_config_for_cli(root_path: Path) -> None:
         os.environ["TRAINLOOP_LOG_LEVEL"] = str(
             trainloop_config.get("log_level", "info").upper()
         )
+
+
+def load_benchmark_config(root_path: Optional[Path] = None) -> Dict[str, Any]:
+    """
+    Load benchmark configuration from trainloop.config.yaml.
+
+    Args:
+        root_path: Path to the trainloop root directory. If None, will try to find it.
+
+    Returns:
+        Dictionary containing benchmark configuration with defaults applied.
+    """
+    # Default benchmark configuration
+    default_config = {
+        "providers": [],
+        "temperature": 0.7,
+        "max_tokens": 1000,
+        "timeout": 60,
+        "parallel_requests": 5,
+        "env_path": None,
+    }
+
+    # Find root path if not provided
+    if root_path is None:
+        root_path = find_root(silent_on_error=True)
+        if root_path is None:
+            return default_config
+
+    # Load config file
+    config_path = root_path / "trainloop.config.yaml"
+    if not config_path.exists():
+        return default_config
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+
+        # Extract benchmark config from trainloop section
+        trainloop_config = config.get("trainloop", {})
+        benchmark_config = trainloop_config.get("benchmark", {})
+
+        # Merge with defaults
+        merged_config = default_config.copy()
+        merged_config.update(benchmark_config)
+
+        return merged_config
+
+    except Exception as e:
+        # Log error but return defaults
+        print(f"Warning: Failed to load benchmark config from {config_path}: {e}")
+        return default_config
