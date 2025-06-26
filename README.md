@@ -94,7 +94,7 @@ You can find more information about it in [the Scaffold README](cli/trainloop_cl
 
 ## CLI Reference
 
-The TrainLoop CLI provides three main commands for managing your evaluation workflow:
+The TrainLoop CLI provides four main commands for managing your evaluation workflow:
 
 ### `trainloop init`
 
@@ -182,6 +182,83 @@ trainloop studio --local /path/to/your/trainloop-studio-runner.tgz
 # Combine both options
 trainloop studio --config /custom/config.yaml --local /local/studio.tgz
 ```
+
+### `trainloop benchmark`
+
+Compares evaluation results across multiple LLM providers to understand performance, cost, and quality differences. This command allows you to benchmark different models against your custom evaluation metrics.
+
+```bash
+trainloop benchmark
+```
+
+**Configuration:**
+
+Add a `benchmark` section to your `trainloop.config.yaml`:
+
+```yaml
+trainloop:
+  # ... other config ...
+  
+  benchmark:
+    # Simple format
+    providers:
+      - openai/gpt-4
+      - anthropic/claude-3-sonnet-20240229
+      - openai/gpt-3.5-turbo
+    
+    # Or detailed format for multiple models per provider
+    providers:
+      - name: openai
+        models: [gpt-4o, gpt-4o-mini]
+      - name: anthropic
+        models: [claude-3-5-sonnet-20241022]
+    
+    # Optional settings (with defaults)
+    temperature: 0.7      # Default: 0.7
+    max_tokens: 1000     # Default: 1000
+    max_samples: 50      # Limit samples to benchmark
+    timeout: 60          # Request timeout in seconds
+```
+
+**Environment Variables:**
+
+The benchmark command requires API keys for each provider. It automatically loads from a `.env` file in your trainloop folder.
+
+1. Copy the example file:
+   ```bash
+   cp trainloop/.env.example trainloop/.env
+   ```
+
+2. Edit `.env` and add your API keys:
+   ```bash
+   # OpenAI API Key
+   OPENAI_API_KEY=sk-...
+   
+   # Anthropic API Key
+   ANTHROPIC_API_KEY=sk-ant-...
+   
+   # Google Gemini API Key
+   GEMINI_API_KEY=...
+   ```
+
+You can also specify a custom env file in the config:
+
+```yaml
+benchmark:
+  env_path: "../.env.benchmark"  # Relative to config file, overrides default .env
+  providers:
+    # ...
+```
+
+**Output:**
+
+Benchmark results are saved to `data/benchmarks/` with timestamped directories and can be visualized in the Studio UI.
+
+**Use Cases:**
+- **Provider Selection**: Compare different providers to choose the best one for your use case
+- **Cost Analysis**: Understand the cost implications of different models
+- **Performance Testing**: Measure latency differences between providers
+- **Quality Comparison**: See how different models handle the same evaluation prompts
 
 ### Default Behavior
 
