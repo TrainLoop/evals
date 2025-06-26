@@ -5,17 +5,14 @@ from __future__ import annotations
 import sys
 import os
 import json
-import gc
-import warnings
+import time
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
-import asyncio
-import aiohttp
 import litellm
 from litellm.cost_calculator import completion_cost
-from litellm import acompletion
+from litellm import batch_completion
 import yaml
 from dotenv import load_dotenv
 
@@ -187,120 +184,125 @@ def _validate_provider_keys(providers: List[str]) -> List[str]:
     return valid_providers
 
 
-async def _benchmark_single_result(
-    result: Result,
-    providers: List[str],
-    temperature: float = 0.7,
-    max_tokens: int = 1000,
-) -> Dict[str, Dict[str, Any]]:
-    """Benchmark a single result across multiple providers."""
-    provider_results = {}
-
-    # Extract the original prompt from the result's sample
-    sample = result.sample
-    messages = sample.input
-
-    for provider in providers:
-        try:
-            start_time = datetime.now()
-
-            # Call the provider using LiteLLM
-            response = await acompletion(
-                model=provider,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=sample.model_params.get("max_tokens", max_tokens),
-            )
-
-            end_time = datetime.now()
-            latency_ms = int((end_time - start_time).total_seconds() * 1000)
-
-            # Extract response content
-            response_content = response.choices[0].message.content  # type: ignore[attr-defined]
-
-            # Calculate cost using LiteLLM helper (handles caching, provider pricing)
-            cost = completion_cost(
-                completion_response=response,
-                model=provider,
-            )
-
-            provider_results[provider] = {
-                "response": response_content,
-                "latency_ms": latency_ms,
-                "cost": cost,
-                "error": None,
-                "model_params": {
-                    "temperature": temperature,
-                    "max_tokens": sample.model_params.get("max_tokens", max_tokens),
-                },
-            }
-
-        except Exception as e:
-            provider_results[provider] = {
-                "response": None,
-                "latency_ms": None,
-                "cost": None,
-                "error": str(e),
-                "model_params": {
-                    "temperature": temperature,
-                    "max_tokens": sample.model_params.get("max_tokens", max_tokens),
-                },
-            }
-
-    return provider_results
-
-
-async def _run_benchmarks(
+def _run_benchmarks(
     results: Dict[str, List[Result]],
     providers: List[str],
     max_samples: Optional[int] = None,
     temperature: float = 0.7,
     max_tokens: int = 1000,
 ) -> List[BenchmarkResult]:
-    """Run benchmarks for all results across all providers."""
-    benchmark_results = []
-    total_samples = sum(len(suite_results) for suite_results in results.values())
+    """Run benchmarks for all results across all providers using batching."""
+    # 1. Collect all samples and create BenchmarkResult shells
+    all_samples_with_results: List[Result] = []
+    for suite_results in results.values():
+        all_samples_with_results.extend(suite_results)
 
-    if max_samples and total_samples > max_samples:
+    if max_samples and len(all_samples_with_results) > max_samples:
         print(
-            f"\n{INFO_COLOR}Limiting benchmark to {max_samples} samples (out of {total_samples} total){RESET_COLOR}"
+            f"\n{INFO_COLOR}Limiting benchmark to {max_samples} samples (out of {len(all_samples_with_results)} total){RESET_COLOR}"
+        )
+        all_samples_with_results = all_samples_with_results[:max_samples]
+
+    # Create a unique key for each result to map responses back
+    benchmark_results_map = {
+        f"{res.metric}-{res.sample.tag}-{i}": BenchmarkResult(
+            original_result=res,
+            provider_results={},
+            timestamp=datetime.now().isoformat(),
+        )
+        for i, res in enumerate(all_samples_with_results)
+    }
+
+    prompts = [res.sample.input for res in all_samples_with_results]
+
+    if not prompts:
+        return []
+
+    print(
+        f"\n{EMOJI_GRAPH} Benchmarking {len(prompts)} samples across {len(providers)} providers..."
+    )
+
+    # 2. Iterate through each provider and run a batch job
+    for provider in providers:
+        print(
+            f"  Processing provider: {EMPHASIS_COLOR}{provider}{RESET_COLOR}",
+            end="",
+            flush=True,
         )
 
-    sample_count = 0
-    for suite_name, suite_results in results.items():
-        print(
-            f"\n{EMOJI_GRAPH} Benchmarking suite: {EMPHASIS_COLOR}{suite_name}{RESET_COLOR}"
-        )
+        try:
+            start_time = time.time()
 
-        for result in suite_results:
-            if max_samples and sample_count >= max_samples:
-                break
-
-            sample_count += 1
-            print(
-                f"  Processing sample {sample_count}: {result.sample.tag} (metric: {result.metric})",
-                end="",
-                flush=True,
+            # Note: This uses a global max_tokens for the entire batch.
+            # The per-sample model_params for max_tokens is not supported by batch_completion.
+            provider_responses = batch_completion(
+                model=provider,
+                messages=prompts,
+                temperature=temperature,
+                max_tokens=max_tokens,
             )
 
-            provider_results = await _benchmark_single_result(
-                result, providers, temperature, max_tokens
-            )
+            end_time = time.time()
+            total_latency_ms = (end_time - start_time) * 1000
+            avg_latency_ms = total_latency_ms / len(prompts) if prompts else 0
 
-            benchmark_result = BenchmarkResult(
-                original_result=result,
-                provider_results=provider_results,
-                timestamp=datetime.now().isoformat(),
-            )
-            benchmark_results.append(benchmark_result)
+            # 3. Process the batch of responses
+            for i, response in enumerate(provider_responses):
+                original_result = all_samples_with_results[i]
+                result_key = (
+                    f"{original_result.metric}-{original_result.sample.tag}-{i}"
+                )
 
-            # Print summary of this benchmark
-            success_count = sum(
-                1 for r in provider_results.values() if r["error"] is None
-            )
-            print(f" - {success_count}/{len(providers)} providers succeeded")
+                # batch_completion can return Exceptions in the list for failed calls
+                if isinstance(response, Exception):
+                    provider_result_data = {
+                        "response": None,
+                        "latency_ms": None,
+                        "cost": None,
+                        "error": str(response),
+                        "model_params": {
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                        },
+                    }
+                else:
+                    cost = completion_cost(completion_response=response, model=provider)
+                    provider_result_data = {
+                        "response": response.choices[0].message.content,
+                        "latency_ms": int(avg_latency_ms),
+                        "cost": cost,
+                        "error": None,
+                        "model_params": {
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                        },
+                    }
 
-    return benchmark_results
+                benchmark_results_map[result_key].provider_results[
+                    provider
+                ] = provider_result_data
+
+            print(f" - {OK} Done")
+
+        except Exception as e:
+            print(f" - {BAD} Batch call failed: {e}")
+            # Populate all results for this provider with the batch-level error
+            for i, original_result in enumerate(all_samples_with_results):
+                result_key = (
+                    f"{original_result.metric}-{original_result.sample.tag}-{i}"
+                )
+                benchmark_results_map[result_key].provider_results[provider] = {
+                    "response": None,
+                    "latency_ms": None,
+                    "cost": None,
+                    "error": str(e),
+                    "model_params": {
+                        "temperature": temperature,
+                        "max_tokens": max_tokens,
+                    },
+                }
+
+    return list(benchmark_results_map.values())
 
 
 def _save_benchmark_results(
@@ -597,30 +599,10 @@ def benchmark_command() -> None:
         f"\n{EMOJI_GRAPH} Starting benchmark across {len(valid_providers)} providers..."
     )
 
-    # Run async benchmark with asyncio.run for proper cleanup
-    async def run_with_cleanup():
-        try:
-            bench_results = await _run_benchmarks(
-                results, valid_providers, max_samples, temperature, max_tokens
-            )
-            
-            # Clean up any litellm client sessions
-            if hasattr(litellm, 'client_session') and litellm.client_session:
-                await litellm.client_session.close()
-                litellm.client_session = None
-                
-            # Small delay to ensure cleanup
-            await asyncio.sleep(0.1)
-            
-            return bench_results
-        finally:
-            # Ensure cleanup even on error
-            if hasattr(litellm, 'client_session') and litellm.client_session:
-                await litellm.client_session.close()
-                litellm.client_session = None
-    
     try:
-        benchmark_results = asyncio.run(run_with_cleanup())
+        benchmark_results = _run_benchmarks(
+            results, valid_providers, max_samples, temperature, max_tokens
+        )
     except Exception as e:
         print(f"\n{BAD} Error during benchmarking: {e}")
         sys.exit(1)
@@ -630,19 +612,11 @@ def benchmark_command() -> None:
         sys.exit(1)
 
     # Save results (directory is printed by _save_benchmark_results)
-    _ = _save_benchmark_results(  # discard variable to avoid linter unused-variable warning
-        benchmark_results, project_root_path, valid_providers
-    )
+    _ = _save_benchmark_results(benchmark_results, project_root_path, valid_providers)
 
     # Print summary
     _print_benchmark_summary(benchmark_results, valid_providers)
 
     print(f"\n{EMOJI_CHECK} Benchmark complete!")
-    
-    # Suppress ResourceWarnings about unclosed sessions on exit
-    warnings.filterwarnings("ignore", category=ResourceWarning)
-    
-    # Force garbage collection to clean up any lingering objects
-    gc.collect()
-    
+
     sys.exit(0)
