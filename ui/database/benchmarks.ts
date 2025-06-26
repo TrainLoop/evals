@@ -195,41 +195,74 @@ export async function getBenchmarkSummary(id: string) {
   const db = await getDuckDB()
   const conn = await db.connect()
   try {
-    // Get summary data from the summary record
+    // Get all summary records
     const summaryQuery = `
       SELECT 
+        type,
         data
       FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
-      WHERE type = 'summary'
-      LIMIT 1
+      WHERE type IN ('summary', 'metadata')
     `
     
-    const summaryReader = await conn.runAndReadAll(summaryQuery)
-    const summaryRows = summaryReader.getRowObjects()
+    const reader = await conn.runAndReadAll(summaryQuery)
+    const rows = reader.getRowObjects()
     
-    if (summaryRows.length === 0) {
-      return null
+    let summaryData = null
+    let metadataData = null
+    
+    rows.forEach(row => {
+      if (row.type === 'summary' && row.data) {
+        summaryData = row.data
+      } else if (row.type === 'metadata' && row.data) {
+        metadataData = row.data
+      }
+    })
+    
+    // If no summary record exists, generate one from result records
+    if (!summaryData && metadataData) {
+      const resultsQuery = `
+        SELECT 
+          sample->>'$.model' AS provider,
+          COUNT(*) AS total,
+          SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) AS passed,
+          SUM(CASE WHEN provider_result->>'$.error' IS NOT NULL THEN 1 ELSE 0 END) AS errors,
+          AVG(CAST(provider_result->>'$.latency_ms' AS DOUBLE)) AS avg_latency_ms,
+          SUM(CAST(provider_result->>'$.cost' AS DOUBLE)) AS total_cost
+        FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
+        WHERE type = 'result'
+        GROUP BY provider
+      `
+      
+      const resultsReader = await conn.runAndReadAll(resultsQuery)
+      const resultsRows = resultsReader.getRowObjects()
+      
+      const provider_summaries = {}
+      resultsRows.forEach(row => {
+        provider_summaries[row.provider] = {
+          total_evaluations: Number(row.total),
+          passed: Number(row.passed),
+          errors: Number(row.errors),
+          pass_rate: Number(row.passed) / Number(row.total),
+          avg_latency_ms: Number(row.avg_latency_ms) || 0,
+          total_cost: Number(row.total_cost) || 0
+        }
+      })
+      
+      summaryData = {
+        total_samples: metadataData.total_samples,
+        total_providers: metadataData.providers?.length || 0,
+        provider_summaries
+      }
     }
     
-    const summaryData = summaryRows[0].data
-    
-    // Also get metadata
-    const metadataQuery = `
-      SELECT 
-        data
-      FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
-      WHERE type = 'metadata'
-      LIMIT 1
-    `
-    
-    const metadataReader = await conn.runAndReadAll(metadataQuery)
-    const metadataRows = metadataReader.getRowObjects()
-    const metadata = metadataRows.length > 0 ? metadataRows[0].data : {}
+    if (!metadataData) {
+      return null
+    }
     
     // Ensure the data is serializable
     return convertBigIntsToNumbers({
       summary: summaryData,
-      metadata: metadata
+      metadata: metadataData
     })
   } catch (err) {
     console.warn(`Warning: Failed to fetch benchmark summary for ${id}:`, err)

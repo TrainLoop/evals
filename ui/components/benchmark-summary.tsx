@@ -12,26 +12,47 @@ export function BenchmarkSummary({ summary, metadata }: BenchmarkSummaryProps) {
     return null
   }
 
+  // Handle DuckDB structure - data might be wrapped in entries
+  const summaryData = summary.entries || summary
+  const metadataData = metadata.entries || metadata
+
   // Find best and worst providers
   let bestProvider = { name: '', passRate: 0, cost: 0 }
   let worstProvider = { name: '', passRate: 100, cost: 0 }
   let fastestProvider = { name: '', latency: Infinity }
   let cheapestProvider = { name: '', cost: Infinity }
 
-  Object.entries(summary.provider_summaries || {}).forEach(([provider, stats]: [string, any]) => {
-    if (stats.pass_rate > bestProvider.passRate) {
-      bestProvider = { name: provider, passRate: stats.pass_rate * 100, cost: stats.total_cost }
+  const providerSummaries = summaryData.provider_summaries?.entries || summaryData.provider_summaries || {}
+  
+  Object.entries(providerSummaries).forEach(([provider, stats]: [string, any]) => {
+    // Handle stats that might also be wrapped in entries
+    const statsData = stats.entries || stats
+    const passRate = (statsData.pass_rate || 0) * 100
+    
+    if (passRate > bestProvider.passRate) {
+      bestProvider = { name: provider, passRate: passRate, cost: statsData.total_cost || 0 }
     }
-    if (stats.pass_rate < worstProvider.passRate) {
-      worstProvider = { name: provider, passRate: stats.pass_rate * 100, cost: stats.total_cost }
+    if (passRate < worstProvider.passRate && statsData.total_evaluations > 0) {
+      worstProvider = { name: provider, passRate: passRate, cost: statsData.total_cost || 0 }
     }
-    if (stats.avg_latency_ms < fastestProvider.latency) {
-      fastestProvider = { name: provider, latency: stats.avg_latency_ms }
+    if (statsData.avg_latency_ms > 0 && statsData.avg_latency_ms < fastestProvider.latency) {
+      fastestProvider = { name: provider, latency: statsData.avg_latency_ms }
     }
-    if (stats.total_cost < cheapestProvider.cost) {
-      cheapestProvider = { name: provider, cost: stats.total_cost }
+    if (statsData.total_cost >= 0 && statsData.total_cost < cheapestProvider.cost) {
+      cheapestProvider = { name: provider, cost: statsData.total_cost }
     }
   })
+  
+  // Handle cases where no valid data was found
+  if (fastestProvider.latency === Infinity) {
+    fastestProvider = { name: 'N/A', latency: 0 }
+  }
+  if (cheapestProvider.cost === Infinity) {
+    cheapestProvider = { name: 'N/A', cost: 0 }
+  }
+  if (!bestProvider.name) {
+    bestProvider = { name: 'N/A', passRate: 0, cost: 0 }
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -41,9 +62,9 @@ export function BenchmarkSummary({ summary, metadata }: BenchmarkSummaryProps) {
           <Trophy className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{bestProvider.name}</div>
+          <div className="text-2xl font-bold">{bestProvider.name || 'N/A'}</div>
           <p className="text-xs text-muted-foreground">
-            {bestProvider.passRate.toFixed(1)}% pass rate
+            {bestProvider.name !== 'N/A' ? `${bestProvider.passRate.toFixed(1)}% pass rate` : 'No data'}
           </p>
         </CardContent>
       </Card>
@@ -54,9 +75,9 @@ export function BenchmarkSummary({ summary, metadata }: BenchmarkSummaryProps) {
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{fastestProvider.name}</div>
+          <div className="text-2xl font-bold">{fastestProvider.name || 'N/A'}</div>
           <p className="text-xs text-muted-foreground">
-            {fastestProvider.latency.toFixed(0)}ms avg latency
+            {fastestProvider.name !== 'N/A' ? `${fastestProvider.latency.toFixed(0)}ms avg latency` : 'No data'}
           </p>
         </CardContent>
       </Card>
@@ -67,9 +88,9 @@ export function BenchmarkSummary({ summary, metadata }: BenchmarkSummaryProps) {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{cheapestProvider.name}</div>
+          <div className="text-2xl font-bold">{cheapestProvider.name || 'N/A'}</div>
           <p className="text-xs text-muted-foreground">
-            ${cheapestProvider.cost.toFixed(4)} total cost
+            {cheapestProvider.name !== 'N/A' ? `$${cheapestProvider.cost.toFixed(4)} total cost` : 'No data'}
           </p>
         </CardContent>
       </Card>
@@ -80,9 +101,9 @@ export function BenchmarkSummary({ summary, metadata }: BenchmarkSummaryProps) {
           <AlertCircle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{summary.total_samples || 0}</div>
+          <div className="text-2xl font-bold">{summaryData.total_samples || 0}</div>
           <p className="text-xs text-muted-foreground">
-            Across {summary.total_providers || 0} providers
+            Across {summaryData.total_providers || 0} providers
           </p>
         </CardContent>
       </Card>
