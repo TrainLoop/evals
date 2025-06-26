@@ -567,7 +567,7 @@ def benchmark_command() -> None:
         providers = [
             "openai/gpt-4",
             "anthropic/claude-3-sonnet-20240229",
-            "openai/gpt-3.5-turbo",
+            "gemini/gemini-2.0-flash",
         ]
 
     max_samples = benchmark_config.get("max_samples", None)
