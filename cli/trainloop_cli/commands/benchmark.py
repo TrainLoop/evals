@@ -5,11 +5,14 @@ from __future__ import annotations
 import sys
 import os
 import json
+import gc
+import warnings
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, asdict
 import asyncio
+import aiohttp
 import litellm
 from litellm.cost_calculator import completion_cost
 from litellm import acompletion
@@ -507,6 +510,11 @@ def benchmark_command() -> None:
     5. Saves comparison results for analysis
     """
     litellm.suppress_debug_info = True
+    # Disable async callbacks to prevent pending task warnings
+    litellm.callbacks = []
+    # Disable litellm's request timeout to prevent session issues
+    os.environ["LITELLM_REQUEST_TIMEOUT"] = "600"
+    os.environ["LITELLM_LOG"] = "ERROR"
 
     try:
         # Find project root
@@ -589,18 +597,33 @@ def benchmark_command() -> None:
         f"\n{EMOJI_GRAPH} Starting benchmark across {len(valid_providers)} providers..."
     )
 
-    # Run async benchmark
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    try:
-        benchmark_results = loop.run_until_complete(
-            _run_benchmarks(
+    # Run async benchmark with asyncio.run for proper cleanup
+    async def run_with_cleanup():
+        try:
+            bench_results = await _run_benchmarks(
                 results, valid_providers, max_samples, temperature, max_tokens
             )
-        )
-    finally:
-        loop.close()
+            
+            # Clean up any litellm client sessions
+            if hasattr(litellm, 'client_session') and litellm.client_session:
+                await litellm.client_session.close()
+                litellm.client_session = None
+                
+            # Small delay to ensure cleanup
+            await asyncio.sleep(0.1)
+            
+            return bench_results
+        finally:
+            # Ensure cleanup even on error
+            if hasattr(litellm, 'client_session') and litellm.client_session:
+                await litellm.client_session.close()
+                litellm.client_session = None
+    
+    try:
+        benchmark_results = asyncio.run(run_with_cleanup())
+    except Exception as e:
+        print(f"\n{BAD} Error during benchmarking: {e}")
+        sys.exit(1)
 
     if not benchmark_results:
         print(f"\n{BAD} No benchmark results generated.")
@@ -615,4 +638,11 @@ def benchmark_command() -> None:
     _print_benchmark_summary(benchmark_results, valid_providers)
 
     print(f"\n{EMOJI_CHECK} Benchmark complete!")
+    
+    # Suppress ResourceWarnings about unclosed sessions on exit
+    warnings.filterwarnings("ignore", category=ResourceWarning)
+    
+    # Force garbage collection to clean up any lingering objects
+    gc.collect()
+    
     sys.exit(0)
