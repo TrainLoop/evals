@@ -17,51 +17,59 @@ interface ModelComparisonChartProps {
 
 export function ModelComparisonChart({ title, description, data, models, className }: ModelComparisonChartProps) {
   // Generate a config object for ChartContainer with dynamic model colors
-  const generateConfig = () => {
-    const colors = [
-      "hsl(var(--chart-1))",
-      "hsl(var(--chart-2))",
-      "hsl(var(--chart-3))",
-      "hsl(var(--chart-4))",
-      "hsl(var(--chart-5))",
-    ]
-
-    return models.reduce(
-      (config, model, index) => {
-        config[model] = {
-          label: model,
-          color: colors[index % colors.length],
-        }
-        return config
-      },
-      {} as Record<string, { label: string; color: string }>,
-    )
-  }
+  const colors = [
+    "hsl(var(--chart-1))",
+    "hsl(var(--chart-2))",
+    "hsl(var(--chart-3))",
+    "hsl(var(--chart-4))",
+    "hsl(var(--chart-5))",
+  ]
+  
+  const chartConfig = models.reduce(
+    (config, model, index) => {
+      config[model] = {
+        label: model,
+        color: colors[index % colors.length],
+      }
+      return config
+    },
+    {} as Record<string, { label: string; color: string }>,
+  )
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+      <CardHeader className="text-center">
+        <CardTitle className="text-xl">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={generateConfig()} className="h-[350px]">
+      <CardContent className="pt-0">
+        <ChartContainer config={chartConfig} className="h-[500px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+            <BarChart data={data} margin={{ top: 20, right: 30, left: 40, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="metric" angle={-45} textAnchor="end" height={70} tick={{ fontSize: 12 }} />
+              <XAxis 
+                dataKey="metric" 
+                angle={-45} 
+                textAnchor="end" 
+                height={100} 
+                tick={{ fontSize: 12 }}
+                interval={0}
+              />
               <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Legend />
-              {models.map((model, index) => (
-                <Bar
-                  key={model}
-                  dataKey={model}
-                  name={model}
-                  stroke={`var(--color-${model})`}
-                  fill={`var(--color-${model})`}
-                />
-              ))}
+              <Legend wrapperStyle={{ paddingTop: '20px' }} />
+              {models.map((model, index) => {
+                const colorIndex = index % colors.length + 1
+                return (
+                  <Bar
+                    key={model}
+                    dataKey={model}
+                    name={model}
+                    fill={`hsl(var(--chart-${colorIndex}))`}
+                    radius={[4, 4, 0, 0]}
+                  />
+                )
+              })}
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

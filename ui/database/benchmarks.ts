@@ -8,6 +8,9 @@ export interface BenchmarkResult {
   passed: number
   total: number
   reason?: string
+  avgLatency?: number
+  totalCost?: number
+  errors?: number
 }
 
 export interface BenchmarkRun {
@@ -54,7 +57,12 @@ export async function getBenchmarkRun(id: string): Promise<BenchmarkRun | null> 
         passed,
         score,
         reason,
-        type
+        type,
+        provider_result->>'$.latency_ms' AS latency_ms,
+        provider_result->>'$.cost' AS cost,
+        provider_result->>'$.error' AS error,
+        sample->>'$.tag' AS sample_tag,
+        sample->>'$.input' AS input
       FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
       WHERE type = 'result'
     `
@@ -68,6 +76,8 @@ export async function getBenchmarkRun(id: string): Promise<BenchmarkRun | null> 
     
     // Group results by provider and metric
     const resultsMap = new Map<string, BenchmarkResult>()
+    const latencyMap = new Map<string, number[]>()
+    const costMap = new Map<string, number>()
     
     rows.forEach((row: any) => {
       const key = `${row.provider}-${row.metric}`
@@ -77,19 +87,44 @@ export async function getBenchmarkRun(id: string): Promise<BenchmarkRun | null> 
           metric: row.metric,
           score: 0,
           passed: 0,
-          total: 0
+          total: 0,
+          errors: 0,
+          totalCost: 0
         })
+        latencyMap.set(key, [])
       }
       
       const result = resultsMap.get(key)!
       result.total += 1
-      if (row.passed) {
-        result.passed += 1
+      
+      if (row.error) {
+        result.errors = (result.errors || 0) + 1
+      } else {
+        if (row.passed) {
+          result.passed += 1
+        }
+        // Collect latency data
+        if (row.latency_ms) {
+          latencyMap.get(key)!.push(parseFloat(row.latency_ms))
+        }
+        // Sum up costs
+        if (row.cost) {
+          result.totalCost = (result.totalCost || 0) + parseFloat(row.cost)
+        }
       }
+      
       // Use the score field directly now that it exists
       if (row.score !== null && row.score !== undefined) {
         // Average the scores
         result.score = (result.score * (result.total - 1) + row.score) / result.total
+      }
+    })
+    
+    // Calculate average latencies
+    resultsMap.forEach((result, key) => {
+      const latencies = latencyMap.get(key) || []
+      if (latencies.length > 0) {
+        result.avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length
       }
     })
     
@@ -151,6 +186,54 @@ export async function getBenchmarkComparison(id: string) {
   } catch (err) {
     console.warn(`Warning: Failed to fetch benchmark comparison for ${id}:`, err)
     return { data: [], providers: [] }
+  } finally {
+    conn.closeSync()
+  }
+}
+
+export async function getBenchmarkSummary(id: string) {
+  const db = await getDuckDB()
+  const conn = await db.connect()
+  try {
+    // Get summary data from the summary record
+    const summaryQuery = `
+      SELECT 
+        data
+      FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
+      WHERE type = 'summary'
+      LIMIT 1
+    `
+    
+    const summaryReader = await conn.runAndReadAll(summaryQuery)
+    const summaryRows = summaryReader.getRowObjects()
+    
+    if (summaryRows.length === 0) {
+      return null
+    }
+    
+    const summaryData = summaryRows[0].data
+    
+    // Also get metadata
+    const metadataQuery = `
+      SELECT 
+        data
+      FROM read_json_auto('${process.env.TRAINLOOP_DATA_FOLDER}/benchmarks/${id}/*.jsonl')
+      WHERE type = 'metadata'
+      LIMIT 1
+    `
+    
+    const metadataReader = await conn.runAndReadAll(metadataQuery)
+    const metadataRows = metadataReader.getRowObjects()
+    const metadata = metadataRows.length > 0 ? metadataRows[0].data : {}
+    
+    // Ensure the data is serializable
+    return convertBigIntsToNumbers({
+      summary: summaryData,
+      metadata: metadata
+    })
+  } catch (err) {
+    console.warn(`Warning: Failed to fetch benchmark summary for ${id}:`, err)
+    return null
   } finally {
     conn.closeSync()
   }

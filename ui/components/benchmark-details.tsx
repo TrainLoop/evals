@@ -11,6 +11,9 @@ interface BenchmarkResult {
   score: number
   passed: number
   total: number
+  avgLatency?: number
+  totalCost?: number
+  errors?: number
 }
 
 interface BenchmarkRun {
@@ -50,7 +53,9 @@ export function BenchmarkDetails({ benchmarkRun }: BenchmarkDetailsProps) {
                   <TableHead>Provider</TableHead>
                   <TableHead>Pass Rate</TableHead>
                   <TableHead>Passed / Total</TableHead>
-                  <TableHead className="w-[200px]">Progress</TableHead>
+                  <TableHead>Avg Latency</TableHead>
+                  <TableHead>Total Cost</TableHead>
+                  <TableHead>Errors</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -72,7 +77,33 @@ export function BenchmarkDetails({ benchmarkRun }: BenchmarkDetailsProps) {
                         {result.passed} / {result.total}
                       </TableCell>
                       <TableCell>
-                        <Progress value={result.score} className="h-2" />
+                        {result.avgLatency ? (
+                          <span className="font-mono text-sm">
+                            {result.avgLatency.toFixed(0)}ms
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {result.totalCost ? (
+                          <span className="font-mono text-sm">
+                            ${result.totalCost.toFixed(4)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {result.errors ? (
+                          <Badge variant="destructive" className="text-xs">
+                            {result.errors}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            0
+                          </Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
