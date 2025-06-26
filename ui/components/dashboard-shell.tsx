@@ -4,7 +4,6 @@ import type React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { BarChart3, Home, Activity, Trophy, Award, ListChecks } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -38,26 +37,12 @@ export function DashboardShell({ children }: DashboardShellProps) {
                 Results
               </Button>
             </Link>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-not-allowed">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-60 pointer-events-none"
-                      tabIndex={-1}
-                    >
-                      <Award className="mr-2 h-4 w-4" />
-                      Benchmarks
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Coming Soon</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Link href="/benchmarks">
+              <Button variant="ghost" size="sm">
+                <Award className="mr-2 h-4 w-4" />
+                Benchmarks
+              </Button>
+            </Link>
           </nav>
         </div>
       </header>
