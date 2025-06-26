@@ -64,3 +64,4 @@ junit.xml
 
 # TrainLoop specific (keep data for testing)
 # trainloop/data/
+.claude/*
