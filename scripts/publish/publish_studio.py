@@ -209,11 +209,7 @@ def main():
         release_exists = False
 
     if release_exists:
-        print(f"WARNING: Release {tag_name} already exists.")
-        response = input("Do you want to continue anyway? (y/N) ")
-        if not response.lower().startswith("y"):
-            print("Release creation aborted.")
-            sys.exit(1)
+        print(f"WARNING: Release {tag_name} already exists. Updating...")
 
         print(f"🔄 Updating release {tag_name}...")
         try:
