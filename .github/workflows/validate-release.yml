@@ -1,0 +1,244 @@
+name: Validate Release
+
+# Run on pushes to release branches to validate everything builds correctly
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'VERSION'
+      - 'releases/**'
+
+# No special permissions needed for validation
+permissions:
+  contents: read
+
+jobs:
+  # Validate release structure and requirements
+  validate-structure:
+    name: Validate Release Structure
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      has-release-notes: ${{ steps.check-release-notes.outputs.has-release-notes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from VERSION file
+        id: get-version
+        run: |
+          if [ -f "VERSION" ]; then
+            VERSION=$(cat VERSION | tr -d '\n')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "✅ Found version: $VERSION"
+          else
+            echo "❌ VERSION file not found"
+            exit 1
+          fi
+
+      - name: Check release notes exist
+        id: check-release-notes
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          RELEASE_FILE="releases/${VERSION}.md"
+          
+          if [ -f "$RELEASE_FILE" ]; then
+            echo "✅ Release notes found: $RELEASE_FILE"
+            echo "has-release-notes=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Release notes not found: $RELEASE_FILE"
+            echo "Please create release notes at $RELEASE_FILE"
+            echo "has-release-notes=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Validate release notes format
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          RELEASE_FILE="releases/${VERSION}.md"
+          
+          # Check if file starts with "Summary:"
+          if head -n1 "$RELEASE_FILE" | grep -q "^Summary:"; then
+            echo "✅ Release notes have proper summary format"
+          else
+            echo "❌ Release notes must start with 'Summary:' on first line"
+            exit 1
+          fi
+
+  # Test publishing builds (different from test runs covered by existing workflows)
+  test-publishing-builds:
+    name: Test Publishing Builds
+    needs: validate-structure
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [cli, sdk, studio]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Install Poetry
+        if: matrix.component == 'cli' || matrix.component == 'sdk'
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Install UI dependencies
+        if: matrix.component == 'studio'
+        run: |
+          cd ui
+          npm ci
+
+      - name: Install TypeScript SDK dependencies
+        if: matrix.component == 'sdk'
+        run: |
+          cd sdk/typescript
+          npm ci
+
+      - name: Test CLI publishing build
+        if: matrix.component == 'cli'
+        run: |
+          cd cli
+          poetry install
+          poetry build
+          echo "✅ CLI builds for publishing"
+
+      - name: Test SDK publishing builds
+        if: matrix.component == 'sdk'
+        run: |
+          # Test Python SDK publishing build
+          cd sdk/python
+          poetry install
+          poetry build
+          echo "✅ Python SDK builds for publishing"
+          
+          # Test TypeScript SDK publishing build
+          cd ../typescript
+          npm run build
+          echo "✅ TypeScript SDK builds for publishing"
+
+      - name: Test Studio publishing build
+        if: matrix.component == 'studio'
+        run: |
+          # Test Studio UI build
+          cd ui
+          npm run build
+          echo "✅ Studio UI builds for publishing"
+          
+          # Test studio package creation
+          cd ..
+          python scripts/build/build_studio.py
+          echo "✅ Studio package builds for publishing"
+
+  # Test that version numbers are synchronized
+  test-version-sync:
+    name: Test Version Synchronization
+    needs: validate-structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check version synchronization
+        run: |
+          ROOT_VERSION="${{ needs.validate-structure.outputs.version }}"
+          echo "🔍 Checking all packages have version: $ROOT_VERSION"
+          
+          # Check CLI version
+          CLI_VERSION=$(grep '^version = ' cli/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$CLI_VERSION" = "$ROOT_VERSION" ]; then
+            echo "✅ CLI version matches: $CLI_VERSION"
+          else
+            echo "❌ CLI version mismatch: expected $ROOT_VERSION, got $CLI_VERSION"
+            exit 1
+          fi
+          
+          # Check Python SDK version
+          SDK_VERSION=$(grep '^version = ' sdk/python/pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          if [ "$SDK_VERSION" = "$ROOT_VERSION" ]; then
+            echo "✅ Python SDK version matches: $SDK_VERSION"
+          else
+            echo "❌ Python SDK version mismatch: expected $ROOT_VERSION, got $SDK_VERSION"
+            exit 1
+          fi
+          
+          # Check TypeScript SDK version
+          TS_VERSION=$(node -p "require('./sdk/typescript/package.json').version")
+          if [ "$TS_VERSION" = "$ROOT_VERSION" ]; then
+            echo "✅ TypeScript SDK version matches: $TS_VERSION"
+          else
+            echo "❌ TypeScript SDK version mismatch: expected $ROOT_VERSION, got $TS_VERSION"
+            exit 1
+          fi
+          
+          # Check UI version
+          UI_VERSION=$(node -p "require('./ui/package.json').version")
+          if [ "$UI_VERSION" = "$ROOT_VERSION" ]; then
+            echo "✅ UI version matches: $UI_VERSION"
+          else
+            echo "❌ UI version mismatch: expected $ROOT_VERSION, got $UI_VERSION"
+            exit 1
+          fi
+          
+          # Check Runner version
+          RUNNER_VERSION=$(node -p "require('./runner/package.json').version")
+          if [ "$RUNNER_VERSION" = "$ROOT_VERSION" ]; then
+            echo "✅ Runner version matches: $RUNNER_VERSION"
+          else
+            echo "❌ Runner version mismatch: expected $ROOT_VERSION, got $RUNNER_VERSION"
+            exit 1
+          fi
+          
+          echo "🎉 All versions are synchronized to $ROOT_VERSION"
+
+  # Summary job
+  validation-complete:
+    name: Validation Complete
+    needs: [validate-structure, test-publishing-builds, test-version-sync]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check validation results
+        run: |
+          VERSION="${{ needs.validate-structure.outputs.version }}"
+          echo "🚀 Release validation completed for v$VERSION"
+          
+          # Check if all jobs succeeded
+          if [ "${{ needs.validate-structure.result }}" = "success" ] && \
+             [ "${{ needs.test-publishing-builds.result }}" = "success" ] && \
+             [ "${{ needs.test-version-sync.result }}" = "success" ]; then
+            echo "✅ All validation checks passed!"
+            echo "📦 CLI: Publishing build verified (poetry build)"
+            echo "📦 SDK: Python and TypeScript publishing builds verified"
+            echo "📦 Studio: UI and package publishing builds verified"
+            echo "🔢 Versions: All packages synchronized to v$VERSION"
+            echo "📋 Release notes: Properly formatted"
+            echo ""
+            echo "ℹ️  Note: Unit/integration tests are verified by existing test workflows"
+            echo "🎉 Release v$VERSION is ready to be merged to main!"
+          else
+            echo "❌ Some validation checks failed:"
+            echo "Structure: ${{ needs.validate-structure.result }}"
+            echo "Publishing Builds: ${{ needs.test-publishing-builds.result }}"
+            echo "Version Sync: ${{ needs.test-version-sync.result }}"
+            exit 1
+          fi

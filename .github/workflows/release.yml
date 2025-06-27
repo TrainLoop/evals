@@ -16,6 +16,11 @@ on:
         required: true
         type: string
 
+# Give workflow permission to create tags and releases
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   # First verify this is a proper version bump and create the tag
   validate-and-tag:
@@ -120,50 +125,10 @@ jobs:
           git push origin "$VERSION_TAG"
           echo "🏷️  Created and pushed tag: $VERSION_TAG"
 
-  # Build all components
-  build:
-    name: Build All Components
-    needs: validate-and-tag
-    if: needs.validate-and-tag.outputs.is-release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          cache: "npm"
-          cache-dependency-path: ui/package-lock.json
-
-      - name: Install pipx
-        run: python -m pip install pipx
-
-      - name: Build all components
-        run: npm run build
-        env:
-          VERSION: ${{ needs.validate-and-tag.outputs.version }}
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            cli/dist/
-            ui/.next/
-            ui/out/
-          retention-days: 7
-
   # Publish SDK packages
   publish-sdk:
     name: Publish SDK Packages
-    needs: [validate-and-tag, build]
+    needs: validate-and-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -180,13 +145,24 @@ jobs:
           node-version: "20.x"
           registry-url: 'https://registry.npmjs.org'
 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
       - name: Install pipx
         run: python -m pip install pipx
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
+      - name: Install TypeScript SDK dependencies
+        run: |
+          cd sdk/typescript
+          npm ci
+
+      - name: Configure Poetry authentication
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
 
       - name: Publish SDK packages
         run: npm run publish:sdk
@@ -199,7 +175,7 @@ jobs:
   # Publish CLI package
   publish-cli:
     name: Publish CLI Package
-    needs: [validate-and-tag, build]
+    needs: validate-and-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -210,13 +186,19 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
       - name: Install pipx
         run: python -m pip install pipx
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
+      - name: Configure Poetry authentication
+        run: |
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
 
       - name: Publish CLI package
         run: npm run publish:cli
@@ -227,7 +209,7 @@ jobs:
   # Publish Studio package
   publish-studio:
     name: Publish Studio Package
-    needs: [validate-and-tag, build]
+    needs: validate-and-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -243,21 +225,26 @@ jobs:
         with:
           node-version: "20.x"
           registry-url: 'https://registry.npmjs.org'
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
 
       - name: Install pipx
         run: python -m pip install pipx
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
+      - name: Install UI dependencies
+        run: |
+          cd ui
+          npm ci
 
-      - name: Publish Studio package
-        run: npm run publish:studio
+      - name: Build and publish Studio package
+        run: |
+          npm run build:studio
+          npm run publish:studio
         env:
           VERSION: ${{ needs.validate-and-tag.outputs.version }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
   # Create GitHub release
   create-release:

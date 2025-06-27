@@ -122,13 +122,9 @@ class SdkPublisher:
                 else:
                     artifact.unlink(missing_ok=True)
 
-        # Build the package
-        log_info("Building package...")
-        subprocess.run(["poetry", "build"], check=True)
-
-        # Publish to PyPI
+        # Publish to PyPI (includes build step)
         log_info("Publishing to PyPI...")
-        subprocess.run(["poetry", "publish", "--build"], check=True)
+        subprocess.run(["poetry", "publish", "--build", "--skip-existing"], check=True)
 
         # Get the published version
         result = subprocess.run(

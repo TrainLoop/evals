@@ -107,7 +107,7 @@ def main():
 
     # Build the UI
     print(f"Building UI in {ui_dir}")
-    run_command(["npm", "install", "--omit=dev"], cwd=ui_dir)
+    run_command(["npm", "ci"], cwd=ui_dir)
     run_command(["npm", "run", "build"], cwd=ui_dir)
 
     # Clean existing bundle directory
