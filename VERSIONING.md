@@ -5,7 +5,12 @@ TrainLoop Evals follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.
 ## Quick Reference
 
 ```bash
-# Bump version (updates VERSION file, package.json files, and changelog)
+# RECOMMENDED: Automated release workflow (creates branch, bumps, creates PR)
+npm run release minor "New FSSpec support and benchmarking"
+npm run release patch "Bug fixes and improvements"
+npm run release major "Breaking API changes"
+
+# ALTERNATIVE: Manual version bump (for advanced users)
 npm run bump patch "Bug fix description"
 npm run bump minor "New feature description"
 npm run bump major "Breaking change description"
@@ -36,10 +41,22 @@ The system uses a central `VERSION` file as the source of truth. When you run th
 
 ## Workflow Examples
 
-### Typical Release Process
+### Automated Release Process (Recommended)
 
 ```bash
-# 1. Bump version with changelog entry
+# One command handles everything:
+npm run release minor "Added new evaluation metrics"
+
+# What happens:
+# 1. Creates release branch + notes + version bump + PR
+# 2. Team reviews and merges PR  
+# 3. GitHub Actions automatically: tags → builds → publishes → releases
+```
+
+### Manual Release Process (Advanced)
+
+```bash
+# 1. Manual version bump
 npm run bump minor "Added new evaluation metrics"
 
 # 2. Build all components

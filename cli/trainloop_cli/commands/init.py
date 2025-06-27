@@ -5,6 +5,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 
 def init_command(force: bool = False):
@@ -23,11 +26,15 @@ def init_command(force: bool = False):
     # Check if trainloop directory already exists
     if trainloop_dir.exists():
         if force:
-            print(f"Warning: {trainloop_dir} already exists. --force flag detected, removing existing directory.")
+            print(
+                f"Warning: {trainloop_dir} already exists. --force flag detected, removing existing directory."
+            )
             try:
                 shutil.rmtree(trainloop_dir)
             except OSError as e:
-                print(f"Error: Could not remove existing directory {trainloop_dir}. {e}")
+                print(
+                    f"Error: Could not remove existing directory {trainloop_dir}. {e}"
+                )
                 sys.exit(1)
         else:
             print(
@@ -45,19 +52,34 @@ def init_command(force: bool = False):
 
     # Ensure the data folder exists
     data_dir = trainloop_dir / "data"
-    data_dir.mkdir(exist_ok=True)
     events_dir = data_dir / "events"
-    events_dir.mkdir(exist_ok=True)
     results_dir = data_dir / "results"
-    results_dir.mkdir(exist_ok=True)
     registry_file = data_dir / "_registry.json"
-    registry_file.write_text("{}")
+
+    # Use fsspec to create directories and write registry file
+    registry_file_str = str(registry_file)
+    fs_spec = fsspec.open(registry_file_str, "w")
+    fs = cast(AbstractFileSystem, fs_spec.fs)
+
+    if fs:
+        fs.makedirs(str(data_dir), exist_ok=True)
+        fs.makedirs(str(events_dir), exist_ok=True)
+        fs.makedirs(str(results_dir), exist_ok=True)
+
+    # Use fsspec to write registry file
+    with fsspec.open(registry_file_str, "w") as f:
+        f.write("{}")  # type: ignore
 
     # Create a virtual environment inside the trainloop directory
     venv_path = trainloop_dir / ".venv"
     print(f"\nCreating virtual environment in {venv_path}...")
     try:
-        subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True, capture_output=True, text=True)
+        subprocess.run(
+            [sys.executable, "-m", "venv", str(venv_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         print(f"Successfully created virtual environment at {venv_path}")
 
         # Determine pip executable path
@@ -67,14 +89,21 @@ def init_command(force: bool = False):
             pip_executable = venv_path / "bin" / "pip"
 
         print(f"Installing trainloop-cli into {venv_path}...")
-        subprocess.run([str(pip_executable), "install", "trainloop-cli"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            [str(pip_executable), "install", "trainloop-cli"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         print("Successfully installed trainloop-cli in the virtual environment.")
     except subprocess.CalledProcessError as e:
         print(f"Error during virtual environment setup: {e.stderr}")
         print("Please ensure Python's venv module is available and try again.")
         # Optionally, you might want to exit or clean up here if this step is critical
     except FileNotFoundError:
-        print("Error: Python executable not found. Could not create virtual environment.")
+        print(
+            "Error: Python executable not found. Could not create virtual environment."
+        )
 
     # Install appropriate SDK based on project type (for the main project, not the nested venv)
     install_appropriate_sdk(dest_dir)
@@ -90,11 +119,19 @@ def init_command(force: bool = False):
 
     print("\n🚀 Next Steps:")
     print("1. Start collecting data: See `trainloop/README.md`.")
-    print("2. For custom metric/suite development (IDE autocompletion & terminal work):")
-    print(r"   - In your terminal: `source trainloop/.venv/bin/activate` (or `.\trainloop\.venv\Scripts\activate` on Windows)")
-    print("   - For IDEs (e.g., VS Code): Add `./trainloop/.venv/lib/pythonX.Y/site-packages` to your Python interpreter's extra paths.")
+    print(
+        "2. For custom metric/suite development (IDE autocompletion & terminal work):"
+    )
+    print(
+        r"   - In your terminal: `source trainloop/.venv/bin/activate` (or `.\trainloop\.venv\Scripts\activate` on Windows)"
+    )
+    print(
+        "   - For IDEs (e.g., VS Code): Add `./trainloop/.venv/lib/pythonX.Y/site-packages` to your Python interpreter's extra paths."
+    )
     print("     (Replace X.Y with your Python version, e.g., python3.11)")
-    print("3. Define custom logic: Edit files in `trainloop/eval/metrics/` and `trainloop/eval/suites/`.")
+    print(
+        "3. Define custom logic: Edit files in `trainloop/eval/metrics/` and `trainloop/eval/suites/`."
+    )
 
 
 def install_appropriate_sdk(project_dir: Path):
@@ -156,8 +193,8 @@ def install_appropriate_sdk(project_dir: Path):
                 print(
                     "\nDetected Python project, adding trainloop-llm-logging to requirements.txt..."
                 )
-                with open(requirements_txt, "a", encoding="utf-8") as f:
-                    f.write("\n# TrainLoop evaluation SDK\ntrainloop-llm-logging\n")
+                with fsspec.open(str(requirements_txt), "a", encoding="utf-8") as f:
+                    f.write("\n# TrainLoop evaluation SDK\ntrainloop-llm-logging\n")  # type: ignore
                 print("Added trainloop-llm-logging to requirements.txt")
                 print("Please run: pip install -r requirements.txt")
             else:

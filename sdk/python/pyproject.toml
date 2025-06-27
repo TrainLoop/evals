@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trainloop-llm-logging"
-version = "0.6.0"
+version = "0.7.0"
 description = "TrainLoop LLM Logging SDK for data collection"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
 readme = "README.md"
@@ -10,6 +10,7 @@ packages = [{ include = "trainloop_llm_logging" }]
 python = "^3.9"
 requests = "^2.31.0"
 pyyaml = "^6.0"
+fsspec = ">=2023.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"

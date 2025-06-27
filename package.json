@@ -7,6 +7,7 @@
     "url": "https://github.com/trainloop/evals"
   },
   "scripts": {
+    "release": "pipx run scripts/release.py",
     "bump": "pipx run scripts/bump/bump_version.py",
     "build": "pipx run scripts/build.py",
     "build:docker": "pipx run scripts/build.py --skip-studio",

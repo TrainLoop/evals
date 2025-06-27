@@ -34,27 +34,25 @@ EOF
 ```
 
 ### Step 2: Run the Bump Script
+
+**Automated (recommended):**
 ```bash
-# Bump patch version
-npm run bump patch
-# or
-python scripts/bump/bump_version.py patch
+# Use the automated release script instead:
+npm run release minor
+```
 
-# Bump minor version
+**Manual bump (advanced users):**
+```bash
 npm run bump minor
-
-# Bump major version
-npm run bump major
 ```
 
 ## How It Works
 
-1. **Pre-check**: The script calculates the new version and checks if `releases/<new_version>.md` exists
-2. **Summary Extraction**: Reads the `Summary:` line from the release file for the commit message
-3. **Version Update**: Updates all package.json and pyproject.toml files
-4. **Lock Files**: Regenerates npm lock files
-5. **Changelog**: Adds an entry to CHANGELOG.md that links to the release notes file
-6. **Git Operations**: Commits all changes including the release file, tags, and pushes
+1. Updates all package.json and pyproject.toml files with new version
+2. Regenerates npm lock files
+3. Adds entry to CHANGELOG.md linking to release notes
+4. Commits changes and pushes to current branch (no tag creation)
+5. When merged to main, GitHub Actions handles tagging and publishing
 
 ## Release File Format
 

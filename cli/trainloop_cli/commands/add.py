@@ -6,12 +6,14 @@ import types
 import urllib.request
 import urllib.error
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 from importlib import metadata, import_module
 import click
 import tomli
 import yaml
 from packaging import version as version_package
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 
 def get_current_version() -> str:
@@ -149,7 +151,17 @@ def install_metric(
     """Install a metric from the registry."""
     trainloop_dir = get_trainloop_dir()
     metrics_dir = trainloop_dir / "eval" / "metrics"
-    metrics_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use fsspec to create directory
+    metrics_dir_str = str(metrics_dir)
+    target_file_str = str(metrics_dir / f"{name}.py")
+    fs_spec = fsspec.open(target_file_str, "w")
+    fs = cast(AbstractFileSystem, fs_spec.fs)
+
+    if fs:
+        fs.makedirs(metrics_dir_str, exist_ok=True)
+    else:
+        raise ValueError(f"Failed to create directory {metrics_dir_str}")
 
     target_file = metrics_dir / f"{name}.py"
 
@@ -185,8 +197,9 @@ def install_metric(
     # Rewrite imports for target environment
     impl_content = rewrite_imports(impl_content)
 
-    # Write to target
-    target_file.write_text(impl_content)
+    # Write to target using fsspec
+    with fsspec.open(str(target_file), "w") as f:
+        f.write(impl_content)  # type: ignore
 
     click.echo(f"✓ Installed metric '{name}'")
     return True
@@ -198,7 +211,17 @@ def install_suite(
     """Install a suite and its dependencies from the registry."""
     trainloop_dir = get_trainloop_dir()
     suites_dir = trainloop_dir / "eval" / "suites"
-    suites_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use fsspec to create directory
+    suites_dir_str = str(suites_dir)
+    target_file_str = str(suites_dir / f"{name}.py")
+    fs_spec = fsspec.open(target_file_str, "w")
+    fs = cast(AbstractFileSystem, fs_spec.fs)
+
+    if fs:
+        fs.makedirs(suites_dir_str, exist_ok=True)
+    else:
+        raise ValueError(f"Failed to create directory {suites_dir_str}")
 
     target_file = suites_dir / f"{name}.py"
 
@@ -243,8 +266,9 @@ def install_suite(
     # Rewrite imports for target environment
     impl_content = rewrite_imports(impl_content)
 
-    # Write to target
-    target_file.write_text(impl_content)
+    # Write to target using fsspec
+    with fsspec.open(str(target_file), "w") as f:
+        f.write(impl_content)  # type: ignore
 
     click.echo(f"✓ Installed suite '{name}' with {len(installed_deps)} dependencies")
 

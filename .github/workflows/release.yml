@@ -1,0 +1,326 @@
+name: Release and Publish
+
+# Trigger on VERSION file changes merged to main (safer than direct tag pushes)
+# This happens when a version bump PR is merged into main
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'VERSION'
+  # Allow manual trigger for debugging
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build and publish (e.g., 0.7.0)'
+        required: true
+        type: string
+
+jobs:
+  # First verify this is a proper version bump and create the tag
+  validate-and-tag:
+    name: Validate and Create Release Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      version-tag: ${{ steps.get-version.outputs.version-tag }}
+      is-release: ${{ steps.check-release.outputs.is-release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use a token that can push tags
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version from VERSION file or input
+        id: get-version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "version-tag=v$VERSION" >> $GITHUB_OUTPUT
+          else
+            # Read from VERSION file
+            if [ -f "VERSION" ]; then
+              FILE_VERSION=$(cat VERSION | tr -d '\n')
+              echo "version=$FILE_VERSION" >> $GITHUB_OUTPUT
+              echo "version-tag=v$FILE_VERSION" >> $GITHUB_OUTPUT
+              echo "📋 Found version in VERSION file: $FILE_VERSION"
+            else
+              echo "❌ VERSION file not found"
+              exit 1
+            fi
+          fi
+
+      - name: Check if this is a valid release
+        id: check-release
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          VERSION_TAG="${{ steps.get-version.outputs.version-tag }}"
+          
+          echo "🔍 Validating release for version: $VERSION"
+          
+          # Check if VERSION file exists and is not empty
+          if [ -f "VERSION" ]; then
+            FILE_VERSION=$(cat VERSION | tr -d '\n')
+            if [ -n "$FILE_VERSION" ]; then
+              echo "✅ VERSION file contains: $FILE_VERSION"
+              
+              # Check if release notes exist
+              RELEASE_FILE="releases/${VERSION}.md"
+              if [ -f "$RELEASE_FILE" ]; then
+                echo "✅ Release notes found: $RELEASE_FILE"
+                echo "is-release=true" >> $GITHUB_OUTPUT
+              else
+                echo "❌ Release notes not found: $RELEASE_FILE"
+                echo "is-release=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "❌ VERSION file is empty"
+              echo "is-release=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "❌ VERSION file not found"
+            echo "is-release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if tag already exists
+        id: check-tag
+        run: |
+          VERSION_TAG="${{ steps.get-version.outputs.version-tag }}"
+          if git rev-parse "$VERSION_TAG" >/dev/null 2>&1; then
+            echo "⚠️  Tag $VERSION_TAG already exists, skipping tag creation"
+            echo "tag-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Tag $VERSION_TAG does not exist, will create"
+            echo "tag-exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push release tag
+        if: steps.check-release.outputs.is-release == 'true' && steps.check-tag.outputs.tag-exists == 'false'
+        run: |
+          VERSION_TAG="${{ steps.get-version.outputs.version-tag }}"
+          VERSION="${{ steps.get-version.outputs.version }}"
+          
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create tag with release summary
+          RELEASE_FILE="releases/${VERSION}.md"
+          if [ -f "$RELEASE_FILE" ]; then
+            SUMMARY=$(head -n1 "$RELEASE_FILE" | sed 's/^Summary: //')
+            git tag -a "$VERSION_TAG" -m "$SUMMARY"
+          else
+            git tag -a "$VERSION_TAG" -m "Release $VERSION"
+          fi
+          
+          # Push the tag
+          git push origin "$VERSION_TAG"
+          echo "🏷️  Created and pushed tag: $VERSION_TAG"
+
+  # Build all components
+  build:
+    name: Build All Components
+    needs: validate-and-tag
+    if: needs.validate-and-tag.outputs.is-release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Build all components
+        run: npm run build
+        env:
+          VERSION: ${{ needs.validate-and-tag.outputs.version }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            cli/dist/
+            ui/.next/
+            ui/out/
+          retention-days: 7
+
+  # Publish SDK packages
+  publish-sdk:
+    name: Publish SDK Packages
+    needs: [validate-and-tag, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Publish SDK packages
+        run: npm run publish:sdk
+        env:
+          VERSION: ${{ needs.validate-and-tag.outputs.version }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Publish CLI package
+  publish-cli:
+    name: Publish CLI Package
+    needs: [validate-and-tag, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Publish CLI package
+        run: npm run publish:cli
+        env:
+          VERSION: ${{ needs.validate-and-tag.outputs.version }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+  # Publish Studio package
+  publish-studio:
+    name: Publish Studio Package
+    needs: [validate-and-tag, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pipx
+        run: python -m pip install pipx
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Publish Studio package
+        run: npm run publish:studio
+        env:
+          VERSION: ${{ needs.validate-and-tag.outputs.version }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    needs: [validate-and-tag, publish-sdk, publish-cli, publish-studio]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get release notes
+        id: release-notes
+        run: |
+          VERSION="${{ needs.validate-and-tag.outputs.version }}"
+          VERSION_NUM="${VERSION#v}"
+          RELEASE_FILE="releases/${VERSION_NUM}.md"
+          
+          if [ -f "$RELEASE_FILE" ]; then
+            echo "release-file=$RELEASE_FILE" >> $GITHUB_OUTPUT
+            echo "✅ Found release notes: $RELEASE_FILE"
+          else
+            echo "release-file=" >> $GITHUB_OUTPUT
+            echo "❌ Release notes not found: $RELEASE_FILE"
+          fi
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.validate-and-tag.outputs.version-tag }}
+          release_name: TrainLoop Evals ${{ needs.validate-and-tag.outputs.version-tag }}
+          body_path: ${{ steps.release-notes.outputs.release-file }}
+          draft: false
+          prerelease: false
+
+  # Summary job
+  release-complete:
+    name: Release Complete
+    needs: [validate-and-tag, publish-sdk, publish-cli, publish-studio, create-release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check release status
+        run: |
+          VERSION="${{ needs.validate-and-tag.outputs.version-tag }}"
+          echo "🚀 Release workflow completed for $VERSION"
+          
+          # Check if all jobs succeeded
+          if [ "${{ needs.publish-sdk.result }}" = "success" ] && \
+             [ "${{ needs.publish-cli.result }}" = "success" ] && \
+             [ "${{ needs.publish-studio.result }}" = "success" ] && \
+             [ "${{ needs.create-release.result }}" = "success" ]; then
+            echo "✅ All components published successfully!"
+            echo "📦 SDK: Published to PyPI and NPM"
+            echo "🔧 CLI: Published to PyPI"
+            echo "🎨 Studio: Published to NPM"
+            echo "📋 GitHub Release: Created"
+          else
+            echo "❌ Some components failed to publish:"
+            echo "SDK: ${{ needs.publish-sdk.result }}"
+            echo "CLI: ${{ needs.publish-cli.result }}"
+            echo "Studio: ${{ needs.publish-studio.result }}"
+            echo "Release: ${{ needs.create-release.result }}"
+            exit 1
+          fi
