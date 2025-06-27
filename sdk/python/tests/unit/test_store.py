@@ -233,12 +233,16 @@ class TestStore:
         mock_open_file = MagicMock()
         mock_open_file.fs = mock_fs
 
-        # Mock Path for glob operation
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        events_path = MagicMock()
-        mock_path.__truediv__.return_value = events_path
-        events_path.glob.return_value = []  # No existing files
+        # Create a better Path mock that won't create real directories
+        # We need to mock both Path(data_dir) / "events" and Path(event_dir_str)
+        def create_path_mock(path_str):
+            path_mock = MagicMock()
+            path_mock.__str__ = MagicMock(return_value=path_str)
+            path_mock.__truediv__ = MagicMock(side_effect=lambda x: create_path_mock(f"{path_str}/{x}"))
+            path_mock.glob = MagicMock(return_value=[])  # No existing files
+            return path_mock
+        
+        mock_path_class.side_effect = lambda x: create_path_mock(x)
 
         # Mock file write
         mock_file = MagicMock()
@@ -296,12 +300,15 @@ class TestStore:
         mock_open_file = MagicMock()
         mock_open_file.fs = mock_fs
 
-        # Mock Path for glob operation
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        events_path = MagicMock()
-        mock_path.__truediv__.return_value = events_path
-        events_path.glob.return_value = []  # No existing files
+        # Create a better Path mock that won't create real directories
+        def create_path_mock(path_str):
+            path_mock = MagicMock()
+            path_mock.__str__ = MagicMock(return_value=path_str)
+            path_mock.__truediv__ = MagicMock(side_effect=lambda x: create_path_mock(f"{path_str}/{x}"))
+            path_mock.glob = MagicMock(return_value=[])  # No existing files
+            return path_mock
+        
+        mock_path_class.side_effect = lambda x: create_path_mock(x)
 
         # Mock file write
         mock_file = MagicMock()
