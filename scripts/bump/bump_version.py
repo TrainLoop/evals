@@ -207,9 +207,27 @@ def main() -> None:
 
     sh("git add " + " ".join(map(str, files_to_add)))
     sh(f"git commit -m 'chore: release {ver} - {commit_msg}'")
-    sh(f"git tag -a v{ver} -m '{commit_msg}'")
-    sh("git push origin main --tags")
-    print(f"✅ bumped to {ver}, changelog updated, pushed to origin")
+
+    # Note: Tag creation is now handled by GitHub Actions after PR merge
+    # This allows for safer release process via PR review
+    current_branch = (
+        subprocess.check_output("git branch --show-current", shell=True)
+        .decode()
+        .strip()
+    )
+
+    if current_branch == "main":
+        print("⚠️  WARNING: You're on the main branch!")
+        print(
+            "   Consider creating a release branch and opening a PR for safer releases."
+        )
+        print("   Example: git checkout -b release/v{ver}")
+        sh("git push origin main")
+        print(f"✅ bumped to {ver}, pushed to main - tag will be created automatically")
+    else:
+        sh(f"git push origin {current_branch}")
+        print(f"✅ bumped to {ver} on branch {current_branch}")
+        print("   Create a PR to merge this into main to trigger the release workflow")
 
 
 if __name__ == "__main__":
