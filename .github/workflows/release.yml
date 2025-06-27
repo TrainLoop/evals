@@ -16,6 +16,11 @@ on:
         required: true
         type: string
 
+# Give workflow permission to create tags and releases
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   # First verify this is a proper version bump and create the tag
   validate-and-tag:
