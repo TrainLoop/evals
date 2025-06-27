@@ -244,6 +244,7 @@ jobs:
           VERSION: ${{ needs.validate-and-tag.outputs.version }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
   # Create GitHub release
   create-release:
