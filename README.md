@@ -274,6 +274,121 @@ trainloop  # Same as: trainloop studio
 - `-h, --help` - Show help message and exit
 
 
+## Testing
+
+TrainLoop includes a comprehensive test suite to ensure reliability across all components.
+
+### Quick Start
+
+Run all tests with one of these commands:
+
+```bash
+# Using go-task (recommended)
+task test
+
+# Simple tests (when disk space is limited)
+task test:simple
+```
+
+### Test Categories
+
+The test suite includes:
+
+1. **CLI FSSpec Integration Tests** - Tests for filesystem abstraction in CLI
+2. **SDK FSSpec Tests** - Tests for filesystem abstraction in Python SDK
+3. **SDK Store Tests** - Tests for data storage functionality
+4. **Init Command Tests** - Integration tests for project initialization
+5. **All CLI Unit Tests** - Complete CLI unit test suite
+6. **All SDK Unit Tests** - Complete SDK unit test suite
+7. **MagicMock Directory Check** - Ensures no mock directories are created
+
+### Individual Test Commands
+
+If you want to run specific test categories:
+
+#### CLI Tests
+```bash
+cd cli
+poetry run pytest ../tests/unit/test_fsspec_integration.py -v  # FSSpec tests
+poetry run pytest ../tests/integration/init_flow/test_init_command.py -v  # Init tests
+poetry run pytest -m unit -v  # All unit tests
+```
+
+#### SDK Tests
+```bash
+cd sdk/python
+poetry run pytest tests/unit/test_fsspec_store.py -v  # FSSpec tests
+poetry run pytest tests/unit/test_store.py -v  # Store tests
+poetry run pytest -m unit -v  # All unit tests
+```
+
+#### Using go-task
+```bash
+task test:cli      # Run only CLI tests
+task test:sdk      # Run only SDK tests
+task test:fsspec   # Run FSSpec-specific tests
+task test:init     # Run init command tests
+task clean:mocks   # Clean up any MagicMock directories
+task check:mocks   # Check for any MagicMock directories
+task clean:all     # Clean up all test artifacts
+
+# View all available tasks
+task --list
+```
+
+### Expected Results
+
+All tests should pass. The output will show:
+- ✓ Green checkmarks for passed test suites
+- ✗ Red X marks for failed test suites
+- A summary at the end showing total passed/failed
+
+### Troubleshooting
+
+#### MagicMock Directories
+
+If you see directories with names like `<MagicMock name='Path()' id='123456'>`, these are created when tests don't properly mock filesystem operations. Run:
+
+```bash
+task clean:mocks
+# or
+find . -name "*MagicMock*" -type d -exec rm -rf {} + 2>/dev/null
+```
+
+#### Poetry Not Found
+
+Make sure you have Poetry installed and the virtual environments are set up:
+
+```bash
+cd cli && poetry install
+cd ../sdk/python && poetry install
+```
+
+#### Test Failures
+
+If tests fail, check:
+1. All dependencies are installed
+2. You're in the correct directory
+3. No leftover test artifacts from previous runs
+
+### Test Coverage
+
+The tests cover:
+- FSSpec implementation for cloud storage support (S3, GCS, Azure)
+- File operations with proper mocking
+- Project initialization and scaffolding
+- Registry operations
+- Multi-threaded safety
+- Prevention of MagicMock directory creation
+
+### Adding New Tests
+
+When adding new tests:
+1. Use appropriate pytest markers (`@pytest.mark.unit`, `@pytest.mark.integration`)
+2. Properly mock filesystem operations to prevent MagicMock directories
+3. Follow the existing test patterns in the codebase
+
+
 ## About this repository
 The repository is split into several packages:
 

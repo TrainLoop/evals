@@ -1,0 +1,124 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  CLI_DIR: ./cli
+  SDK_DIR: ./sdk/python
+
+tasks:
+  # Default task - show help
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # Main test tasks
+  test:
+    desc: Run all tests with the Python test runner
+    cmds:
+      - python3 scripts/run_all_tests.py
+
+  test:all:
+    desc: Run all tests with detailed output
+    cmds:
+      - python3 scripts/run_all_tests.py
+
+  test:simple:
+    desc: Run simplified key tests (recommended when disk space is limited)
+    cmds:
+      - python3 scripts/run_tests_simple.py
+
+  # Component-specific tests
+  test:cli:
+    desc: Run only CLI unit tests
+    dir: '{{.CLI_DIR}}'
+    cmds:
+      - poetry run pytest -m unit -v
+
+  test:sdk:
+    desc: Run only SDK unit tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest -m unit -v
+
+  # Feature-specific tests
+  test:fsspec:
+    desc: Run FSSpec-specific tests for both CLI and SDK
+    cmds:
+      - task: test:fsspec:cli
+      - task: test:fsspec:sdk
+
+  test:fsspec:cli:
+    desc: Run CLI FSSpec integration tests
+    dir: '{{.CLI_DIR}}'
+    cmds:
+      - poetry run pytest ../tests/unit/test_fsspec_integration.py -v
+
+  test:fsspec:sdk:
+    desc: Run SDK FSSpec tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/unit/test_fsspec_store.py -v
+
+  test:init:
+    desc: Run init command integration tests
+    dir: '{{.CLI_DIR}}'
+    cmds:
+      - poetry run pytest ../tests/integration/init_flow/test_init_command.py -v
+
+  test:store:
+    desc: Run SDK store tests (includes MagicMock fixes)
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/unit/test_store.py -v
+
+  # Specific test scenarios
+  test:registry:
+    desc: Run registry update tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/unit/test_store.py::TestStore::test_update_registry_creates_new_registry tests/unit/test_store.py::TestStore::test_update_registry_updates_existing_entry tests/unit/test_store.py::TestStore::test_update_registry_thread_safety -v
+
+  test:s3:
+    desc: Run S3 path support tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/unit/test_fsspec_store.py::test_save_samples_with_s3_path_mock -v
+
+  test:magicmock:
+    desc: Run tests that verify MagicMock directory fixes
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/unit/test_store.py::TestStore::test_save_samples_creates_jsonl_file tests/unit/test_store.py::TestStore::test_save_samples_ensures_events_dir_exists -v
+
+  # Cleanup tasks
+  clean:mocks:
+    desc: Clean up any MagicMock directories
+    cmds:
+      - find . -name "*MagicMock*" -type d -exec rm -rf {} + 2>/dev/null || true
+      - echo "MagicMock directories cleaned up."
+
+  check:mocks:
+    desc: Check for any MagicMock directories
+    cmds:
+      - |
+        count=$(find . -name "*MagicMock*" -type d 2>/dev/null | wc -l)
+        if [ "$count" -eq 0 ]; then
+          echo "✓ No MagicMock directories found"
+        else
+          echo "✗ Found $count MagicMock directories:"
+          find . -name "*MagicMock*" -type d 2>/dev/null
+        fi
+
+  clean:pytest:
+    desc: Clean up pytest temporary directories
+    cmds:
+      - rm -rf /tmp/pytest-of-* 2>/dev/null || true
+      - echo "Pytest temp directories cleaned up."
+
+  clean:all:
+    desc: Clean up all test artifacts
+    cmds:
+      - task: clean:mocks
+      - task: clean:pytest
