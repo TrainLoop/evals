@@ -43,15 +43,26 @@ function findJsonlFiles(dir: string, pattern?: string): string[] {
 export async function getDuckDB(): Promise<DuckDBInstance> {
   if (cached) return cached;
 
-  const ROOT = process.env.TRAINLOOP_DATA_FOLDER!;
+  // During build time, this might be called for static analysis but we won't actually connect
+  const ROOT = process.env.TRAINLOOP_DATA_FOLDER;
 
   if (!ROOT) {
+    // During build time, this is expected - create a temporary in-memory database
+    if (process.env.NODE_ENV === 'production' && !process.env.RUNTIME) {
+      const db = await DuckDBInstance.fromCache(':memory:');
+      return (cached = db);
+    }
     console.error('❌ ERROR: TRAINLOOP_DATA_FOLDER environment variable is not set');
     process.exit(1);
   }
 
   // Check that the data folder exists
   if (!existsSync(ROOT)) {
+    // During build time, this is expected - create a temporary in-memory database
+    if (process.env.NODE_ENV === 'production' && !process.env.RUNTIME) {
+      const db = await DuckDBInstance.fromCache(':memory:');
+      return (cached = db);
+    }
     console.error(`❌ ERROR: Data folder does not exist at path: ${ROOT}`);
     console.error('Please check your TRAINLOOP_DATA_FOLDER environment variable');
     process.exit(1);
