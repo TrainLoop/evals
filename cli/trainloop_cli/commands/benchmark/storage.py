@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
+from typing import List, cast
 from datetime import datetime
 from dataclasses import asdict
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 from .types import BenchmarkResult
 from .constants import EMOJI_SAVE
@@ -19,7 +21,16 @@ def save_benchmark_results(
     benchmark_dir = project_root / "data" / "benchmarks"
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     output_dir = benchmark_dir / timestamp
-    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use fsspec to create directory
+    output_dir_str = str(output_dir)
+    fs_spec = fsspec.open(output_dir_str + "/.placeholder", "w")
+    fs = cast(AbstractFileSystem, fs_spec.fs)
+
+    if fs:
+        fs.makedirs(output_dir_str, exist_ok=True)
+    else:
+        raise ValueError(f"Failed to create directory {output_dir_str}")
 
     # Group results by suite
     results_by_suite = {}
@@ -40,7 +51,7 @@ def save_benchmark_results(
     for suite_name, suite_results in results_by_suite.items():
         results_file = output_dir / f"{suite_name}.jsonl"
 
-        with results_file.open("w") as f:
+        with fsspec.open(str(results_file), "w") as f:
             # Write metadata record (first line)
             metadata_record = {
                 "type": "metadata",
@@ -55,7 +66,7 @@ def save_benchmark_results(
                     "total_samples": len(suite_results),
                 },
             }
-            f.write(json.dumps(metadata_record) + "\n")
+            f.write(json.dumps(metadata_record) + "\n")  # type: ignore
 
             # Write result records
             provider_summaries = {
@@ -106,26 +117,32 @@ def save_benchmark_results(
                             # Check metric results for failure reason
                             metric_results = provider_result.get("metric_results", {})
                             for metric_name, metric_result in metric_results.items():
-                                if not metric_result.get("passed") and metric_result.get("error"):
+                                if not metric_result.get(
+                                    "passed"
+                                ) and metric_result.get("error"):
                                     reason = f"Metric '{metric_name}' error: {metric_result['error']}"
                                     break
                             if not reason:
-                                reason = f"Failed {result.original_result.metric} evaluation"
-                    
+                                reason = (
+                                    f"Failed {result.original_result.metric} evaluation"
+                                )
+
                     result_record = {
                         "type": "result",
                         "metric": result.original_result.metric,
                         "sample": {
                             **asdict(result.original_result.sample),
                             "model": provider,  # Add provider to sample for UI compatibility
-                            "output": {"content": provider_result.get("response", "")},  # Update output with benchmark response
+                            "output": {
+                                "content": provider_result.get("response", "")
+                            },  # Update output with benchmark response
                         },
                         "passed": passed,
                         "score": score,
                         "reason": reason,
                         "provider_result": provider_result,
                     }
-                    f.write(json.dumps(result_record, default=str) + "\n")
+                    f.write(json.dumps(result_record, default=str) + "\n")  # type: ignore
 
             # Write summary record (last line)
             summary_data = {}
@@ -156,7 +173,7 @@ def save_benchmark_results(
                     "provider_summaries": summary_data,
                 },
             }
-            f.write(json.dumps(summary_record, default=str) + "\n")
+            f.write(json.dumps(summary_record, default=str) + "\n")  # type: ignore
 
     print(f"\n{EMOJI_SAVE} Benchmark results saved to:")
     print(f"  {output_dir}")

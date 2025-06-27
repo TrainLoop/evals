@@ -7,7 +7,9 @@ import os
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, cast
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,16 @@ def ensure_trace_dir() -> Optional[Path]:
     trace_dir = data_folder_path / "judge_traces"
 
     try:
-        trace_dir.mkdir(parents=True, exist_ok=True)
+        # Use fsspec to create directory
+        trace_dir_str = str(trace_dir)
+        fs_spec = fsspec.open(trace_dir_str + "/.placeholder", "w")
+        fs = cast(AbstractFileSystem, fs_spec.fs)
+
+        if fs:
+            fs.makedirs(trace_dir_str, exist_ok=True)
+        else:
+            raise ValueError(f"Failed to create directory {trace_dir_str}")
+
         return trace_dir
     except OSError as e:
         logger.error(f"Could not create trace directory {trace_dir}: {e}")
@@ -60,10 +71,11 @@ def write_trace_log(
 
     trace_file_path = trace_dir / f"{trace_id}.jsonl"
     try:
-        with open(trace_file_path, "w", encoding="utf-8") as f:
+        # Use fsspec to write trace log
+        with fsspec.open(str(trace_file_path), "w", encoding="utf-8") as f:
             for event in trace_events:
-                json.dump(event, f)
-                f.write("\n")
+                json.dump(event, f)  # type: ignore
+                f.write("\n")  # type: ignore
         logger.info(f"Judge trace written to: {trace_file_path}")
     except IOError as e:
         logger.error(f"Failed to write trace log to {trace_file_path}: {e}")

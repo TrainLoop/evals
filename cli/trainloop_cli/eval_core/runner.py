@@ -15,8 +15,10 @@ import sys
 from collections import defaultdict, Counter
 from dataclasses import asdict
 from pathlib import Path
-from typing import List, Optional, Dict, Set, Iterator, Tuple
+from typing import List, Optional, Dict, Set, Iterator, Tuple, Union, cast
 from datetime import datetime
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 from .types import Result
 
@@ -91,18 +93,34 @@ def _discover_suites(
         sys.path = original_sys_path
 
 
-def _write_results(suite_name: str, results: List[Result], result_dir_for_run: Path):
+def _write_results(
+    suite_name: str, results: List[Result], result_dir_for_run: Union[Path, str]
+):
     """Writes results for a single suite to a JSONL file in the run-specific directory."""
-    # Ensure the specific run directory exists (e.g., data/results/YYYY-MM-DD_HH-MM-SS/)
-    result_dir_for_run.mkdir(parents=True, exist_ok=True)
-    out_file = result_dir_for_run / f"{suite_name}.jsonl"
+    # Convert Path to string for fsspec
+    if isinstance(result_dir_for_run, Path):
+        result_dir_str = str(result_dir_for_run)
+        out_file_str = str(result_dir_for_run / f"{suite_name}.jsonl")
+    else:
+        # Handle string paths (e.g., S3 URLs)
+        result_dir_str = result_dir_for_run
+        out_file_str = f"{result_dir_for_run}/{suite_name}.jsonl"
+
     try:
-        with out_file.open("a", encoding="utf-8") as f:
+        # Ensure the directory exists using fsspec
+        fs_spec = fsspec.open(out_file_str, "a")
+        fs = cast(AbstractFileSystem, fs_spec.fs)
+
+        if fs:
+            fs.makedirs(result_dir_str, exist_ok=True)
+
+        # Write results using fsspec
+        with fsspec.open(out_file_str, "a", encoding="utf-8") as f:
             for r in results:
-                f.write(json.dumps(asdict(r), default=str) + "\n")
-        print(f"  {EMOJI_SAVE} {out_file}")
+                f.write(json.dumps(asdict(r), default=str) + "\n")  # type: ignore
+        print(f"  {EMOJI_SAVE} {out_file_str}")
     except IOError as e:
-        print(f"Error writing results for suite '{suite_name}' to {out_file}: {e}")
+        print(f"Error writing results for suite '{suite_name}' to {out_file_str}: {e}")
 
 
 def _print_summary(all_results: Dict[str, List[Result]]):
@@ -177,7 +195,13 @@ def run_evaluations(
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     result_dir_for_this_run = result_dir_base / timestamp
     try:
-        result_dir_for_this_run.mkdir(parents=True, exist_ok=True)
+        # Use fsspec to create directory
+        result_dir_str = str(result_dir_for_this_run)
+        fs_spec = fsspec.open(result_dir_str + "/.placeholder", "w")
+        fs = cast(AbstractFileSystem, fs_spec.fs)
+
+        if fs:
+            fs.makedirs(result_dir_str, exist_ok=True)
     except OSError as e:
         print(f"Error creating results directory {result_dir_for_this_run}: {e}")
         return 1  # Indicate failure

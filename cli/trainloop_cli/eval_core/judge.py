@@ -49,7 +49,7 @@ Lightweight "LLM Judge" helper for TrainLoop metrics.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, Union, Any, TypedDict
+from typing import Dict, List, Optional, Tuple, Union, Any, TypedDict, cast
 import os
 import uuid
 import datetime
@@ -62,6 +62,8 @@ from functools import lru_cache
 from dotenv import load_dotenv, find_dotenv
 import yaml
 import litellm
+import fsspec
+from fsspec.spec import AbstractFileSystem
 
 from ._trace_helpers import ensure_trace_dir
 
@@ -601,12 +603,20 @@ def assert_true(
         # Now, write all accumulated trace events to the consolidated run log file
         if engine.current_trace_filepath and trace_events:
             try:
-                # Ensure parent directory exists, though it should have been created by eval.py
-                engine.current_trace_filepath.parent.mkdir(parents=True, exist_ok=True)
-                with open(engine.current_trace_filepath, "a", encoding="utf-8") as f:
+                # Ensure parent directory exists using fsspec
+                parent_dir = str(engine.current_trace_filepath.parent)
+                fs_spec = fsspec.open(str(engine.current_trace_filepath), "a")
+                fs = cast(AbstractFileSystem, fs_spec.fs)
+
+                if fs:
+                    fs.makedirs(parent_dir, exist_ok=True)
+
+                with fsspec.open(
+                    str(engine.current_trace_filepath), "a", encoding="utf-8"
+                ) as f:
                     for event in trace_events:
-                        json.dump(event, f)
-                        f.write("\n")
+                        json.dump(event, f)  # type: ignore
+                        f.write("\n")  # type: ignore
             except Exception as e:
                 logger.error(
                     f"Failed to write to consolidated trace log {engine.current_trace_filepath}: {e}"
