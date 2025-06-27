@@ -2,6 +2,26 @@
 
 This directory contains GitHub Actions workflows for the TrainLoop Evals project.
 
+## Release Workflow
+
+### release.yml (Automated Release and Publishing)
+Automatically builds and publishes all components when version bump PRs are merged:
+- **Triggers**: VERSION file changes merged to main (safer than direct tag pushes)
+- **Flow**: Validates → Creates Git tag → Builds → Publishes → Creates GitHub release
+- **Components**: SDK (Python/TypeScript), CLI (Python), Studio (Node.js)
+- **Publishes to**: PyPI, NPM
+- **Validates**: VERSION file and corresponding release notes must exist
+- **Manual trigger**: Available for debugging specific versions
+
+## Test Workflows
+
+### cli-tests.yml (CLI Integration Tests)
+Tests CLI functionality on every PR and push to main:
+- **CLI Integration Tests**: FSSpec integration (5 tests)
+- **Init Command Tests**: Scaffolding and setup (5 tests)
+- **Linting**: Black and Flake8 code quality checks
+- **Fast feedback**: ~1-2 minutes for CLI changes
+
 ## SDK Test Workflows
 
 ### sdk-tests-lean.yml (Primary - Runs Automatically)
