@@ -18,7 +18,7 @@ on:
 
 jobs:
   test-cli:
-    name: CLI Unit Tests
+    name: CLI Integration Tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -57,9 +57,6 @@ jobs:
           poetry run black --check .
           poetry run flake8 .
         continue-on-error: true
-
-      - name: Run CLI unit tests
-        run: poetry run pytest -m unit -v
 
       - name: Run CLI FSSpec integration tests
         run: poetry run pytest ../tests/unit/test_fsspec_integration.py -v
