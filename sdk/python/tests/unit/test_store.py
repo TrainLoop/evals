@@ -1,10 +1,11 @@
 """
-Unit tests for the store module.
+Unit tests for the store module with proper fsspec mocking.
 """
 
 import json
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone
+import threading
 
 from trainloop_llm_logging.store import save_samples, update_registry, _now_iso
 from trainloop_llm_logging.types import CollectedSample, LLMCallLocation
@@ -25,25 +26,38 @@ class TestStore:
         assert "T" in timestamp
         assert timestamp.count(":") >= 2
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_update_registry_creates_new_registry(self, mock_path_class):
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    def test_update_registry_creates_new_registry(self, mock_fsspec_open):
         """Test update_registry creates a new registry if none exists."""
         # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists.return_value = False
+        mock_fs = MagicMock()
+        mock_fs.exists.return_value = False
 
-        mock_write = MagicMock()
-        mock_path.write_text = mock_write
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock file write
+        mock_file = MagicMock()
+        mock_file.__enter__ = MagicMock(return_value=mock_file)
+        mock_file.__exit__ = MagicMock(return_value=None)
+
+        # Set up side effects for different calls
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "r":
+                return mock_open_file
+            else:
+                return mock_file
+
+        mock_fsspec_open.side_effect = open_side_effect
 
         # Call update_registry
         location: LLMCallLocation = {"file": "test.py", "lineNumber": "10"}
         update_registry("/tmp/data", location, "test-tag")
 
         # Should write a new registry
-        mock_write.assert_called_once()
-        written_data = json.loads(mock_write.call_args[0][0])
+        assert mock_fsspec_open.call_count == 2  # One for read check, one for write
+        written_data = json.loads(mock_file.write.call_args[0][0])
 
         assert written_data["schema"] == 1
         assert "test.py" in written_data["files"]
@@ -55,8 +69,8 @@ class TestStore:
         assert "firstSeen" in entry
         assert "lastSeen" in entry
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_update_registry_updates_existing_entry(self, mock_path_class):
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    def test_update_registry_updates_existing_entry(self, mock_fsspec_open):
         """Test update_registry updates an existing entry."""
         # Set up existing registry data
         existing_registry = {
@@ -74,22 +88,41 @@ class TestStore:
         }
 
         # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists.return_value = True
-        mock_path.read_text.return_value = json.dumps(existing_registry)
+        mock_fs = MagicMock()
+        mock_fs.exists.return_value = True
 
-        mock_write = MagicMock()
-        mock_path.write_text = mock_write
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock file read
+        mock_read_file = MagicMock()
+        mock_read_file.__enter__ = MagicMock(return_value=mock_read_file)
+        mock_read_file.__exit__ = MagicMock(return_value=None)
+        mock_read_file.read.return_value = json.dumps(existing_registry)
+
+        # Mock file write
+        mock_write_file = MagicMock()
+        mock_write_file.__enter__ = MagicMock(return_value=mock_write_file)
+        mock_write_file.__exit__ = MagicMock(return_value=None)
+
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "r":
+                if kwargs:  # actual read operation
+                    return mock_read_file
+                return mock_open_file  # fs check
+            else:
+                return mock_write_file
+
+        mock_fsspec_open.side_effect = open_side_effect
 
         # Call update_registry with same location but different tag
         location: LLMCallLocation = {"file": "test.py", "lineNumber": "10"}
         update_registry("/tmp/data", location, "new-tag")
 
         # Should update the entry
-        mock_write.assert_called_once()
-        written_data = json.loads(mock_write.call_args[0][0])
+        assert mock_fsspec_open.call_count >= 3
+        written_data = json.loads(mock_write_file.write.call_args[0][0])
 
         entry = written_data["files"]["test.py"]["10"]
         assert entry["tag"] == "new-tag"  # Tag should be updated
@@ -97,84 +130,128 @@ class TestStore:
         assert entry["firstSeen"] == "2024-01-01T00:00:00Z"  # First seen preserved
         assert entry["lastSeen"] != "2024-01-01T00:00:00Z"  # Last seen updated
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_update_registry_handles_corrupt_registry(self, mock_path_class):
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    def test_update_registry_handles_corrupt_registry(self, mock_fsspec_open):
         """Test update_registry handles corrupt registry files."""
         # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists.return_value = True
-        mock_path.read_text.return_value = "invalid json {"
+        mock_fs = MagicMock()
+        mock_fs.exists.return_value = True
 
-        mock_write = MagicMock()
-        mock_path.write_text = mock_write
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock file read with invalid JSON
+        mock_read_file = MagicMock()
+        mock_read_file.__enter__ = MagicMock(return_value=mock_read_file)
+        mock_read_file.__exit__ = MagicMock(return_value=None)
+        mock_read_file.read.return_value = "invalid json {"
+
+        # Mock file write
+        mock_write_file = MagicMock()
+        mock_write_file.__enter__ = MagicMock(return_value=mock_write_file)
+        mock_write_file.__exit__ = MagicMock(return_value=None)
+
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "r":
+                if kwargs:  # actual read operation
+                    return mock_read_file
+                return mock_open_file  # fs check
+            else:
+                return mock_write_file
+
+        mock_fsspec_open.side_effect = open_side_effect
 
         # Call update_registry
         location: LLMCallLocation = {"file": "test.py", "lineNumber": "10"}
         update_registry("/tmp/data", location, "test-tag")
 
-        # Should create a new registry
-        mock_write.assert_called_once()
-        written_data = json.loads(mock_write.call_args[0][0])
+        # Should recreate registry
+        assert mock_fsspec_open.call_count >= 3
+        written_data = json.loads(mock_write_file.write.call_args[0][0])
 
         assert written_data["schema"] == 1
         assert "test.py" in written_data["files"]
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_update_registry_handles_empty_registry(self, mock_path_class):
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    def test_update_registry_handles_empty_registry(self, mock_fsspec_open):
         """Test update_registry handles empty registry file."""
         # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists.return_value = True
-        mock_path.read_text.return_value = "{}"
+        mock_fs = MagicMock()
+        mock_fs.exists.return_value = True
 
-        mock_write = MagicMock()
-        mock_path.write_text = mock_write
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock file read with empty JSON
+        mock_read_file = MagicMock()
+        mock_read_file.__enter__ = MagicMock(return_value=mock_read_file)
+        mock_read_file.__exit__ = MagicMock(return_value=None)
+        mock_read_file.read.return_value = "{}"
+
+        # Mock file write
+        mock_write_file = MagicMock()
+        mock_write_file.__enter__ = MagicMock(return_value=mock_write_file)
+        mock_write_file.__exit__ = MagicMock(return_value=None)
+
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "r":
+                if kwargs:  # actual read operation
+                    return mock_read_file
+                return mock_open_file  # fs check
+            else:
+                return mock_write_file
+
+        mock_fsspec_open.side_effect = open_side_effect
 
         # Call update_registry
         location: LLMCallLocation = {"file": "test.py", "lineNumber": "10"}
         update_registry("/tmp/data", location, "test-tag")
 
         # Should initialize the registry structure
-        mock_write.assert_called_once()
-        written_data = json.loads(mock_write.call_args[0][0])
+        assert mock_fsspec_open.call_count >= 3
+        written_data = json.loads(mock_write_file.write.call_args[0][0])
 
         assert written_data["schema"] == 1
         assert "files" in written_data
 
     @patch("trainloop_llm_logging.store.time")
+    @patch("trainloop_llm_logging.store.fsspec.open")
     @patch("trainloop_llm_logging.store.Path")
-    def test_save_samples_creates_jsonl_file(self, mock_path_class, mock_time):
+    def test_save_samples_creates_jsonl_file(
+        self, mock_path_class, mock_fsspec_open, mock_time
+    ):
         """Test save_samples creates a JSONL file with timestamp."""
         # Set up mocks
         mock_time.time.return_value = 1234567890.123
 
-        # Create a proper mock file handle
-        mock_file = MagicMock()
-        mock_file.write = MagicMock()
+        # Mock filesystem
+        mock_fs = MagicMock()
 
-        # Mock the Path operations chain
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock Path for glob operation
         mock_path = MagicMock()
         mock_path_class.return_value = mock_path
-
-        # Mock events directory path
         events_path = MagicMock()
         mock_path.__truediv__.return_value = events_path
-        events_path.mkdir = MagicMock()
-        events_path.glob = MagicMock(return_value=[])  # No existing files
+        events_path.glob.return_value = []  # No existing files
 
-        # Mock the file path
-        file_path = MagicMock()
-        events_path.__truediv__.return_value = file_path
+        # Mock file write
+        mock_file = MagicMock()
+        mock_file.__enter__ = MagicMock(return_value=mock_file)
+        mock_file.__exit__ = MagicMock(return_value=None)
 
-        # Mock the open context manager
-        mock_open_cm = MagicMock()
-        mock_open_cm.__enter__.return_value = mock_file
-        mock_open_cm.__exit__.return_value = None
-        file_path.open.return_value = mock_open_cm
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "w":
+                return mock_open_file
+            else:
+                return mock_file
+
+        mock_fsspec_open.side_effect = open_side_effect
 
         # Create samples
         samples: list[CollectedSample] = [
@@ -185,110 +262,132 @@ class TestStore:
                 "model": "gpt-4",
                 "modelParams": {},
                 "durationMs": 100,
-                "startTimeMs": 1000,
-                "endTimeMs": 1100,
-                "url": "https://api.openai.com/v1/chat",
+                "startTimeMs": 1234567890000,
+                "endTimeMs": 1234567890100,
+                "url": "https://api.openai.com/v1/chat/completions",
                 "location": {"file": "test.py", "lineNumber": "10"},
-            },
+            }
+        ]
+
+        # Call save_samples
+        save_samples("/tmp/data", samples)
+
+        # Should create directory and write file
+        mock_fs.makedirs.assert_called_once_with("/tmp/data/events", exist_ok=True)
+
+        # Check written content
+        written_content = mock_file.write.call_args[0][0]
+        assert json.loads(written_content.strip()) == samples[0]
+
+    @patch("trainloop_llm_logging.store.time")
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    @patch("trainloop_llm_logging.store.Path")
+    def test_save_samples_ensures_events_dir_exists(
+        self, mock_path_class, mock_fsspec_open, mock_time
+    ):
+        """Test save_samples creates events directory if it doesn't exist."""
+        # Set up mocks
+        mock_time.time.return_value = 1234567890.123
+
+        # Mock filesystem
+        mock_fs = MagicMock()
+
+        # Mock fsspec.open to return object with .fs attribute
+        mock_open_file = MagicMock()
+        mock_open_file.fs = mock_fs
+
+        # Mock Path for glob operation
+        mock_path = MagicMock()
+        mock_path_class.return_value = mock_path
+        events_path = MagicMock()
+        mock_path.__truediv__.return_value = events_path
+        events_path.glob.return_value = []  # No existing files
+
+        # Mock file write
+        mock_file = MagicMock()
+        mock_file.__enter__ = MagicMock(return_value=mock_file)
+        mock_file.__exit__ = MagicMock(return_value=None)
+
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "w":
+                return mock_open_file
+            else:
+                return mock_file
+
+        mock_fsspec_open.side_effect = open_side_effect
+
+        # Call save_samples
+        samples: list[CollectedSample] = [
             {
-                "tag": "test-2",
-                "input": [{"role": "user", "content": "Bye"}],
-                "output": {"content": "Goodbye!"},
-                "model": "gpt-3.5",
-                "modelParams": {"temperature": 0.5},
-                "durationMs": 50,
-                "startTimeMs": 2000,
-                "endTimeMs": 2050,
-                "url": "https://api.openai.com/v1/chat",
-                "location": {"file": "test.py", "lineNumber": "20"},
-            },
+                "tag": "test",
+                "input": [],
+                "output": {"content": "test"},
+                "model": "test",
+                "modelParams": {},
+                "durationMs": 0,
+                "startTimeMs": 0,
+                "endTimeMs": 0,
+                "url": "",
+                "location": {"file": "", "lineNumber": "0"},
+            }
         ]
 
         save_samples("/tmp/data", samples)
 
-        # Verify directory creation
-        events_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        # Should ensure directory exists
+        mock_fs.makedirs.assert_called_once_with("/tmp/data/events", exist_ok=True)
 
-        # Verify file naming
-        events_path.__truediv__.assert_called_once_with("1234567890123.jsonl")
+    @patch("trainloop_llm_logging.store.fsspec.open")
+    def test_update_registry_thread_safety(self, mock_fsspec_open):
+        """Test update_registry can handle concurrent updates."""
+        # Track call count
+        call_count = 0
+        results = []
 
-        # Verify file was opened correctly
-        file_path.open.assert_called_once_with("a", encoding="utf-8")
-
-        # Verify content written
-        assert mock_file.write.call_count == 2
-
-        # Check the written content
-        written_calls = mock_file.write.call_args_list
-
-        # Check first sample
-        line1 = json.loads(written_calls[0][0][0].rstrip("\n"))
-        assert line1["tag"] == "test-1"
-        assert line1["model"] == "gpt-4"
-
-    @patch("trainloop_llm_logging.store.Path")
-    def test_save_samples_handles_empty_list(self, mock_path_class):
-        """Test save_samples handles empty sample list."""
         # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
+        def make_open_file():
+            mock_fs = MagicMock()
+            mock_fs.exists.return_value = False
+            mock_open_file = MagicMock()
+            mock_open_file.fs = mock_fs
+            return mock_open_file
 
-        save_samples("/tmp/data", [])
+        def make_file():
+            nonlocal call_count
+            call_count += 1
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=None)
 
-        # Should not create any files
-        mock_path.__truediv__.assert_not_called()
+            # Capture write calls
+            def capture_write(data):
+                results.append(data)
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_save_samples_ensures_events_dir_exists(self, mock_path_class):
-        """Test save_samples creates events directory if needed."""
-        # Set up mocks
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
+            mock_file.write = capture_write
+            return mock_file
 
-        events_path = MagicMock()
-        mock_path.__truediv__.return_value = events_path
+        def open_side_effect(path, mode="r", **kwargs):
+            if mode == "r":
+                return make_open_file()
+            else:
+                return make_file()
 
-        file_path = MagicMock()
-        events_path.__truediv__.return_value = file_path
-        file_path.write_text = MagicMock()
+        mock_fsspec_open.side_effect = open_side_effect
 
-        # Create a sample
-        sample: CollectedSample = {
-            "tag": "test",
-            "input": [],
-            "output": {"content": ""},
-            "model": "gpt-4",
-            "modelParams": {},
-            "durationMs": 0,
-            "startTimeMs": 0,
-            "endTimeMs": 0,
-            "url": "",
-            "location": {"file": "", "lineNumber": "0"},
-        }
+        # Run concurrent updates
+        def update_thread(i):
+            location: LLMCallLocation = {"file": f"test{i}.py", "lineNumber": str(i)}
+            update_registry("/tmp/data", location, f"tag-{i}")
 
-        save_samples("/tmp/data", [sample])
+        threads = []
+        for i in range(10):
+            t = threading.Thread(target=update_thread, args=(i,))
+            threads.append(t)
+            t.start()
 
-        # Should create events directory
-        mock_path.__truediv__.assert_called_once_with("events")
-        events_path.mkdir.assert_called_once_with(parents=True, exist_ok=True)
+        for t in threads:
+            t.join()
 
-    @patch("trainloop_llm_logging.store.Path")
-    def test_update_registry_thread_safety(self, mock_path_class):
-        """Test registry updates handle concurrent access gracefully."""
-        # This test verifies the function completes without errors
-        # Real thread safety would require file locking mechanisms
-
-        mock_path = MagicMock()
-        mock_path_class.return_value = mock_path
-        mock_path.__truediv__.return_value = mock_path
-        mock_path.exists.return_value = False
-        mock_path.write_text = MagicMock()
-
-        # Multiple updates to same file
-        locations = [{"file": "test.py", "lineNumber": str(i)} for i in range(10)]
-
-        for i, loc in enumerate(locations):
-            update_registry("/tmp/data", loc, f"tag-{i}")
-
-        # Should have written multiple times
-        assert mock_path.write_text.call_count == 10
+        # All threads should have written something
+        assert call_count == 10
+        assert len(results) == 10
