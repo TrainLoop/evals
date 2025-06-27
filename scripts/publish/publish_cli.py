@@ -112,16 +112,12 @@ def main():
         if item.is_dir():
             shutil.rmtree(item)
 
-    # Build package
-    print("🔨 Building package...")
-    run_command(["poetry", "build"], cwd=cli_dir)
-
-    # Publish to PyPI
+    # Publish to PyPI (includes build step)
     print("🚀 Publishing to PyPI...")
     run_command(
         ["poetry", "publish", "--build", "--skip-existing"],
         cwd=cli_dir,
-        interactive=True,
+        interactive=False,
     )
 
     # Get the version
