@@ -1,0 +1,68 @@
+name: CLI Tests
+
+# Fast CLI tests that run on every PR and push to main
+
+on:
+  pull_request:
+    paths:
+      - "cli/**"
+      - "tests/**"
+      - ".github/workflows/cli-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cli/**"
+      - "tests/**"
+      - ".github/workflows/cli-tests.yml"
+
+jobs:
+  test-cli:
+    name: CLI Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: cli/.venv
+          key: venv-${{ runner.os }}-cli-python-3.11-${{ hashFiles('cli/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-cli-python-3.11-
+            venv-${{ runner.os }}-cli-
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Run linting
+        run: |
+          poetry run black --check .
+          poetry run flake8 .
+        continue-on-error: true
+
+      - name: Run CLI unit tests
+        run: poetry run pytest -m unit -v
+
+      - name: Run CLI FSSpec integration tests
+        run: poetry run pytest ../tests/unit/test_fsspec_integration.py -v
+
+      - name: Run CLI init command tests
+        run: poetry run pytest ../tests/integration/init_flow/test_init_command.py -v
