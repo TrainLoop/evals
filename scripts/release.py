@@ -4,7 +4,7 @@ TrainLoop Release Script - Automated release workflow
 
 This script handles the complete release process:
 1. Ensures you're on main branch and up to date
-2. Creates release notes file (or uses existing one)
+2. Creates release notes file using Claude Code AI (or manual template)
 3. Creates release branch
 4. Runs version bump
 5. Creates PR to main
@@ -19,6 +19,16 @@ Options:
     --release-notes PATH    Use existing release notes file
     --dry-run              Show what would be done without executing
     --skip-pr              Create branch and bump but don't create PR
+    --no-claude            Skip Claude Code generation and use manual template
+
+Claude Code Integration:
+    If Claude Code CLI is available, the script will:
+    - Analyze git commits since the last release
+    - Use previous release notes as a template
+    - Generate comprehensive release notes automatically
+    - Open an editor for review and editing
+
+    Fallback: If Claude Code is not available, uses a manual template.
 """
 
 import argparse
@@ -26,6 +36,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import os
 from typing import Optional
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -38,7 +49,8 @@ def run_cmd(
     cmd: str, capture_output: bool = False, check: bool = True
 ) -> Optional[str]:
     """Run a shell command."""
-    print(f"🔧 {cmd}")
+    if not capture_output:
+        print(f"🔧 {cmd}")
     if capture_output:
         result = subprocess.run(
             cmd, shell=True, capture_output=True, text=True, check=check
@@ -47,6 +59,251 @@ def run_cmd(
     else:
         subprocess.run(cmd, shell=True, check=check)
         return None
+
+
+def check_claude_code_available() -> Optional[str]:
+    """Check if Claude Code CLI is available and return the path."""
+    # Check common locations for Claude Code CLI
+    claude_paths = [
+        "claude",  # If in PATH
+        os.path.expanduser("~/.claude/local/claude"),  # User home
+    ]
+
+    for claude_path in claude_paths:
+        try:
+            result = subprocess.run(
+                [claude_path, "--version"], capture_output=True, text=True, check=False
+            )
+            if result.returncode == 0:
+                return claude_path
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            continue
+
+    return None
+
+
+def get_previous_version() -> Optional[str]:
+    """Get the previous version by looking at git tags."""
+    try:
+        # Get all version tags, sorted by version
+        tags_output = run_cmd(
+            "git tag -l | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V",
+            capture_output=True,
+            check=False,
+        )
+        if not tags_output:
+            return None
+
+        tags = tags_output.strip().split("\n")
+        if len(tags) >= 1:
+            # Return the latest tag without the 'v' prefix
+            return tags[-1][1:]  # Remove 'v' prefix
+        return None
+    except Exception:
+        return None
+
+
+def get_git_diff_since_version(previous_version: Optional[str]) -> str:
+    """Get git diff with full content since the previous version."""
+    if previous_version:
+        try:
+            # Get commit messages and full diff since the previous tag
+            print(f"🔍 Analyzing changes since v{previous_version}...")
+
+            # First get the commit log
+            commits_cmd = f"git log v{previous_version}..HEAD --oneline --no-merges"
+            commits_output = run_cmd(commits_cmd, capture_output=True, check=False)
+
+            # Then get the actual diff content (limit to avoid overwhelming output)
+            diff_cmd = (
+                f"git diff v{previous_version}..HEAD --no-merges --stat --summary"
+            )
+            diff_summary = run_cmd(diff_cmd, capture_output=True, check=False)
+
+            # Get more detailed diff for key files (exclude large generated files and release notes)
+            # Limit to 300 lines to keep Claude prompts manageable
+            detailed_diff_cmd = f"git diff v{previous_version}..HEAD --no-merges -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml' ':!releases/'"
+            detailed_diff_raw = run_cmd(
+                detailed_diff_cmd, capture_output=True, check=False
+            )
+
+            # Limit detailed diff to 300 lines
+            if detailed_diff_raw:
+                lines = detailed_diff_raw.split("\n")
+                if len(lines) > 300:
+                    detailed_diff = (
+                        "\n".join(lines[:300])
+                        + f"\n\n... (truncated {len(lines) - 300} lines for brevity)"
+                    )
+                else:
+                    detailed_diff = detailed_diff_raw
+            else:
+                detailed_diff = detailed_diff_raw
+
+            if commits_output:
+                result = f"""COMMIT MESSAGES:
+{commits_output}
+
+DIFF SUMMARY:
+{diff_summary or 'No summary available'}
+
+DETAILED CHANGES (Python, TypeScript, configs, docs):
+{detailed_diff or 'No detailed changes available'}"""
+                return result
+            elif commits_output:
+                return f"COMMIT MESSAGES:\n{commits_output}"
+        except Exception as e:
+            print(f"⚠️  Error getting diff since {previous_version}: {e}")
+
+    # Fallback: get recent commits and diff
+    try:
+        print("🔍 Analyzing recent changes (last 20 commits)...")
+
+        # Get recent commit messages
+        commits_cmd = "git log --oneline --no-merges -20"
+        commits_output = run_cmd(commits_cmd, capture_output=True, check=False)
+
+        # Get recent diff summary
+        diff_cmd = "git diff HEAD~20..HEAD --stat --summary"
+        diff_summary = run_cmd(diff_cmd, capture_output=True, check=False)
+
+        # Get detailed diff for key files (limited to 300 lines, exclude release notes)
+        detailed_diff_cmd = "git diff HEAD~20..HEAD -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml' ':!releases/'"
+        detailed_diff_raw = run_cmd(detailed_diff_cmd, capture_output=True, check=False)
+
+        # Limit detailed diff to 300 lines
+        if detailed_diff_raw:
+            lines = detailed_diff_raw.split("\n")
+            if len(lines) > 300:
+                detailed_diff = (
+                    "\n".join(lines[:300])
+                    + f"\n\n... (truncated {len(lines) - 300} lines for brevity)"
+                )
+            else:
+                detailed_diff = detailed_diff_raw
+        else:
+            detailed_diff = detailed_diff_raw
+
+        if commits_output:
+            result = f"""RECENT COMMIT MESSAGES:
+{commits_output}
+
+RECENT DIFF SUMMARY:
+{diff_summary or 'No summary available'}
+
+RECENT DETAILED CHANGES:
+{detailed_diff or 'No detailed changes available'}"""
+            return result
+        else:
+            return "No recent commits found"
+    except Exception as e:
+        print(f"⚠️  Error getting recent changes: {e}")
+        return "Could not retrieve git history"
+
+
+def get_release_template() -> str:
+    """Get a template based on recent release files."""
+    try:
+        release_files = list(RELEASES_DIR.glob("*.md"))
+        if not release_files:
+            return ""
+
+        # Get the most recent release file
+        release_files.sort(key=lambda x: x.stem, reverse=True)
+        latest_release = release_files[0]
+
+        content = latest_release.read_text()
+        return content
+    except Exception:
+        return ""
+
+
+def generate_release_notes_with_claude(
+    new_version: str, description: str, previous_version: Optional[str]
+) -> Optional[str]:
+    """Generate release notes using Claude Code."""
+    print("🤖 Generating release notes with Claude Code...")
+
+    # Check if Claude Code is available and get path
+    claude_path = check_claude_code_available()
+    if not claude_path:
+        print("⚠️  Claude Code CLI not available")
+        return None
+
+    # Get git changes since previous version
+    git_changes = get_git_diff_since_version(previous_version)
+
+    # Get template from previous release
+    template = get_release_template()
+
+    # Create prompt for Claude
+    prompt = f"""You are helping generate release notes for TrainLoop Evals version {new_version}.
+
+User-provided description: "{description}"
+
+COMPLETE CHANGE ANALYSIS:
+<git-changes>
+{git_changes}
+</git-changes>
+
+RELEASE NOTES TEMPLATE (follow this exact format and style):
+<previous-release-notes>
+{template}
+</previous-release-notes>
+
+INSTRUCTIONS:
+Generate comprehensive release notes for version {new_version} by:
+
+1. **FORMAT**: Follow the exact structure shown in the template:
+   - Start with "Summary: [brief one-line description]"
+   - Use the same markdown formatting and emoji structure
+   - Include appropriate sections based on what actually changed
+
+2. **ANALYSIS**: Based on the git commit messages, diff summary, and detailed code changes:
+   - Identify NEW features and capabilities added
+   - Spot BUG fixes and issues resolved  
+   - Note TECHNICAL improvements and refactoring
+   - Find CONFIGURATION or setup changes
+   - Detect PERFORMANCE optimizations
+   - Notice DOCUMENTATION updates
+
+3. **CATEGORIZATION**: Organize changes into logical sections like:
+   - 🚀 New Features (new commands, APIs, capabilities)
+   - 🐛 Bug Fixes (specific issues resolved)
+   - 🛠️ Technical Improvements (refactoring, optimizations)
+   - 📊 [Other relevant sections based on actual changes]
+   - 🔧 Configuration/Setup changes
+   - 📚 Documentation updates
+
+4. **WRITING STYLE**:
+   - Be specific about what changed (not just "various improvements")
+   - Use professional, clear language
+   - Focus on user-facing impact
+   - Mention specific files/components when relevant
+   - Keep bullet points concise but informative
+   - If a section is not relevant, you should not include it in the output.
+   - These release notes should be as concise as possible while still being informative.
+
+5. **OUTPUT**: Return ONLY the raw markdown content - no code fences, no explanations."""
+
+    # print(f"Prompt: {prompt}")
+
+    try:
+        # Call Claude Code using subprocess directly for better quote handling
+        result = subprocess.run(
+            [claude_path, "-p", prompt], capture_output=True, text=True, check=False
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+        else:
+            print(f"⚠️  Claude Code failed with return code {result.returncode}")
+            if result.stderr:
+                print(f"    Error: {result.stderr.strip()}")
+
+    except Exception as e:
+        print(f"⚠️  Claude Code generation failed: {e}")
+
+    return None
 
 
 def get_current_version() -> str:
@@ -116,7 +373,10 @@ def ensure_main_branch():
 
 
 def create_release_notes(
-    new_version: str, description: str, existing_file: Optional[str] = None
+    new_version: str,
+    description: str,
+    existing_file: Optional[str] = None,
+    skip_claude: bool = False,
 ) -> pathlib.Path:
     """Create or validate release notes file."""
     release_file = RELEASES_DIR / f"{new_version}.md"
@@ -137,8 +397,36 @@ def create_release_notes(
 
     print(f"📝 Creating release notes: {release_file}")
 
-    # Create release notes template
-    content = f"""Summary: {description}
+    # Ensure releases directory exists
+    RELEASES_DIR.mkdir(exist_ok=True)
+
+    # Try to generate with Claude Code first (unless disabled)
+    claude_content = None
+
+    if not skip_claude:
+        claude_path = check_claude_code_available()
+
+        if claude_path:
+            previous_version = get_previous_version()
+            if previous_version:
+                print(f"📚 Found previous version: {previous_version}")
+
+            claude_content = generate_release_notes_with_claude(
+                new_version, description, previous_version
+            )
+        else:
+            print("⚠️  Claude Code not available, using manual template")
+    else:
+        print("🚫 Claude Code generation disabled, using manual template")
+
+    if claude_content:
+        # Write Claude-generated content
+        release_file.write_text(claude_content)
+        print(f"✅ Generated release notes with Claude Code: {release_file}")
+        print("📝 Opening editor for review and editing...")
+    else:
+        # Fallback to manual template
+        content = f"""Summary: {description}
 
 **Release {new_version}**
 
@@ -157,12 +445,19 @@ The changes in this release include:
 For detailed technical information, see the commit history since the last release.
 """
 
-    release_file.write_text(content)
+        # Write manual template
+        release_file.write_text(content)
+        print(f"✅ Created release notes template: {release_file}")
+        print("📝 Opening editor to complete release notes...")
 
-    # Open in editor if available
-    editor = run_cmd("echo $EDITOR", capture_output=True) or "nano"
+    # Open in editor for review/editing
+    editor = (
+        os.environ.get("EDITOR")
+        or run_cmd("echo $EDITOR", capture_output=True)
+        or "nano"
+    )
     try:
-        print(f"📝 Opening release notes in {editor} for editing...")
+        print(f"   Using editor: {editor}")
         print("   Please review and edit the release notes, then save and close.")
         input("   Press Enter when ready to continue...")
         run_cmd(f"{editor} {release_file}")
@@ -342,12 +637,15 @@ def main():
 
     parser.add_argument(
         "bump_type",
+        nargs="?",  # Make optional
         choices=["major", "minor", "patch"],
         help="Type of version bump to perform",
     )
 
     parser.add_argument(
-        "description", help="Brief description of the release (used in release notes)"
+        "description",
+        nargs="?",  # Make optional
+        help="Brief description of the release (used in release notes)",
     )
 
     parser.add_argument("--release-notes", help="Path to existing release notes file")
@@ -364,27 +662,128 @@ def main():
         help="Create branch and bump but don't create PR",
     )
 
+    parser.add_argument(
+        "--no-claude",
+        action="store_true",
+        help="Skip Claude Code generation and use manual template",
+    )
+
+    parser.add_argument(
+        "--test-notes",
+        action="store_true",
+        help="Test release notes generation only (no git operations)",
+    )
+
+    # Check if we're being called via npm and provide helpful guidance
+    if len(sys.argv) == 1 and os.environ.get("npm_execpath"):
+        print("🚀 TrainLoop Release Script")
+        print("=" * 40)
+        print("📝 USAGE VIA NPM:")
+        print('   npm run release -- <bump_type> "<description>" [options]')
+        print("")
+        print("📋 EXAMPLES:")
+        print('   npm run release -- patch "Bug fixes and improvements"')
+        print('   npm run release -- minor "New features added" --test-notes')
+        print('   npm run release -- major "Breaking changes" --dry-run')
+        print("")
+        print("⚠️  Note: The '--' is required to pass arguments through npm")
+        print(
+            '💡 Alternatively, run directly: python scripts/release.py patch "description"'
+        )
+        sys.exit(0)
+
     args = parser.parse_args()
 
     if args.dry_run:
         print("🔍 DRY RUN MODE - No changes will be made")
 
+    if args.test_notes:
+        print("🧪 TEST NOTES MODE - Only generating release notes (no git operations)")
+
     print("🚀 TrainLoop Release Script")
     print("=" * 40)
 
+    # Prompt for missing arguments if not provided
+    bump_type = args.bump_type
+    description = args.description
+
+    if not bump_type:
+        print("\n📈 RELEASE TYPE:")
+        print("  major: Breaking changes (1.0.0 → 2.0.0)")
+        print("  minor: New features (1.0.0 → 1.1.0)")
+        print("  patch: Bug fixes (1.0.0 → 1.0.1)")
+
+        while not bump_type:
+            bump_type = (
+                input("\n🤔 Select release type [major/minor/patch]: ").strip().lower()
+            )
+            if bump_type not in ["major", "minor", "patch"]:
+                print("❌ Invalid choice. Please enter: major, minor, or patch")
+                bump_type = None
+
+    if not description:
+        description = input("\n📝 Brief description of this release: ").strip()
+        while not description:
+            print("❌ Description is required")
+            description = input("📝 Brief description of this release: ").strip()
+
     # Get current and new versions
     current_version = get_current_version()
-    new_version = calculate_new_version(current_version, args.bump_type)
+    new_version = calculate_new_version(current_version, bump_type)
 
     print(f"📊 Current version: {current_version}")
     print(f"📈 New version: {new_version}")
-    print(f"📝 Description: {args.description}")
+    print(f"📝 Description: {description}")
 
     if args.dry_run:
         print("\n✅ DRY RUN COMPLETE - No changes made")
         return
 
-    # Confirm with user
+    # Handle test notes mode
+    if args.test_notes:
+        print("\n🧪 TESTING CLAUDE CODE RELEASE NOTES GENERATION")
+        print("=" * 50)
+
+        if args.no_claude:
+            print("❌ Cannot test Claude generation with --no-claude flag")
+            return
+
+        claude_path = check_claude_code_available()
+        if not claude_path:
+            print("❌ Claude Code CLI not available. Install it first:")
+            print("   Visit: https://claude.ai/code")
+            return
+
+        # Get previous version for context
+        previous_version = get_previous_version()
+        if previous_version:
+            print(f"📚 Previous version found: {previous_version}")
+        else:
+            print("⚠️  No previous version found - will use recent commits")
+
+        # Generate test release notes
+        claude_content = generate_release_notes_with_claude(
+            new_version, description, previous_version
+        )
+
+        if claude_content:
+            print(f"\n📝 GENERATED RELEASE NOTES for v{new_version}:")
+            print("=" * 50)
+            print(claude_content)
+            print("=" * 50)
+
+            # Automatically save to test file in test mode
+            test_file = RELEASES_DIR / f"test-{new_version}.md"
+            RELEASES_DIR.mkdir(exist_ok=True)
+            test_file.write_text(claude_content)
+            print(f"✅ Test release notes saved to: {test_file}")
+        else:
+            print("❌ Failed to generate release notes with Claude Code")
+
+        print("\n✅ TEST NOTES COMPLETE")
+        return
+
+    # Confirm with user (only for actual releases, not test mode)
     confirm = input(f"\n🤔 Proceed with release v{new_version}? [y/N]: ")
     if confirm.lower() != "y":
         print("❌ Release cancelled")
@@ -394,15 +793,15 @@ def main():
         # Execute release workflow
         check_git_status()
         ensure_main_branch()
-        release_file = create_release_notes(
-            new_version, args.description, args.release_notes
+        create_release_notes(
+            new_version, description, args.release_notes, args.no_claude
         )
         branch_name = create_release_branch(new_version)
-        run_version_bump(args.bump_type)
+        run_version_bump(bump_type)
 
         pr_created = False
         if not args.skip_pr:
-            create_pull_request(new_version, args.description, branch_name)
+            create_pull_request(new_version, description, branch_name)
             pr_created = True
 
         print_next_steps(new_version, pr_created)
