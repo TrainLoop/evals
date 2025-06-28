@@ -5,15 +5,17 @@ name: SDK Tests
 
 on:
   pull_request:
+    types: [opened, synchronize]
     paths:
       - "sdk/**"
       - ".github/workflows/sdk-tests-lean.yml"
   push:
     branches:
-      - main
+      - "release/**"
     paths:
       - "sdk/**"
       - ".github/workflows/sdk-tests-lean.yml"
+  workflow_dispatch:
 
 jobs:
   test-python:

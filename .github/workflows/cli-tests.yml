@@ -4,17 +4,19 @@ name: CLI Tests
 
 on:
   pull_request:
+    types: [opened, synchronize]
     paths:
       - "cli/**"
       - "tests/**"
       - ".github/workflows/cli-tests.yml"
   push:
     branches:
-      - main
+      - "release/**"
     paths:
       - "cli/**"
       - "tests/**"
       - ".github/workflows/cli-tests.yml"
+  workflow_dispatch:
 
 jobs:
   test-cli:

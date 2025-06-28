@@ -246,41 +246,6 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GH_TOKEN: ${{ github.token }}
 
-  # Create GitHub release
-  create-release:
-    name: Create GitHub Release
-    needs: [validate-and-tag, publish-sdk, publish-cli, publish-studio]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Get release notes
-        id: release-notes
-        run: |
-          VERSION="${{ needs.validate-and-tag.outputs.version }}"
-          VERSION_NUM="${VERSION#v}"
-          RELEASE_FILE="releases/${VERSION_NUM}.md"
-          
-          if [ -f "$RELEASE_FILE" ]; then
-            echo "release-file=$RELEASE_FILE" >> $GITHUB_OUTPUT
-            echo "✅ Found release notes: $RELEASE_FILE"
-          else
-            echo "release-file=" >> $GITHUB_OUTPUT
-            echo "❌ Release notes not found: $RELEASE_FILE"
-          fi
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ needs.validate-and-tag.outputs.version-tag }}
-          release_name: TrainLoop Evals ${{ needs.validate-and-tag.outputs.version-tag }}
-          body_path: ${{ steps.release-notes.outputs.release-file }}
-          draft: false
-          prerelease: false
-
   # Summary job
   release-complete:
     name: Release Complete

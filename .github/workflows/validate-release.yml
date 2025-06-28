@@ -6,11 +6,8 @@ on:
     branches:
       - 'release/**'
   pull_request:
-    branches:
-      - main
-    paths:
-      - 'VERSION'
-      - 'releases/**'
+    types: [opened]
+  workflow_dispatch:
 
 # No special permissions needed for validation
 permissions:
