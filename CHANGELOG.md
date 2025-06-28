@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.5 (2025-06-27)
+[Release Notes](releases/0.7.5.md)
+
+
 ## 0.7.4 (2025-06-27)
 [Release Notes](releases/0.7.4.md)
 
