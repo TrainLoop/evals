@@ -608,12 +608,15 @@ def main():
 
     parser.add_argument(
         "bump_type",
+        nargs="?",  # Make optional
         choices=["major", "minor", "patch"],
         help="Type of version bump to perform",
     )
 
     parser.add_argument(
-        "description", help="Brief description of the release (used in release notes)"
+        "description",
+        nargs="?",  # Make optional
+        help="Brief description of the release (used in release notes)",
     )
 
     parser.add_argument("--release-notes", help="Path to existing release notes file")
@@ -642,6 +645,24 @@ def main():
         help="Test release notes generation only (no git operations)",
     )
 
+    # Check if we're being called via npm and provide helpful guidance
+    if len(sys.argv) == 1 and os.environ.get("npm_execpath"):
+        print("🚀 TrainLoop Release Script")
+        print("=" * 40)
+        print("📝 USAGE VIA NPM:")
+        print('   npm run release -- <bump_type> "<description>" [options]')
+        print("")
+        print("📋 EXAMPLES:")
+        print('   npm run release -- patch "Bug fixes and improvements"')
+        print('   npm run release -- minor "New features added" --test-notes')
+        print('   npm run release -- major "Breaking changes" --dry-run')
+        print("")
+        print("⚠️  Note: The '--' is required to pass arguments through npm")
+        print(
+            '💡 Alternatively, run directly: python scripts/release.py patch "description"'
+        )
+        sys.exit(0)
+
     args = parser.parse_args()
 
     if args.dry_run:
@@ -653,13 +674,37 @@ def main():
     print("🚀 TrainLoop Release Script")
     print("=" * 40)
 
+    # Prompt for missing arguments if not provided
+    bump_type = args.bump_type
+    description = args.description
+
+    if not bump_type:
+        print("\n📈 RELEASE TYPE:")
+        print("  major: Breaking changes (1.0.0 → 2.0.0)")
+        print("  minor: New features (1.0.0 → 1.1.0)")
+        print("  patch: Bug fixes (1.0.0 → 1.0.1)")
+
+        while not bump_type:
+            bump_type = (
+                input("\n🤔 Select release type [major/minor/patch]: ").strip().lower()
+            )
+            if bump_type not in ["major", "minor", "patch"]:
+                print("❌ Invalid choice. Please enter: major, minor, or patch")
+                bump_type = None
+
+    if not description:
+        description = input("\n📝 Brief description of this release: ").strip()
+        while not description:
+            print("❌ Description is required")
+            description = input("📝 Brief description of this release: ").strip()
+
     # Get current and new versions
     current_version = get_current_version()
-    new_version = calculate_new_version(current_version, args.bump_type)
+    new_version = calculate_new_version(current_version, bump_type)
 
     print(f"📊 Current version: {current_version}")
     print(f"📈 New version: {new_version}")
-    print(f"📝 Description: {args.description}")
+    print(f"📝 Description: {description}")
 
     if args.dry_run:
         print("\n✅ DRY RUN COMPLETE - No changes made")
@@ -689,7 +734,7 @@ def main():
 
         # Generate test release notes
         claude_content = generate_release_notes_with_claude(
-            new_version, args.description, previous_version
+            new_version, description, previous_version
         )
 
         if claude_content:
@@ -698,24 +743,18 @@ def main():
             print(claude_content)
             print("=" * 50)
 
-            # Optionally save to test file
-            save_test = input(
-                "\n💾 Save test notes to releases/test-{}.md? [y/N]: ".format(
-                    new_version
-                )
-            )
-            if save_test.lower() == "y":
-                test_file = RELEASES_DIR / f"test-{new_version}.md"
-                RELEASES_DIR.mkdir(exist_ok=True)
-                test_file.write_text(claude_content)
-                print(f"✅ Test release notes saved to: {test_file}")
+            # Automatically save to test file in test mode
+            test_file = RELEASES_DIR / f"test-{new_version}.md"
+            RELEASES_DIR.mkdir(exist_ok=True)
+            test_file.write_text(claude_content)
+            print(f"✅ Test release notes saved to: {test_file}")
         else:
             print("❌ Failed to generate release notes with Claude Code")
 
         print("\n✅ TEST NOTES COMPLETE")
         return
 
-    # Confirm with user
+    # Confirm with user (only for actual releases, not test mode)
     confirm = input(f"\n🤔 Proceed with release v{new_version}? [y/N]: ")
     if confirm.lower() != "y":
         print("❌ Release cancelled")
@@ -726,14 +765,14 @@ def main():
         check_git_status()
         ensure_main_branch()
         create_release_notes(
-            new_version, args.description, args.release_notes, args.no_claude
+            new_version, description, args.release_notes, args.no_claude
         )
         branch_name = create_release_branch(new_version)
-        run_version_bump(args.bump_type)
+        run_version_bump(bump_type)
 
         pr_created = False
         if not args.skip_pr:
-            create_pull_request(new_version, args.description, branch_name)
+            create_pull_request(new_version, description, branch_name)
             pr_created = True
 
         print_next_steps(new_version, pr_created)
