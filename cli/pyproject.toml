@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trainloop-cli"
-version = "0.7.3"
+version = "0.7.4"
 description = "TrainLoop command-line interface"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
 readme = "README.md"

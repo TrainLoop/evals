@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trainloop-llm-logging"
-version = "0.7.3"
+version = "0.7.4"
 description = "TrainLoop LLM Logging SDK for data collection"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
 readme = "README.md"

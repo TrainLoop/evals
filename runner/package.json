@@ -1,6 +1,6 @@
 {
   "name": "trainloop-studio-runner",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "private": true,
   "description": "Bundled TrainLoop Studio runner",
   "bin": {
