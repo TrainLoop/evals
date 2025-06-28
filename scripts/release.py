@@ -120,9 +120,25 @@ def get_git_diff_since_version(previous_version: Optional[str]) -> str:
             )
             diff_summary = run_cmd(diff_cmd, capture_output=True, check=False)
 
-            # Get more detailed diff for key files (exclude large generated files)
-            detailed_diff_cmd = f"git diff v{previous_version}..HEAD --no-merges -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml'"
-            detailed_diff = run_cmd(detailed_diff_cmd, capture_output=True, check=False)
+            # Get more detailed diff for key files (exclude large generated files and release notes)
+            # Limit to 300 lines to keep Claude prompts manageable
+            detailed_diff_cmd = f"git diff v{previous_version}..HEAD --no-merges -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml' ':!releases/'"
+            detailed_diff_raw = run_cmd(
+                detailed_diff_cmd, capture_output=True, check=False
+            )
+
+            # Limit detailed diff to 300 lines
+            if detailed_diff_raw:
+                lines = detailed_diff_raw.split("\n")
+                if len(lines) > 300:
+                    detailed_diff = (
+                        "\n".join(lines[:300])
+                        + f"\n\n... (truncated {len(lines) - 300} lines for brevity)"
+                    )
+                else:
+                    detailed_diff = detailed_diff_raw
+            else:
+                detailed_diff = detailed_diff_raw
 
             if commits_output:
                 result = f"""COMMIT MESSAGES:
@@ -151,9 +167,22 @@ DETAILED CHANGES (Python, TypeScript, configs, docs):
         diff_cmd = "git diff HEAD~20..HEAD --stat --summary"
         diff_summary = run_cmd(diff_cmd, capture_output=True, check=False)
 
-        # Get detailed diff for key files
-        detailed_diff_cmd = "git diff HEAD~20..HEAD -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml'"
-        detailed_diff = run_cmd(detailed_diff_cmd, capture_output=True, check=False)
+        # Get detailed diff for key files (limited to 300 lines, exclude release notes)
+        detailed_diff_cmd = "git diff HEAD~20..HEAD -- '*.py' '*.ts' '*.tsx' '*.js' '*.md' '*.yml' '*.yaml' '*.json' '*.toml' ':!releases/'"
+        detailed_diff_raw = run_cmd(detailed_diff_cmd, capture_output=True, check=False)
+
+        # Limit detailed diff to 300 lines
+        if detailed_diff_raw:
+            lines = detailed_diff_raw.split("\n")
+            if len(lines) > 300:
+                detailed_diff = (
+                    "\n".join(lines[:300])
+                    + f"\n\n... (truncated {len(lines) - 300} lines for brevity)"
+                )
+            else:
+                detailed_diff = detailed_diff_raw
+        else:
+            detailed_diff = detailed_diff_raw
 
         if commits_output:
             result = f"""RECENT COMMIT MESSAGES:
