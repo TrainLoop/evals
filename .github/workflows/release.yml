@@ -249,7 +249,7 @@ jobs:
   # Summary job
   release-complete:
     name: Release Complete
-    needs: [validate-and-tag, publish-sdk, publish-cli, publish-studio, create-release]
+    needs: [validate-and-tag, publish-sdk, publish-cli, publish-studio]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -261,8 +261,7 @@ jobs:
           # Check if all jobs succeeded
           if [ "${{ needs.publish-sdk.result }}" = "success" ] && \
              [ "${{ needs.publish-cli.result }}" = "success" ] && \
-             [ "${{ needs.publish-studio.result }}" = "success" ] && \
-             [ "${{ needs.create-release.result }}" = "success" ]; then
+             [ "${{ needs.publish-studio.result }}" = "success" ]; then
             echo "✅ All components published successfully!"
             echo "📦 SDK: Published to PyPI and NPM"
             echo "🔧 CLI: Published to PyPI"
@@ -273,6 +272,5 @@ jobs:
             echo "SDK: ${{ needs.publish-sdk.result }}"
             echo "CLI: ${{ needs.publish-cli.result }}"
             echo "Studio: ${{ needs.publish-studio.result }}"
-            echo "Release: ${{ needs.create-release.result }}"
             exit 1
           fi
