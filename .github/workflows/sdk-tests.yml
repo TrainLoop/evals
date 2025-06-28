@@ -9,22 +9,9 @@ on:
         required: false
         default: "main"
 
-  # Run full matrix daily to catch compatibility issues
-  schedule:
-    - cron: "0 0 * * *" # Every day at midnight
-
-  # Run on PR open (not on subsequent commits)
+  # Run on PR open to any branch (not on subsequent commits)
   pull_request:
     types: [opened]
-    paths:
-      - "sdk/**"
-      - ".github/workflows/sdk-tests.yml"
-
-  # Also run on release branches and merge to main
-  push:
-    branches:
-      - "release/**"
-      - "main"
     paths:
       - "sdk/**"
       - ".github/workflows/sdk-tests.yml"
