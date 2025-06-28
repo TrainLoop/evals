@@ -1,6 +1,6 @@
 {
   "name": "trainloop-llm-logging",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "TrainLoop Evaluations - header-based request tagging and zero-touch collection",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
