@@ -75,13 +75,12 @@ def install(exporter: FileExporter) -> None:
     # ------------------------------------------------------------------ #
     #  Transport that swaps in the tee-stream                             #
     # ------------------------------------------------------------------ #
-    class Tap(httpx.BaseTransport, httpx.AsyncBaseTransport):
+    class SyncTap(httpx.BaseTransport):
         """
-        Custom transport that wraps another httpx transport to intercept requests.
-        Handles both sync and async requests, capturing timing and payloads.
+        Custom sync transport that wraps another httpx transport to intercept requests.
         """
 
-        def __init__(self, inner: httpx.HTTPTransport | httpx.AsyncHTTPTransport):
+        def __init__(self, inner: httpx.HTTPTransport):
             self._inner = inner
 
         # ---------- sync ----------
@@ -124,6 +123,14 @@ def install(exporter: FileExporter) -> None:
                 exporter,
             )
             return response
+
+    class AsyncTap(httpx.AsyncBaseTransport):
+        """
+        Custom async transport that wraps another httpx transport to intercept requests.
+        """
+
+        def __init__(self, inner: httpx.AsyncHTTPTransport):
+            self._inner = inner
 
         # ---------- async ----------
         async def handle_async_request(self, request: httpx.Request):
@@ -295,20 +302,21 @@ def install(exporter: FileExporter) -> None:
     # ------------------------------------------------------------------ #
     #  Swap the public Client classes                                    #
     # ------------------------------------------------------------------ #
-    def _wrap(client_cls):
-        class Patched(client_cls):  # type: ignore[misc]
+    def _wrap_sync(client_cls):
+        class PatchedSync(client_cls):  # type: ignore[misc]
             def __init__(self, *a: Any, **kw: Any):
-                kw["transport"] = Tap(
-                    kw.get("transport")
-                    or (
-                        httpx.HTTPTransport()
-                        if client_cls is httpx.Client
-                        else httpx.AsyncHTTPTransport()
-                    )
-                )
+                inner_transport = kw.get("transport") or httpx.HTTPTransport()
+                kw["transport"] = SyncTap(inner_transport)
                 super().__init__(*a, **kw)
+        return PatchedSync
 
-        return Patched
+    def _wrap_async(client_cls):
+        class PatchedAsync(client_cls):  # type: ignore[misc]
+            def __init__(self, *a: Any, **kw: Any):
+                inner_transport = kw.get("transport") or httpx.AsyncHTTPTransport()
+                kw["transport"] = AsyncTap(inner_transport)
+                super().__init__(*a, **kw)
+        return PatchedAsync
 
-    httpx.Client = _wrap(httpx.Client)  # type: ignore[assignment]
-    httpx.AsyncClient = _wrap(httpx.AsyncClient)  # type: ignore[assignment]
+    httpx.Client = _wrap_sync(httpx.Client)  # type: ignore[assignment]
+    httpx.AsyncClient = _wrap_async(httpx.AsyncClient)  # type: ignore[assignment]
