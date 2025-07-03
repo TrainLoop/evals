@@ -136,34 +136,32 @@ tasks:
     cmds:
       - poetry run pytest tests/integration/test_real_api_calls.py -v
 
-  test:integration:llm:
-    desc: Run LLM library integration tests
-    dir: '{{.SDK_DIR}}'
-    cmds:
-      - poetry run pytest tests/integration/test_other_llm_libraries.py -v
-
   test:integration:openai:
-    desc: Run OpenAI-specific integration tests
+    desc: Run OpenAI integration tests
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_real_api_calls.py::TestOpenAIIntegration -v
-      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestOpenAISDKIntegration -v
+      - poetry run pytest tests/integration/test_openai_sdk.py -v
 
   test:integration:anthropic:
-    desc: Run Anthropic-specific integration tests
+    desc: Run Anthropic integration tests
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_real_api_calls.py::TestAnthropicIntegration -v
-      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestAnthropicSDKIntegration -v
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v
 
   test:integration:langchain:
     desc: Run LangChain integration tests
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestLangChainIntegration -v
+      - poetry run pytest tests/integration/test_langchain.py -v
 
   test:integration:litellm:
     desc: Run LiteLLM integration tests
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestLiteLLMIntegration -v
+      - poetry run pytest tests/integration/test_litellm.py -v
+
+  test:integration:browser-use:
+    desc: Run browser_use integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_browser_use.py -v
