@@ -37,7 +37,6 @@ class FileExporter:
     # ------------------------------------------------------------------ #
 
     def record_llm_call(self, call: LLMCallData) -> None:
-        _log.info("Recording LLM call: %s", call)
         if not call.get("isLLMRequest"):
             return
         with self.lock:
@@ -48,24 +47,17 @@ class FileExporter:
     # ------------------------------------------------------------------ #
 
     def _export(self) -> None:
-        _log.info("Exporting %d calls", len(self.buf))
         data_dir = os.getenv("TRAINLOOP_DATA_FOLDER")
         if not data_dir:
-            _log.info("TRAINLOOP_DATA_FOLDER not set - export skipped")
             self.buf.clear()
             return
 
         samples: list[CollectedSample] = []
         for llm_call in self.buf:
-            _log.info("Exporting LLM call: %s", llm_call)
             parsed_request = parse_request_body(llm_call.get("requestBodyStr", ""))
             parsed_response = parse_response_body(llm_call.get("responseBodyStr", ""))
 
-            _log.info("Request: %s", parsed_request)
-            _log.info("Response: %s", parsed_response)
-
             if not parsed_request or not parsed_response:
-                _log.info("Invalid request or response - skipping")
                 continue
 
             loc = llm_call.get("location") or caller_site()

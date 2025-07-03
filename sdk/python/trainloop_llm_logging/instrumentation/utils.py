@@ -134,6 +134,35 @@ def format_streamed_content(raw: bytes) -> bytes:
     
     text = raw.decode("utf8", errors="ignore")
     
+    # ---- Handle HTTP chunked transfer encoding ----
+    # Check if this looks like chunked encoding (starts with hex chunk size)
+    if '\r\n' in text and text.split('\r\n')[0].strip():
+        try:
+            # Simple chunked decoding - extract content after chunk headers
+            lines = text.split('\r\n')
+            content_parts = []
+            i = 0
+            while i < len(lines):
+                # Try to parse the line as a hex chunk size
+                try:
+                    chunk_size = int(lines[i].strip(), 16)
+                    if chunk_size == 0:
+                        break  # End of chunks
+                    # Next line should be the chunk data
+                    if i + 1 < len(lines):
+                        content_parts.append(lines[i + 1])
+                    i += 2  # Skip chunk size and chunk data lines
+                except ValueError:
+                    # Not a chunk size, might be chunk data or other content
+                    content_parts.append(lines[i])
+                    i += 1
+            
+            if content_parts:
+                text = ''.join(content_parts)
+        except Exception:
+            # If chunked decoding fails, continue with original text
+            pass
+    
     # ---- Regular JSON Response (non-streaming) ----
     try:
         js = json.loads(text)

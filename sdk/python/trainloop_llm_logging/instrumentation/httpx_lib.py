@@ -112,16 +112,9 @@ def install(exporter: FileExporter) -> None:
                 extensions=original.extensions,
             )
 
-            _patch_close(
-                response,
-                captured,
-                request.method,
-                url,
-                req_b,
-                tag,
-                t0,
-                exporter,
-            )
+            # Patch content access methods to trigger recording when accessed
+            _patch_content_access(response, captured, request.method, url, req_b, tag, t0, exporter)
+            
             return response
 
     class AsyncTap(httpx.AsyncBaseTransport):
@@ -161,16 +154,9 @@ def install(exporter: FileExporter) -> None:
                 extensions=original.extensions,
             )
 
-            _patch_aclose(
-                response,
-                captured,
-                request.method,
-                url,
-                req_b,
-                tag,
-                t0,
-                exporter,
-            )
+            # Patch content access methods to trigger recording when accessed
+            _patch_content_access(response, captured, request.method, url, req_b, tag, t0, exporter)
+            
             return response
 
     # ------------------------------------------------------------------ #
@@ -205,7 +191,7 @@ def install(exporter: FileExporter) -> None:
             )
             exporter.record_llm_call(call_data)
 
-    def _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter):
+    def _patch_content_access(response, captured, method, url, req_b, tag, t0, exporter):
         """Patch content access methods to trigger flush when content is read."""
         _flushed = False
         
@@ -215,89 +201,41 @@ def install(exporter: FileExporter) -> None:
                 _flushed = True
                 _flush(captured, method, url, req_b, tag, t0, exporter)
         
-        # Patch response.content property
-        if hasattr(response, '_content'):
-            orig_content = response._content
-            def get_content():
-                maybe_flush()
-                return orig_content
-            response._content = property(get_content)
+        # Hook into the response class to intercept property/method access
+        original_Response_class = type(response)
         
-        # Patch response.text property
-        if hasattr(response, 'text'):
-            orig_text = response.text
-            def get_text():
+        class InstrumentedResponse(original_Response_class):
+            @property 
+            def content(self):
+                # Call parent to get content (this will read the stream via our tee)
+                content_bytes = super().content
                 maybe_flush()
-                return orig_text
-            response.text = property(get_text)
-        
-        # Patch response.json method
-        if hasattr(response, 'json'):
-            orig_json = response.json
-            def patched_json(*args, **kwargs):
+                return content_bytes
+                
+            @property
+            def text(self):
+                text_str = super().text
                 maybe_flush()
-                return orig_json(*args, **kwargs)
-            response.json = patched_json
-        
-        # Patch response.aread method
-        if hasattr(response, 'aread'):
-            orig_aread = response.aread
-            async def patched_aread(*args, **kwargs):
-                result = await orig_aread(*args, **kwargs)
+                return text_str
+                
+            def json(self, **kwargs):
+                result = super().json(**kwargs)
                 maybe_flush()
                 return result
-            response.aread = patched_aread
-        
-        # Patch response.read method
-        if hasattr(response, 'read'):
-            orig_read = response.read
-            def patched_read(*args, **kwargs):
-                result = orig_read(*args, **kwargs)
+                
+            async def aread(self):
+                result = await super().aread()
                 maybe_flush()
                 return result
-            response.read = patched_read
+                
+            def read(self):
+                result = super().read()
+                maybe_flush()
+                return result
+        
+        # Replace the response class
+        response.__class__ = InstrumentedResponse
     
-    def _patch_close(
-        response: httpx.Response,
-        captured: List[bytes],
-        method: str,
-        url: str,
-        req_b: bytes,
-        tag: str | None,
-        t0: int,
-        exporter: FileExporter,
-    ):
-        orig_close = response.close
-
-        def _on_close():
-            _flush(captured, method, url, req_b, tag, t0, exporter)
-            orig_close()
-
-        response.close = _on_close  # type: ignore[attr-defined]
-        
-        # Add automatic flush triggers when content is accessed
-        _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter)
-
-    def _patch_aclose(
-        response: httpx.Response,
-        captured: List[bytes],
-        method: str,
-        url: str,
-        req_b: bytes,
-        tag: str | None,
-        t0: int,
-        exporter: FileExporter,
-    ):
-        orig_aclose = response.aclose
-
-        async def _on_aclose():
-            _flush(captured, method, url, req_b, tag, t0, exporter)
-            await orig_aclose()
-
-        response.aclose = _on_aclose
-        
-        # Add automatic flush triggers when content is accessed
-        _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter)
 
     # ------------------------------------------------------------------ #
     #  Swap the public Client classes                                    #
