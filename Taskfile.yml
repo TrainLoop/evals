@@ -125,43 +125,49 @@ tasks:
 
   # Integration test tasks
   test:integration:
-    desc: Run all integration tests (requires API keys in .env file)
+    desc: Run all integration tests in parallel (requires API keys in .env file)
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/ -v
+      - poetry run pytest tests/integration/ -v -n auto --tb=short -ra
+
+  test:integration:sequential:
+    desc: Run all integration tests sequentially (for debugging)
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/ -v --tb=long -ra
 
   test:integration:http:
-    desc: Run core HTTP library integration tests
+    desc: Run core HTTP library integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_real_api_calls.py -v
+      - poetry run pytest tests/integration/test_real_api_calls.py -v -n auto --tb=short -ra
 
   test:integration:openai:
-    desc: Run OpenAI integration tests
+    desc: Run OpenAI integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_openai_sdk.py -v
+      - poetry run pytest tests/integration/test_openai_sdk.py -v -n auto --tb=short -ra
 
   test:integration:anthropic:
-    desc: Run Anthropic integration tests
+    desc: Run Anthropic integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_anthropic_sdk.py -v
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -n auto --tb=short -ra
 
   test:integration:langchain:
-    desc: Run LangChain integration tests
+    desc: Run LangChain integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_langchain.py -v
+      - poetry run pytest tests/integration/test_langchain.py -v -n auto --tb=short -ra
 
   test:integration:litellm:
-    desc: Run LiteLLM integration tests
+    desc: Run LiteLLM integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_litellm.py -v
+      - poetry run pytest tests/integration/test_litellm.py -v -n auto --tb=short -ra
 
   test:integration:browser-use:
-    desc: Run browser_use integration tests
+    desc: Run browser_use integration tests in parallel
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_browser_use.py -v
+      - poetry run pytest tests/integration/test_browser_use.py -v -n auto --tb=short -ra
