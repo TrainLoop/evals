@@ -58,12 +58,19 @@ def parse_request_body(s: str) -> Optional[ParsedRequestBody]:
         return None
 
 
-def parse_response_body(s: str) -> Optional[ParsedResponseBody]:
+def parse_response_body(s: str | bytes) -> Optional[ParsedResponseBody]:
     """Parse a response body string into a simplified format with just content.
 
     Returns:
         A ParsedResponseBody or None if parsing fails
     """
+    # Handle bytes input
+    if isinstance(s, bytes):
+        try:
+            s = s.decode('utf-8')
+        except Exception:
+            return None
+    
     try:
         body = json.loads(s)
     except Exception:
@@ -117,7 +124,27 @@ def format_streamed_content(raw: bytes) -> bytes:
     Collapse an SSE chat stream into a single JSON blob with just the content.
     If parsing fails, return the original bytes.
     """
+    # Check if the response is gzipped
+    if raw.startswith(b'\x1f\x8b'):
+        try:
+            import gzip
+            raw = gzip.decompress(raw)
+        except Exception:
+            pass  # If decompression fails, continue with original bytes
+    
     text = raw.decode("utf8", errors="ignore")
+    
+    # ---- Regular JSON Response (non-streaming) ----
+    try:
+        js = json.loads(text)
+        # Handle OpenAI chat completion response
+        if "choices" in js and js["choices"]:
+            choice = js["choices"][0]
+            if "message" in choice and "content" in choice["message"]:
+                out = {"content": choice["message"]["content"]}
+                return json.dumps(out, ensure_ascii=False).encode()
+    except Exception:
+        pass  # Not a regular JSON response, continue with streaming logic
 
     # ---- OpenAI ------------------------------------------------------------
     if '"chat.completion.chunk"' in text:

@@ -35,27 +35,39 @@ def install(exporter: FileExporter) -> None:
     #  Tiny helpers - tee wrappers that satisfy httpx’ stream contracts   #
     # ------------------------------------------------------------------ #
     class _TeeSync(httpx.SyncByteStream):
-        def __init__(self, inner: httpx.SyncByteStream, buf: List[bytes]):
+        def __init__(self, inner: httpx.SyncByteStream, buf: List[bytes], on_exhaust=None):
             self._inner = inner
             self._buf = buf
+            self._on_exhaust = on_exhaust
 
         def __iter__(self):
-            for chunk in self._inner:
-                self._buf.append(chunk)
-                yield chunk
+            try:
+                for chunk in self._inner:
+                    self._buf.append(chunk)
+                    yield chunk
+            finally:
+                # Call the exhaustion callback when iteration is complete
+                if self._on_exhaust:
+                    self._on_exhaust()
 
         def close(self):
             self._inner.close()
 
     class _TeeAsync(httpx.AsyncByteStream):
-        def __init__(self, inner: httpx.AsyncByteStream, buf: List[bytes]):
+        def __init__(self, inner: httpx.AsyncByteStream, buf: List[bytes], on_exhaust=None):
             self._inner = inner
             self._buf = buf
+            self._on_exhaust = on_exhaust
 
         async def __aiter__(self):
-            async for chunk in self._inner:
-                self._buf.append(chunk)
-                yield chunk
+            try:
+                async for chunk in self._inner:
+                    self._buf.append(chunk)
+                    yield chunk
+            finally:
+                # Call the exhaustion callback when iteration is complete
+                if self._on_exhaust:
+                    self._on_exhaust()
 
         async def aclose(self) -> None:  # noqa: D401
             await self._inner.aclose()
@@ -88,11 +100,15 @@ def install(exporter: FileExporter) -> None:
 
             original = self._inner.handle_request(request)
             captured: List[bytes] = []
+            
+            # Create exhaust callback
+            def on_exhaust():
+                _flush(captured, request.method, url, req_b, tag, t0, exporter)
 
             response = httpx.Response(
                 status_code=original.status_code,
                 headers=original.headers,
-                stream=_TeeSync(original.stream, captured),
+                stream=_TeeSync(original.stream, captured, on_exhaust),
                 request=request,
                 extensions=original.extensions,
             )
@@ -125,11 +141,15 @@ def install(exporter: FileExporter) -> None:
 
             original = await self._inner.handle_async_request(request)
             captured: List[bytes] = []
+            
+            # Create exhaust callback
+            def on_exhaust():
+                _flush(captured, request.method, url, req_b, tag, t0, exporter)
 
             response = httpx.Response(
                 status_code=original.status_code,
                 headers=original.headers,
-                stream=_TeeAsync(original.stream, captured),
+                stream=_TeeAsync(original.stream, captured, on_exhaust),
                 request=request,  # <-- attach the real request
                 extensions=original.extensions,
             )
@@ -178,6 +198,58 @@ def install(exporter: FileExporter) -> None:
             )
             exporter.record_llm_call(call_data)
 
+    def _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter):
+        """Patch content access methods to trigger flush when content is read."""
+        _flushed = False
+        
+        def maybe_flush():
+            nonlocal _flushed
+            if not _flushed and captured:
+                _flushed = True
+                _flush(captured, method, url, req_b, tag, t0, exporter)
+        
+        # Patch response.content property
+        if hasattr(response, '_content'):
+            orig_content = response._content
+            def get_content():
+                maybe_flush()
+                return orig_content
+            response._content = property(get_content)
+        
+        # Patch response.text property
+        if hasattr(response, 'text'):
+            orig_text = response.text
+            def get_text():
+                maybe_flush()
+                return orig_text
+            response.text = property(get_text)
+        
+        # Patch response.json method
+        if hasattr(response, 'json'):
+            orig_json = response.json
+            def patched_json(*args, **kwargs):
+                maybe_flush()
+                return orig_json(*args, **kwargs)
+            response.json = patched_json
+        
+        # Patch response.aread method
+        if hasattr(response, 'aread'):
+            orig_aread = response.aread
+            async def patched_aread(*args, **kwargs):
+                result = await orig_aread(*args, **kwargs)
+                maybe_flush()
+                return result
+            response.aread = patched_aread
+        
+        # Patch response.read method
+        if hasattr(response, 'read'):
+            orig_read = response.read
+            def patched_read(*args, **kwargs):
+                result = orig_read(*args, **kwargs)
+                maybe_flush()
+                return result
+            response.read = patched_read
+    
     def _patch_close(
         response: httpx.Response,
         captured: List[bytes],
@@ -195,6 +267,9 @@ def install(exporter: FileExporter) -> None:
             orig_close()
 
         response.close = _on_close  # type: ignore[attr-defined]
+        
+        # Add automatic flush triggers when content is accessed
+        _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter)
 
     def _patch_aclose(
         response: httpx.Response,
@@ -213,6 +288,9 @@ def install(exporter: FileExporter) -> None:
             await orig_aclose()
 
         response.aclose = _on_aclose
+        
+        # Add automatic flush triggers when content is accessed
+        _patch_content_methods(response, captured, method, url, req_b, tag, t0, exporter)
 
     # ------------------------------------------------------------------ #
     #  Swap the public Client classes                                    #

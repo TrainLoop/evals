@@ -175,6 +175,24 @@ class TestInstrumentationUtils:
         assert parse_response_body("not json") is None
         assert parse_response_body("{invalid}") is None
 
+    def test_parse_response_body_bytes_input(self):
+        """Test parsing response body with bytes input."""
+        body_dict = {"content": "Hello from bytes!"}
+        body_bytes = json.dumps(body_dict).encode('utf-8')
+        
+        parsed = parse_response_body(body_bytes)
+        
+        assert parsed is not None
+        assert parsed["content"] == "Hello from bytes!"
+
+    def test_parse_response_body_invalid_bytes(self):
+        """Test parsing invalid bytes returns None."""
+        invalid_bytes = b'\xff\xfe\xfd'  # Invalid UTF-8
+        
+        parsed = parse_response_body(invalid_bytes)
+        
+        assert parsed is None
+
     def test_caller_site_extracts_location(self):
         """Test that caller_site extracts file and line info."""
         location = caller_site()
@@ -222,6 +240,35 @@ class TestInstrumentationUtils:
 
         # Should return the original bytes unchanged
         assert formatted == raw
+
+    def test_format_streamed_content_gzipped_response(self):
+        """Test that gzipped responses are properly decompressed."""
+        import gzip
+        
+        # Create a regular JSON response
+        json_response = json.dumps({
+            "choices": [{"message": {"content": "Hello from gzipped response!"}}]
+        })
+        
+        # Compress it
+        gzipped_data = gzip.compress(json_response.encode())
+        
+        # Should decompress and parse the JSON response
+        formatted = format_streamed_content(gzipped_data)
+        
+        parsed = json.loads(formatted.decode())
+        assert parsed["content"] == "Hello from gzipped response!"
+
+    def test_format_streamed_content_regular_json_response(self):
+        """Test that regular JSON responses are handled correctly."""
+        json_response = json.dumps({
+            "choices": [{"message": {"content": "Hello from regular JSON!"}}]
+        })
+        
+        formatted = format_streamed_content(json_response.encode())
+        
+        parsed = json.loads(formatted.decode())
+        assert parsed["content"] == "Hello from regular JSON!"
 
     def test_now_ms_returns_milliseconds(self):
         """Test that now_ms returns current time in milliseconds."""
