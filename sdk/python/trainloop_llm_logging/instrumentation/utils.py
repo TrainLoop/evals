@@ -3,7 +3,7 @@ import inspect
 import json
 import time
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 from urllib.parse import urlparse
 from ..types import ParsedRequestBody, ParsedResponseBody, LLMCallLocation
 from ..logger import create_logger
@@ -19,8 +19,13 @@ def now_ms() -> int:
     return int(time.time() * 1000)
 
 
-def cap(b: bytes) -> bytes:
-    return b[:_MAX_BODY]
+def cap(b: bytes) -> str:
+    """Return the first `_MAX_BODY` bytes decoded to UTF-8 (best-effort)."""
+    try:
+        return b[:_MAX_BODY].decode("utf-8", errors="ignore")
+    except Exception:
+        # Ensure we always return a string even on decode failure
+        return ""
 
 
 def caller_site() -> LLMCallLocation:
@@ -58,7 +63,7 @@ def parse_request_body(s: str) -> Optional[ParsedRequestBody]:
         return None
 
 
-def parse_response_body(s: str | bytes) -> Optional[ParsedResponseBody]:
+def parse_response_body(s: Union[str, bytes]) -> Optional[ParsedResponseBody]:
     """Parse a response body string into a simplified format with just content.
 
     Returns:
@@ -67,10 +72,10 @@ def parse_response_body(s: str | bytes) -> Optional[ParsedResponseBody]:
     # Handle bytes input
     if isinstance(s, bytes):
         try:
-            s = s.decode('utf-8')
+            s = s.decode("utf-8")
         except Exception:
             return None
-    
+
     try:
         body = json.loads(s)
     except Exception:
@@ -103,7 +108,7 @@ def is_llm_call(url: str) -> bool:
         return False
 
 
-def pop_tag(headers: dict) -> str | None:
+def pop_tag(headers: Any) -> Optional[str]:
     """Pop (case-insensitive) X-Trainloop-Tag from a mutable headers mapping."""
     for k in list(headers.keys()):
         if k.lower() == HEADER_NAME.lower():
@@ -125,21 +130,22 @@ def format_streamed_content(raw: bytes) -> bytes:
     If parsing fails, return the original bytes.
     """
     # Check if the response is gzipped
-    if raw.startswith(b'\x1f\x8b'):
+    if raw.startswith(b"\x1f\x8b"):
         try:
             import gzip
+
             raw = gzip.decompress(raw)
         except Exception:
             pass  # If decompression fails, continue with original bytes
-    
+
     text = raw.decode("utf8", errors="ignore")
-    
+
     # ---- Handle HTTP chunked transfer encoding ----
     # Check if this looks like chunked encoding (starts with hex chunk size)
-    if '\r\n' in text and text.split('\r\n')[0].strip():
+    if "\r\n" in text and text.split("\r\n")[0].strip():
         try:
             # Simple chunked decoding - extract content after chunk headers
-            lines = text.split('\r\n')
+            lines = text.split("\r\n")
             content_parts = []
             i = 0
             while i < len(lines):
@@ -156,13 +162,13 @@ def format_streamed_content(raw: bytes) -> bytes:
                     # Not a chunk size, might be chunk data or other content
                     content_parts.append(lines[i])
                     i += 1
-            
+
             if content_parts:
-                text = ''.join(content_parts)
+                text = "".join(content_parts)
         except Exception:
             # If chunked decoding fails, continue with original text
             pass
-    
+
     # ---- Regular JSON Response (non-streaming) ----
     try:
         js = json.loads(text)

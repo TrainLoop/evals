@@ -7,8 +7,6 @@ keeping requests' streaming semantics intact.
 from __future__ import annotations
 import functools
 import json
-from typing import List
-from urllib3.response import HTTPResponse as _Urllib3Resp
 
 from .utils import (
     now_ms,
@@ -52,7 +50,7 @@ def install(exporter: FileExporter) -> None:
         try:
             # Access the content to read the full response body
             response_content = resp.content
-            
+
             # Format the response content
             pretty = format_streamed_content(response_content)
             t1 = now_ms()
@@ -64,7 +62,7 @@ def install(exporter: FileExporter) -> None:
                 startTimeMs=t0,
                 endTimeMs=t1,
                 durationMs=t1 - t0,
-                tag=tag,
+                tag=str(tag or ""),
                 location=caller_site(),
                 isLLMRequest=True,
                 headers={},
@@ -87,4 +85,4 @@ def install(exporter: FileExporter) -> None:
         return resp
 
     # ---- global patch ------
-    requests.sessions.Session.request = wrapper
+    requests.sessions.Session.request = wrapper  # type: ignore[assignment]

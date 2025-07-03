@@ -47,6 +47,7 @@ class LLMCallData(TypedDict, total=False):
     isLLMRequest: bool
     headers: Dict[str, str]
     status: int
+    method: str
 
 
 class TrainLoopConfigObject(TypedDict):
