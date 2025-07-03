@@ -122,3 +122,48 @@ tasks:
     cmds:
       - task: clean:mocks
       - task: clean:pytest
+
+  # Integration test tasks
+  test:integration:
+    desc: Run all integration tests (requires API keys in .env file)
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/ -v
+
+  test:integration:http:
+    desc: Run core HTTP library integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_real_api_calls.py -v
+
+  test:integration:llm:
+    desc: Run LLM library integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_other_llm_libraries.py -v
+
+  test:integration:openai:
+    desc: Run OpenAI-specific integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_real_api_calls.py::TestOpenAIIntegration -v
+      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestOpenAISDKIntegration -v
+
+  test:integration:anthropic:
+    desc: Run Anthropic-specific integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_real_api_calls.py::TestAnthropicIntegration -v
+      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestAnthropicSDKIntegration -v
+
+  test:integration:langchain:
+    desc: Run LangChain integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestLangChainIntegration -v
+
+  test:integration:litellm:
+    desc: Run LiteLLM integration tests
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_other_llm_libraries.py::TestLiteLLMIntegration -v
