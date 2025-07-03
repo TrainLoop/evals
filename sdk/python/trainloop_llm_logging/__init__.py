@@ -15,6 +15,6 @@ Import this once, early in your program:
 Everything else happens automatically.
 """
 
-from .register import HEADER_NAME, trainloop_tag, collect
+from .register import HEADER_NAME, trainloop_tag, collect, flush
 
-__all__ = ["HEADER_NAME", "trainloop_tag", "collect"]
+__all__ = ["HEADER_NAME", "trainloop_tag", "collect", "flush"]

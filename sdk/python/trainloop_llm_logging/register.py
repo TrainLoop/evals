@@ -25,14 +25,19 @@ def trainloop_tag(tag: str) -> dict[str, str]:
 
 
 _IS_INIT = False
+_EXPORTER = None
 
 
-def collect(trainloop_config_path: str | None = None) -> None:
+def collect(trainloop_config_path: str | None = None, auto_flush: bool = False) -> None:
     """
     Initialize the SDK (idempotent).  Does nothing unless
     TRAINLOOP_DATA_FOLDER is set.
+
+    Args:
+        trainloop_config_path: Path to config file (optional)
+        auto_flush: If True, flush each LLM call immediately (useful for testing)
     """
-    global _IS_INIT
+    global _IS_INIT, _EXPORTER
     if _IS_INIT:
         return
 
@@ -40,8 +45,23 @@ def collect(trainloop_config_path: str | None = None) -> None:
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
         _log.warning("TRAINLOOP_DATA_FOLDER not set - SDK disabled")
         return
-    exporter = FileExporter()  # flushes every 10 s or 5 items
-    install_patches(exporter)  # monkey-patch outbound HTTP
+
+    _EXPORTER = FileExporter(
+        auto_flush=auto_flush
+    )  # flushes every 10 s or 5 items (or immediately if auto_flush=True)
+    install_patches(_EXPORTER)  # monkey-patch outbound HTTP
 
     _IS_INIT = True
     _log.info("TrainLoop Evals SDK initialized")
+
+
+def flush() -> None:
+    """
+    Manually flush any buffered LLM calls to disk.
+    Useful for testing or when you want to ensure data is written immediately.
+    """
+    global _EXPORTER
+    if _EXPORTER:
+        _EXPORTER.flush()
+    else:
+        _log.warning("SDK not initialized - call collect() first")

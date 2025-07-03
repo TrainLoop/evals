@@ -19,11 +19,17 @@ class FileExporter:
     _interval_s = 10
     _batch_len = 5
 
-    def __init__(self, interval: int | None = None, batch_len: int | None = None):
+    def __init__(
+        self,
+        interval: int | None = None,
+        batch_len: int | None = None,
+        auto_flush: bool = False,
+    ):
         self.buf: List[LLMCallData] = []
         self.lock = threading.Lock()
         self._interval_s = interval or self._interval_s
         self._batch_len = batch_len or self._batch_len
+        self._auto_flush = auto_flush
         self.timer = threading.Timer(self._interval_s, self._flush_loop)
         self.timer.daemon = True
         self.timer.start()
@@ -36,7 +42,7 @@ class FileExporter:
             return
         with self.lock:
             self.buf.append(call)
-            if len(self.buf) >= self._batch_len:
+            if self._auto_flush or len(self.buf) >= self._batch_len:
                 self._export()
 
     # ------------------------------------------------------------------ #
