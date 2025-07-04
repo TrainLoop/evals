@@ -64,7 +64,7 @@ class TestBrowserUseIntegration:
     async def test_browser_use_with_openai(self):
         """Test browser_use with OpenAI LLM - should capture API calls."""
         try:
-            from browser_use import Browser, Agent
+            from browser_use import Controller, Agent
             from langchain_openai import ChatOpenAI
         except ImportError as e:
             pytest.skip(f"Required dependencies not available: {e}")
@@ -78,14 +78,14 @@ class TestBrowserUseIntegration:
                 max_tokens=50
             )
             
-            # Create browser and agent
-            browser = Browser()
+            # Create controller and agent
+            controller = Controller(headless=True)
             
-            # Simple task that should make at least one LLM API call
+            # Task that requires web interaction to force LLM API calls
             agent = Agent(
-                task="What is 2+2? Just give me the number.",
+                task="Go to example.com and tell me what the main heading says",
                 llm=llm,
-                browser=browser,
+                controller=controller,
             )
             
             try:
@@ -118,8 +118,8 @@ class TestBrowserUseIntegration:
                 print("🎉 Browser Use + OpenAI integration test passed!")
                 
             finally:
-                # Clean up browser
-                await browser.close()
+                # Clean up controller
+                await controller.browser.close()
     
     @require_browser_use()
     @require_playwright()
@@ -128,7 +128,7 @@ class TestBrowserUseIntegration:
     async def test_browser_use_with_anthropic(self):
         """Test browser_use with Anthropic Claude - should capture API calls."""
         try:
-            from browser_use import Browser, Agent
+            from browser_use import Controller, Agent
             from langchain_anthropic import ChatAnthropic
         except ImportError as e:
             pytest.skip(f"Required dependencies not available: {e}")
@@ -142,14 +142,14 @@ class TestBrowserUseIntegration:
                 max_tokens=50
             )
             
-            # Create browser and agent
-            browser = Browser()
+            # Create controller and agent
+            controller = Controller(headless=True)
             
-            # Simple task that should make at least one LLM API call
+            # Task that requires web interaction to force LLM API calls
             agent = Agent(
-                task="What is 3+3? Just give me the number.",
+                task="Go to example.com and tell me what the main heading says",
                 llm=llm,
-                browser=browser,
+                controller=controller,
             )
             
             try:
@@ -182,8 +182,8 @@ class TestBrowserUseIntegration:
                 print("🎉 Browser Use + Anthropic integration test passed!")
                 
             finally:
-                # Clean up browser
-                await browser.close()
+                # Clean up controller
+                await controller.browser.close()
     
     @require_browser_use()
     @require_playwright()
@@ -192,7 +192,7 @@ class TestBrowserUseIntegration:
     async def test_browser_use_multiple_calls(self):
         """Test that multiple LLM calls in a browser_use session are all captured."""
         try:
-            from browser_use import Browser, Agent
+            from browser_use import Controller, Agent
             from langchain_openai import ChatOpenAI
         except ImportError as e:
             pytest.skip(f"Required dependencies not available: {e}")
@@ -206,13 +206,13 @@ class TestBrowserUseIntegration:
                 max_tokens=30
             )
             
-            # Create browser and agent with a task that might require multiple LLM calls
-            browser = Browser()
+            # Create controller and agent with a task that might require multiple LLM calls
+            controller = Controller(headless=True)
             
             agent = Agent(
-                task="Think step by step: What is 5+7? Then what is that result multiplied by 2?",
+                task="Go to example.com and take a screenshot",
                 llm=llm,
-                browser=browser,
+                controller=controller,
             )
             
             try:
@@ -244,8 +244,8 @@ class TestBrowserUseIntegration:
                 print("🎉 Multiple calls browser_use integration test passed!")
                 
             finally:
-                # Clean up browser
-                await browser.close()
+                # Clean up controller
+                await controller.browser.close()
 
 
 class TestBrowserUseWithManualLLMCalls:
@@ -258,7 +258,7 @@ class TestBrowserUseWithManualLLMCalls:
     async def test_mixed_browser_use_and_manual_calls(self):
         """Test that both browser_use calls and manual API calls are captured."""
         try:
-            from browser_use import Browser, Agent
+            from browser_use import Controller, Agent
             from langchain_openai import ChatOpenAI
             import httpx
         except ImportError as e:
@@ -290,11 +290,11 @@ class TestBrowserUseWithManualLLMCalls:
                 max_tokens=20
             )
             
-            browser = Browser()
+            controller = Controller(headless=True)
             agent = Agent(
-                task="What is 1+1?",
+                task="Go to example.com and find the title",
                 llm=llm,
-                browser=browser,
+                controller=controller,
             )
             
             try:
@@ -325,7 +325,7 @@ class TestBrowserUseWithManualLLMCalls:
                 print("🎉 Mixed manual + browser_use integration test passed!")
                 
             finally:
-                await browser.close()
+                await controller.browser.close()
                 client.close()
 
 
