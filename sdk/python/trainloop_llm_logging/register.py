@@ -28,14 +28,16 @@ _IS_INIT = False
 _EXPORTER = None
 
 
-def collect(trainloop_config_path: str | None = None, auto_flush: bool = False) -> None:
+def collect(
+    trainloop_config_path: str | None = None, flush_immediately: bool = False
+) -> None:
     """
     Initialize the SDK (idempotent).  Does nothing unless
     TRAINLOOP_DATA_FOLDER is set.
 
     Args:
         trainloop_config_path: Path to config file (optional)
-        auto_flush: If True, flush each LLM call immediately (useful for testing)
+        flush_immediately: If True, flush each LLM call immediately (useful for testing)
     """
     global _IS_INIT, _EXPORTER
     if _IS_INIT:
@@ -47,8 +49,8 @@ def collect(trainloop_config_path: str | None = None, auto_flush: bool = False) 
         return
 
     _EXPORTER = FileExporter(
-        auto_flush=auto_flush
-    )  # flushes every 10 s or 5 items (or immediately if auto_flush=True)
+        flush_immediately=flush_immediately
+    )  # flushes every 10 s or 5 items (or immediately if flush_immediately=True)
     install_patches(_EXPORTER)  # monkey-patch outbound HTTP
 
     _IS_INIT = True

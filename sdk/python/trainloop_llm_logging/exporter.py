@@ -23,13 +23,13 @@ class FileExporter:
         self,
         interval: int | None = None,
         batch_len: int | None = None,
-        auto_flush: bool = False,
+        flush_immediately: bool = False,
     ):
         self.buf: List[LLMCallData] = []
         self.lock = threading.Lock()
         self._interval_s = interval or self._interval_s
         self._batch_len = batch_len or self._batch_len
-        self._auto_flush = auto_flush
+        self._auto_flush = flush_immediately
         self.timer = threading.Timer(self._interval_s, self._flush_loop)
         self.timer.daemon = True
         self.timer.start()
