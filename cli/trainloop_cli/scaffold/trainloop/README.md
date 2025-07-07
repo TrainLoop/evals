@@ -54,7 +54,7 @@ pip install trainloop-llm-logging  # tiny wrapper around the Node collector
 ```
 
 ```python
-from trainloop_llm_logging import collect
+from trainloop_llm_logging import collect, flush
 collect("some/path/to/trainloop.config.yaml")  # must be called exactly once, e.g. in your app entrypoint
 
 response = client.chat.completions.create(
@@ -62,6 +62,19 @@ response = client.chat.completions.create(
     messages=[...],
     extra_headers=trainloop_tag("bubble-sort")  # tag requests for evaluation
 )
+```
+
+**Buffering Control:**
+By default, the Python SDK buffers LLM calls and flushes them every 10 seconds or when 5+ calls are buffered. For immediate flushing or manual control:
+
+```python
+# Flush immediately after each LLM call (useful for testing/scripts)
+collect("some/path/to/trainloop.config.yaml", flush_immediately=True)
+
+# Or use default buffering and flush manually when needed
+collect("some/path/to/trainloop.config.yaml")
+# ... your LLM calls ...
+flush()  # Manually flush buffered calls
 ```
 
 ## 📊 Running evaluations

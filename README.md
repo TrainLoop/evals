@@ -74,6 +74,21 @@ from trainloop_llm_logging import collect
 collect("../trainloop/trainloop.config.yaml")
 ```
 
+**Buffering Control**:
+By default, the Python SDK buffers LLM calls and flushes them every 10 seconds or when 5+ calls are buffered. For immediate flushing (useful for testing or scripts that may exit quickly):
+
+```python
+from trainloop_llm_logging import collect, flush
+
+# Flush immediately after each LLM call
+collect("../trainloop/trainloop.config.yaml", flush_immediately=True)
+
+# Or use default buffering and flush manually when needed
+collect("../trainloop/trainloop.config.yaml")
+# ... your LLM calls ...
+flush()  # Manually flush buffered calls
+```
+
 4. **Write metrics and suites** in `trainloop/eval/`
 
 5. **Run the evals:**

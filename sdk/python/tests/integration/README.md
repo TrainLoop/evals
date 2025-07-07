@@ -12,6 +12,7 @@ These tests make **actual API calls** to verify that:
 4. **Response Handling**: Gzipped responses and various response formats are handled correctly
 5. **Multi-provider Support**: Both OpenAI and Anthropic APIs work correctly
 6. **JSONL File Creation**: All captured data is properly written to JSONL files with correct structure
+7. **Immediate Flushing**: Tests use `flush_immediately=True` for reliable test validation
 
 ## 📁 Test Files
 
@@ -25,6 +26,7 @@ These tests make **actual API calls** to verify that:
 
 ### Test Infrastructure
 - **`run_all_integration_tests.py`** - Comprehensive test runner for all integration tests
+- **`harness.py`** - Integration test harness with immediate flushing for reliable testing
 - **`README.md`** - This documentation
 
 ## 🔧 Setup
@@ -154,6 +156,36 @@ Each test validates that:
 5. **Tags are preserved** - Custom tags are maintained
 6. **Provider detection** - Correct API endpoints are identified
 
+## 🔧 Test Configuration
+
+### Immediate Flushing for Tests
+
+The integration tests use `flush_immediately=True` when initializing the TrainLoop SDK:
+
+```python
+# In harness.py
+tl.collect(flush_immediately=True)
+```
+
+This ensures that:
+- **Reliable Testing**: JSONL files are written immediately after each API call
+- **No Race Conditions**: Tests don't need to wait for the default 10-second buffer
+- **Consistent Results**: Each test can validate its data immediately
+
+For your own testing or debugging, you can use the same pattern:
+
+```python
+import trainloop_llm_logging as tl
+
+# Initialize with immediate flushing for testing
+tl.collect(flush_immediately=True)
+
+# Make your API calls
+# ... your code ...
+
+# Data is immediately available in JSONL files
+```
+
 ## 🐛 Troubleshooting
 
 ### No JSONL Files Created
@@ -162,6 +194,7 @@ Each test validates that:
 2. **Check data folder**: Verify `TRAINLOOP_DATA_FOLDER` is set or temporary directory permissions
 3. **Check SDK initialization**: Ensure `tl.collect()` is called before API calls
 4. **Check network**: Verify internet connectivity to API endpoints
+5. **Consider immediate flushing**: Use `flush_immediately=True` for testing scenarios
 
 ### Tests Skipped
 
