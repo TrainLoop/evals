@@ -29,10 +29,15 @@ class FileExporter:
         self.lock = threading.Lock()
         self._interval_s = interval or self._interval_s
         self._batch_len = batch_len or self._batch_len
-        self._auto_flush = flush_immediately
-        self.timer = threading.Timer(self._interval_s, self._flush_loop)
-        self.timer.daemon = True
-        self.timer.start()
+        self._flush_immediately = flush_immediately
+
+        # Start periodic flush timer only when NOT in flush_immediately mode
+        self.timer: threading.Timer | None = None
+        print(f"Mason, flush_immediately: {self._flush_immediately}")
+        if not self._flush_immediately:
+            self.timer = threading.Timer(self._interval_s, self._flush_loop)
+            self.timer.daemon = True
+            self.timer.start()
 
     # ------------------------------------------------------------------ #
 
@@ -41,7 +46,7 @@ class FileExporter:
             return
         with self.lock:
             self.buf.append(call)
-            if self._auto_flush or len(self.buf) >= self._batch_len:
+            if self._flush_immediately or len(self.buf) >= self._batch_len:
                 self._export()
 
     # ------------------------------------------------------------------ #
@@ -52,8 +57,12 @@ class FileExporter:
             self.buf.clear()
             return
 
+        # Copy & clear buffer atomically to avoid writing duplicates if timer
+        # fires while we are exporting (especially when flush_immediately=True).
+        to_write, self.buf = self.buf, []
+
         samples: list[CollectedSample] = []
-        for llm_call in self.buf:
+        for llm_call in to_write:
             parsed_request = parse_request_body(llm_call.get("requestBodyStr", ""))
             parsed_response = parse_response_body(llm_call.get("responseBodyStr", ""))
 
@@ -83,7 +92,6 @@ class FileExporter:
             samples.append(sample)
 
         save_samples(data_dir, samples)
-        self.buf.clear()
 
     # ------------------------------------------------------------------ #
 
@@ -102,5 +110,6 @@ class FileExporter:
             self._export()
 
     def shutdown(self):
-        self.timer.cancel()
+        if self.timer:
+            self.timer.cancel()
         self.flush()
