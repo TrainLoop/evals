@@ -74,8 +74,8 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
 
     # If all variables are already set, no need to load config
     if data_folder_set and host_allowlist_set and log_level_set:
-        _log.debug(
-            "All TrainLoop environment variables already set, skipping config file"
+        print(
+            "[TrainLoop] All TrainLoop environment variables already set, skipping config file"
         )
         return
 
@@ -120,11 +120,11 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
                 resolved_config_path.read_text(encoding="utf-8")
             )
             config_data = data.get("trainloop", {})
-            _log.debug(f"Loaded TrainLoop config from {resolved_config_path}")
+            print(f"[TrainLoop] Loaded TrainLoop config from {resolved_config_path}")
         except Exception as e:
-            _log.warning(f"Failed to load config file {resolved_config_path}: {e}")
+            print(f"[TrainLoop] Failed to load config file {resolved_config_path}: {e}")
     else:
-        _log.debug(f"TrainLoop config file not found at {resolved_config_path}")
+        print(f"[TrainLoop] TrainLoop config file not found at {resolved_config_path}")
 
     # Set environment variables, prioritizing existing values
     if not data_folder_set:
@@ -141,7 +141,11 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
             )
 
     if not host_allowlist_set:
-        if config_data and "host_allowlist" in config_data:
+        if (
+            config_data
+            and "host_allowlist" in config_data
+            and config_data["host_allowlist"]
+        ):
             host_allowlist = ",".join(config_data["host_allowlist"])
             os.environ["TRAINLOOP_HOST_ALLOWLIST"] = host_allowlist
         else:
