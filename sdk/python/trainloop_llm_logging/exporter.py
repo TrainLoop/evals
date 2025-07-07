@@ -33,7 +33,6 @@ class FileExporter:
 
         # Start periodic flush timer only when NOT in flush_immediately mode
         self.timer: threading.Timer | None = None
-        print(f"Mason, flush_immediately: {self._flush_immediately}")
         if not self._flush_immediately:
             self.timer = threading.Timer(self._interval_s, self._flush_loop)
             self.timer.daemon = True
