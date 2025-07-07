@@ -12,15 +12,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import yaml
-from .logger import create_logger
 from .types import TrainloopConfig
 from .instrumentation.utils import DEFAULT_HOST_ALLOWLIST
 
-_log = create_logger("trainloop-config")
-
 
 def resolve_data_folder_path(
-    data_folder: str, config_path: str | None, root_dir: Path
+    data_folder: str | None, config_path: str | None, root_dir: Path
 ) -> str:
     """
     Resolves the data folder path based on whether it's absolute or relative.
@@ -130,6 +127,9 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
     if not data_folder_set:
         if config_data and "data_folder" in config_data:
             data_folder = config_data["data_folder"]
+            resolved_config_path = (
+                str(resolved_config_path) if resolved_config_path else None
+            )
             resolved_path = resolve_data_folder_path(
                 data_folder, resolved_config_path, root
             )

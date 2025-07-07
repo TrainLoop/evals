@@ -17,11 +17,8 @@ from .utils import (
     pop_tag,
     format_streamed_content,
 )
-from ..logger import create_logger
 from ..exporter import FileExporter
 from ..types import LLMCallData
-
-_LOG = create_logger("trainloop-httpx")
 
 
 def install(exporter: FileExporter) -> None:

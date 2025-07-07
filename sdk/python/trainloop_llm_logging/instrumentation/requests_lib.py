@@ -16,11 +16,9 @@ from .utils import (
     pop_tag,
     format_streamed_content,
 )
-from ..logger import create_logger
+from ..register import requests_logger as logger
 from ..exporter import FileExporter
 from ..types import LLMCallData
-
-_LOG = create_logger("trainloop-requests")
 
 
 def install(exporter: FileExporter) -> None:
@@ -80,7 +78,7 @@ def install(exporter: FileExporter) -> None:
             )
             exporter.record_llm_call(call_data)
         except Exception as e:
-            _LOG.warning(f"Error during LLM call instrumentation: {e}")
+            logger.warning(f"Error during LLM call instrumentation: {e}")
 
         return resp
 

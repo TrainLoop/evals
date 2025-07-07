@@ -9,6 +9,8 @@ Entry point - mirrors TS `src/index.ts`.
 from __future__ import annotations
 
 import os
+import logging
+from typing import cast
 
 from .config import load_config_into_env
 from .exporter import FileExporter
@@ -16,7 +18,27 @@ from .instrumentation import install_patches
 from .logger import create_logger
 from .instrumentation.utils import HEADER_NAME
 
-_log = create_logger("trainloop-register")
+# Global loggers for all modules
+exporter_logger = cast(logging.Logger, None)
+config_logger = cast(logging.Logger, None)
+store_logger = cast(logging.Logger, None)
+requests_logger = cast(logging.Logger, None)
+httpx_logger = cast(logging.Logger, None)
+http_client_logger = cast(logging.Logger, None)
+instrumentation_utils_logger = cast(logging.Logger, None)
+register_logger = cast(logging.Logger, None)
+
+
+def create_loggers() -> None:
+    global exporter_logger, config_logger, store_logger, requests_logger, httpx_logger, http_client_logger, instrumentation_utils_logger, register_logger
+    exporter_logger = create_logger("trainloop-exporter")
+    config_logger = create_logger("trainloop-config")
+    store_logger = create_logger("trainloop-store")
+    requests_logger = create_logger("trainloop-requests")
+    httpx_logger = create_logger("trainloop-httpx")
+    http_client_logger = create_logger("trainloop-http.client")
+    instrumentation_utils_logger = create_logger("trainloop-instrumentation-utils")
+    register_logger = create_logger("trainloop-register")
 
 
 def trainloop_tag(tag: str) -> dict[str, str]:
@@ -43,9 +65,13 @@ def collect(
     if _IS_INIT:
         return
 
+    create_loggers()
+    print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
+
+    logger = register_logger
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
-        _log.warning("TRAINLOOP_DATA_FOLDER not set - SDK disabled")
+        logger.warning("TRAINLOOP_DATA_FOLDER not set - SDK disabled")
         return
 
     _EXPORTER = FileExporter(
@@ -54,7 +80,7 @@ def collect(
     install_patches(_EXPORTER)  # monkey-patch outbound HTTP
 
     _IS_INIT = True
-    _log.info("TrainLoop Evals SDK initialized")
+    logger.info("TrainLoop Evals SDK initialized")
 
 
 def flush() -> None:
@@ -66,4 +92,4 @@ def flush() -> None:
     if _EXPORTER:
         _EXPORTER.flush()
     else:
-        _log.warning("SDK not initialized - call collect() first")
+        register_logger.warning("SDK not initialized - call collect() first")

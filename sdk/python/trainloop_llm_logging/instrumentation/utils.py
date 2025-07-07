@@ -3,12 +3,11 @@ import inspect
 import json
 import time
 import re
+import gzip
 from typing import Any, Dict, Optional, Union
 from urllib.parse import urlparse
 from ..types import ParsedRequestBody, ParsedResponseBody, LLMCallLocation
-from ..logger import create_logger
-
-_log = create_logger("trainloop-instrumentation-utils")
+from ..register import instrumentation_utils_logger as logger
 
 _MAX_BODY = 2 * 1024 * 1024  # 2 MB
 DEFAULT_HOST_ALLOWLIST = ["api.openai.com", "api.anthropic.com"]
@@ -59,7 +58,7 @@ def parse_request_body(s: str) -> Optional[ParsedRequestBody]:
 
         return {"messages": messages, "model": model, "modelParams": model_params}
     else:
-        _log.warning(f"Skipping invalid request body: {s}")
+        logger.warning(f"Skipping invalid request body: {s}")
         return None
 
 
@@ -91,11 +90,20 @@ def parse_response_body(s: Union[str, bytes]) -> Optional[ParsedResponseBody]:
             return {"content": str(body["content"]["content"])}
         return {"content": str(body["content"])}
 
-    _log.warning(f"Skipping invalid response body: {s}")
+    logger.warning(f"Skipping invalid response body: {s}")
     return None
 
 
 def build_call(**kw) -> Dict[str, Any]:
+    """
+    Build a call dictionary with the given keyword arguments.
+
+    Args:
+        **kw: Keyword arguments to include in the call dictionary
+
+    Returns:
+        A dictionary with the given keyword arguments and "isLLMRequest" set to True
+    """
     kw.setdefault("isLLMRequest", True)
     return kw
 
@@ -132,8 +140,6 @@ def format_streamed_content(raw: bytes) -> bytes:
     # Check if the response is gzipped
     if raw.startswith(b"\x1f\x8b"):
         try:
-            import gzip
-
             raw = gzip.decompress(raw)
         except Exception:
             pass  # If decompression fails, continue with original bytes

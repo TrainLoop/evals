@@ -7,12 +7,10 @@ from __future__ import annotations
 import threading
 from typing import List
 import os
-from .logger import create_logger
+from .register import exporter_logger as logger
 from .store import save_samples, update_registry
 from .types import CollectedSample, LLMCallData
 from .instrumentation.utils import parse_request_body, parse_response_body, caller_site
-
-_log = create_logger("trainloop-exporter")
 
 
 class FileExporter:
@@ -70,10 +68,10 @@ class FileExporter:
 
             loc = llm_call.get("location") or caller_site()
             tag = llm_call.get("tag") or ""
-            _log.info("Location: %s", loc)
-            _log.info("Tag: %s", tag)
+            logger.info("Location: %s", loc)
+            logger.info("Tag: %s", tag)
             update_registry(data_dir, loc, tag or "untagged")
-            _log.info("Updated registry")
+            logger.info("Updated registry")
 
             sample = CollectedSample(
                 durationMs=llm_call.get("durationMs", 0),
@@ -95,7 +93,7 @@ class FileExporter:
     # ------------------------------------------------------------------ #
 
     def _flush_loop(self):
-        _log.info("Flushing %d calls", len(self.buf))
+        logger.info("Flushing %d calls", len(self.buf))
         with self.lock:
             self._export()
         self.timer = threading.Timer(self._interval_s, self._flush_loop)

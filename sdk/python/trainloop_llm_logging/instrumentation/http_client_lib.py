@@ -18,10 +18,7 @@ from .utils import (
     pop_tag,
 )
 from ..exporter import FileExporter
-from ..logger import create_logger
 from ..types import LLMCallData
-
-_LOG = create_logger("trainloop-http.client")
 
 
 def install(exporter: FileExporter) -> None:
