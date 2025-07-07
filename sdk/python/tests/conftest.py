@@ -50,7 +50,7 @@ def temp_data_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def temp_config_file(temp_data_dir) -> str:
+def temp_config_file(temp_data_dir) -> Generator[str, Any, Any]:
     """Create a temporary config file."""
     config_path = os.path.join(temp_data_dir, "trainloop.config.yaml")
     config_data = {
@@ -89,12 +89,6 @@ def mock_file_exporter():
 
     with patch.object(FileExporter, "__init__", lambda self: None):
         exporter = FileExporter()
-        # Initialize attributes manually to avoid accessing protected members
-        exporter.buffer = []
-        exporter.timer = None
-        # Set public attributes for testing
-        exporter.interval_seconds = 10
-        exporter.batch_size = 5
         yield exporter
 
 
@@ -102,7 +96,7 @@ def mock_file_exporter():
 def sample_llm_request() -> Dict[str, Any]:
     """Sample OpenAI-style request."""
     return {
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello, how are you?"},
@@ -119,7 +113,7 @@ def sample_llm_response() -> Dict[str, Any]:
         "id": "chatcmpl-123",
         "object": "chat.completion",
         "created": 1677652288,
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "choices": [
             {
                 "index": 0,
@@ -167,7 +161,7 @@ def sample_collected_data():
         "tag": "test-tag",
         "input": [{"role": "user", "content": "Hello!"}],
         "output": {"role": "assistant", "content": "Hi there!"},
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "modelParams": {"temperature": 0.7},
         "startTimeMs": 1000000,
         "endTimeMs": 1001234,

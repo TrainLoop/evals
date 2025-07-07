@@ -3,35 +3,15 @@
 Integration tests for OpenAI SDK with TrainLoop LLM Logging.
 """
 
-import asyncio
-import functools
 import os
 import pytest
 
-# Import TrainLoop SDK
-import trainloop_llm_logging as tl
-
 # Test harness
-from .test_real_api_calls import (
+from .harness import (
     IntegrationTestHarness,
     require_openai_key,
+    require_library,
 )
-
-
-def require_library(library_name: str):
-    """Decorator to skip tests if a library is not available."""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                __import__(library_name)
-                return func(*args, **kwargs)
-            except ImportError:
-                pytest.skip(f"{library_name} library not installed. Install with: pip install {library_name}")
-        return wrapper
-
-    return decorator
 
 
 class TestOpenAISDKIntegration:
@@ -42,10 +22,8 @@ class TestOpenAISDKIntegration:
     def test_openai_sdk_sync(self):
         """Test OpenAI SDK sync client."""
         with IntegrationTestHarness("openai_sdk_sync") as harness:
-            try:
-                import openai
-            except ImportError:
-                pytest.skip("openai library not available")
+            import openai
+
             # Create OpenAI client
             client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -73,10 +51,8 @@ class TestOpenAISDKIntegration:
     async def test_openai_sdk_async(self):
         """Test OpenAI SDK async client."""
         with IntegrationTestHarness("openai_sdk_async") as harness:
-            try:
-                import openai
-            except ImportError:
-                pytest.skip("openai library not available")
+            import openai
+
             # Create async OpenAI client
             client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
