@@ -100,9 +100,18 @@ def install(exporter: FileExporter) -> None:
             original = self._inner.handle_request(request)
             captured: List[bytes] = []
 
+            # Ensure we flush exactly once (either when stream exhausted OR when user accesses .content/.text/etc.)
+            flushed = False
+
+            def flush_once():
+                nonlocal flushed
+                if not flushed and captured:
+                    flushed = True
+                    _flush(captured, request.method, url, req_b, tag, t0, exporter)
+
             # Create exhaust callback
             def on_exhaust():
-                _flush(captured, request.method, url, req_b, tag, t0, exporter)
+                flush_once()
 
             response = httpx.Response(
                 status_code=original.status_code,
@@ -114,7 +123,7 @@ def install(exporter: FileExporter) -> None:
 
             # Patch content access methods to trigger recording when accessed
             _patch_content_access(
-                response, captured, request.method, url, req_b, tag, t0, exporter
+                response, captured, request.method, url, req_b, tag, t0, flush_once
             )
 
             return response
@@ -144,9 +153,18 @@ def install(exporter: FileExporter) -> None:
             original = await self._inner.handle_async_request(request)
             captured: List[bytes] = []
 
+            # Ensure we flush exactly once (either when stream exhausted OR when user accesses .content/.text/etc.)
+            flushed = False
+
+            def flush_once():
+                nonlocal flushed
+                if not flushed and captured:
+                    flushed = True
+                    _flush(captured, request.method, url, req_b, tag, t0, exporter)
+
             # Create exhaust callback
             def on_exhaust():
-                _flush(captured, request.method, url, req_b, tag, t0, exporter)
+                flush_once()
 
             response = httpx.Response(
                 status_code=original.status_code,
@@ -158,7 +176,7 @@ def install(exporter: FileExporter) -> None:
 
             # Patch content access methods to trigger recording when accessed
             _patch_content_access(
-                response, captured, request.method, url, req_b, tag, t0, exporter
+                response, captured, request.method, url, req_b, tag, t0, flush_once
             )
 
             return response
@@ -196,17 +214,16 @@ def install(exporter: FileExporter) -> None:
             exporter.record_llm_call(call_data)
 
     def _patch_content_access(
-        response, captured, method, url, req_b, tag, t0, exporter
+        response,
+        captured,
+        method,
+        url,
+        req_b,
+        tag,
+        t0,
+        flush_once,
     ):
         """Patch content access methods to trigger flush when content is read."""
-        _flushed = False
-
-        def maybe_flush():
-            nonlocal _flushed
-            if not _flushed and captured:
-                _flushed = True
-                _flush(captured, method, url, req_b, tag, t0, exporter)
-
         # Hook into the response class to intercept property/method access
         original_Response_class = type(response)
 
@@ -215,28 +232,28 @@ def install(exporter: FileExporter) -> None:
             def content(self):
                 # Call parent to get content (this will read the stream via our tee)
                 content_bytes = super().content
-                maybe_flush()
+                flush_once()
                 return content_bytes
 
             @property
             def text(self):
                 text_str = super().text
-                maybe_flush()
+                flush_once()
                 return text_str
 
             def json(self, **kwargs):
                 result = super().json(**kwargs)
-                maybe_flush()
+                flush_once()
                 return result
 
             async def aread(self):
                 result = await super().aread()
-                maybe_flush()
+                flush_once()
                 return result
 
             def read(self):
                 result = super().read()
-                maybe_flush()
+                flush_once()
                 return result
 
         # Replace the response class
@@ -251,7 +268,7 @@ def install(exporter: FileExporter) -> None:
                 # Handle parameter compatibility: some libraries pass 'proxies' but httpx expects 'proxy'
                 if "proxies" in kw and "proxy" not in kw:
                     kw["proxy"] = kw.pop("proxies")
-                
+
                 inner_transport = kw.get("transport") or httpx.HTTPTransport()
                 kw["transport"] = SyncTap(inner_transport)
                 super().__init__(*a, **kw)
@@ -264,7 +281,7 @@ def install(exporter: FileExporter) -> None:
                 # Handle parameter compatibility: some libraries pass 'proxies' but httpx expects 'proxy'
                 if "proxies" in kw and "proxy" not in kw:
                     kw["proxy"] = kw.pop("proxies")
-                
+
                 inner_transport = kw.get("transport") or httpx.AsyncHTTPTransport()
                 kw["transport"] = AsyncTap(inner_transport)
                 super().__init__(*a, **kw)
