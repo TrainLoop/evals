@@ -3,7 +3,7 @@ Unit tests for instrumentation module.
 """
 
 import json
-from unittest.mock import patch, Mock
+from unittest.mock import Mock
 
 from trainloop_llm_logging.instrumentation.utils import (
     is_llm_call,
@@ -300,7 +300,7 @@ class TestInstrumentationUtils:
 
         capped = cap(small_bytes)
 
-        assert capped == str(small_bytes)
+        assert capped == small_bytes.decode("utf-8")
         assert len(capped) == len(small_bytes)
 
     def test_build_call_creates_dict(self):
