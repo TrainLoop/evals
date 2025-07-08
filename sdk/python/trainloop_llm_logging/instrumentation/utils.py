@@ -7,7 +7,7 @@ import gzip
 from typing import Any, Dict, Optional, Union
 from urllib.parse import urlparse
 from ..types import ParsedRequestBody, ParsedResponseBody, LLMCallLocation
-from ..register import instrumentation_utils_logger as logger
+from ..logger import instrumentation_utils_logger as logger
 
 _MAX_BODY = 2 * 1024 * 1024  # 2 MB
 DEFAULT_HOST_ALLOWLIST = ["api.openai.com", "api.anthropic.com"]

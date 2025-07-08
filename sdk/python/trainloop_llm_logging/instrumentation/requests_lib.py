@@ -16,7 +16,7 @@ from .utils import (
     pop_tag,
     format_streamed_content,
 )
-from ..register import requests_logger as logger
+from ..logger import requests_logger as logger
 from ..exporter import FileExporter
 from ..types import LLMCallData
 

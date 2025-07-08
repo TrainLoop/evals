@@ -7,7 +7,7 @@ from __future__ import annotations
 import threading
 from typing import List
 import os
-from .register import exporter_logger as logger
+from .logger import exporter_logger as logger
 from .store import save_samples, update_registry
 from .types import CollectedSample, LLMCallData
 from .instrumentation.utils import parse_request_body, parse_response_body, caller_site

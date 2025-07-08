@@ -14,7 +14,7 @@ from typing import cast
 import fsspec
 from fsspec.spec import AbstractFileSystem
 
-from .register import store_logger as logger
+from .logger import store_logger as logger
 from .types import CollectedSample, LLMCallLocation, Registry, RegistryEntry
 
 
