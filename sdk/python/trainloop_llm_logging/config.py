@@ -12,15 +12,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import yaml
-from .logger import create_logger
 from .types import TrainloopConfig
 from .instrumentation.utils import DEFAULT_HOST_ALLOWLIST
-
-_log = create_logger("trainloop-config")
+from .logger import config_logger as logger
 
 
 def resolve_data_folder_path(
-    data_folder: str, config_path: str | None, root_dir: Path
+    data_folder: str | None, config_path: str | None, root_dir: Path
 ) -> str:
     """
     Resolves the data folder path based on whether it's absolute or relative.
@@ -72,10 +70,27 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
     host_allowlist_set = "TRAINLOOP_HOST_ALLOWLIST" in os.environ
     log_level_set = "TRAINLOOP_LOG_LEVEL" in os.environ
 
+    logger.debug(
+        "Environment variable check - TRAINLOOP_DATA_FOLDER: %s",
+        "set" if data_folder_set else "not set",
+    )
+    logger.debug(
+        "Environment variable check - TRAINLOOP_HOST_ALLOWLIST: %s",
+        "set" if host_allowlist_set else "not set",
+    )
+    logger.debug(
+        "Environment variable check - TRAINLOOP_LOG_LEVEL: %s",
+        "set" if log_level_set else "not set",
+    )
+    logger.debug(
+        "Environment variable check - TRAINLOOP_CONFIG_PATH: %s",
+        "set" if trainloop_config_path else "not set",
+    )
+
     # If all variables are already set, no need to load config
     if data_folder_set and host_allowlist_set and log_level_set:
-        _log.debug(
-            "All TrainLoop environment variables already set, skipping config file"
+        print(
+            "[TrainLoop] All TrainLoop environment variables already set, skipping config file"
         )
         return
 
@@ -120,20 +135,24 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
                 resolved_config_path.read_text(encoding="utf-8")
             )
             config_data = data.get("trainloop", {})
-            _log.debug(f"Loaded TrainLoop config from {resolved_config_path}")
+            print(f"[TrainLoop] Loaded TrainLoop config from {resolved_config_path}")
         except Exception as e:
-            _log.warning(f"Failed to load config file {resolved_config_path}: {e}")
+            print(f"[TrainLoop] Failed to load config file {resolved_config_path}: {e}")
     else:
-        _log.debug(f"TrainLoop config file not found at {resolved_config_path}")
+        print(f"[TrainLoop] TrainLoop config file not found at {resolved_config_path}")
 
     # Set environment variables, prioritizing existing values
     if not data_folder_set:
         if config_data and "data_folder" in config_data:
             data_folder = config_data["data_folder"]
+            resolved_config_path = (
+                str(resolved_config_path) if resolved_config_path else None
+            )
             resolved_path = resolve_data_folder_path(
                 data_folder, resolved_config_path, root
             )
             os.environ["TRAINLOOP_DATA_FOLDER"] = resolved_path
+            logger.info("Set TRAINLOOP_DATA_FOLDER from config: %s", resolved_path)
         else:
             raise ValueError(
                 "TRAINLOOP_DATA_FOLDER not set in environment and not found in config file. "
@@ -141,17 +160,27 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
             )
 
     if not host_allowlist_set:
-        if config_data and "host_allowlist" in config_data:
+        if (
+            config_data
+            and "host_allowlist" in config_data
+            and config_data["host_allowlist"]
+        ):
             host_allowlist = ",".join(config_data["host_allowlist"])
             os.environ["TRAINLOOP_HOST_ALLOWLIST"] = host_allowlist
+            logger.info("Set TRAINLOOP_HOST_ALLOWLIST from config: %s", host_allowlist)
         else:
             # Use default host allowlist if not set anywhere
             os.environ["TRAINLOOP_HOST_ALLOWLIST"] = ",".join(DEFAULT_HOST_ALLOWLIST)
+            logger.info(
+                "Set TRAINLOOP_HOST_ALLOWLIST to default: %s",
+                ",".join(DEFAULT_HOST_ALLOWLIST),
+            )
 
     if not log_level_set:
         if config_data and "log_level" in config_data:
             log_level = str(config_data["log_level"]).upper()
             os.environ["TRAINLOOP_LOG_LEVEL"] = log_level
+            logger.info("Set TRAINLOOP_LOG_LEVEL from config: %s", log_level)
         else:
             # Use default log level if not set anywhere
             os.environ["TRAINLOOP_LOG_LEVEL"] = "WARN"

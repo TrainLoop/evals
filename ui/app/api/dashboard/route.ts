@@ -56,9 +56,9 @@ export async function GET() {
       const globalReader = await conn.runAndReadAll(`
         SELECT COUNT(*) AS calls_24h,
                approx_quantile(durationMs, 0.5) AS median_latency_ms,
-               (SELECT AVG(passed) FROM results) AS overall_pass_rate
+               (SELECT AVG(CAST(passed AS INTEGER)) FROM results) AS overall_pass_rate
         FROM events
-        WHERE epoch_ms(startTimeMs) > ${dayAgo};
+        WHERE startTimeMs > ${dayAgo};
       `);
 
       const globalRows = globalReader.getRowObjects();
@@ -75,13 +75,13 @@ export async function GET() {
 
       // Get model stats
       const modelReader = await conn.runAndReadAll(`
-        SELECT sample.model AS model,
+        SELECT sample->>'model' AS model,
                COUNT(*) AS calls,
-               approx_quantile(sample.duration_ms, 0.5) AS p50_ms,
-               approx_quantile(sample.duration_ms, 0.95) AS p95_ms,
-               AVG(passed) AS accuracy
+               approx_quantile(CAST(sample->>'durationMs' AS DOUBLE), 0.5) AS p50_ms,
+               approx_quantile(CAST(sample->>'durationMs' AS DOUBLE), 0.95) AS p95_ms,
+               AVG(CAST(passed AS INTEGER)) AS accuracy
         FROM results
-        GROUP BY sample.model;
+        GROUP BY sample->>'model';
       `);
 
       const modelRows = convertBigIntsToNumbers(modelReader.getRowObjects());
@@ -136,7 +136,7 @@ export async function GET() {
       // Metric stats - Performance by metric
       const metricReader = await conn.runAndReadAll(`
       SELECT metric,
-             AVG(passed) AS pass_rate,
+             AVG(CAST(passed AS INTEGER)) AS pass_rate,
              COUNT(*) AS runs
       FROM results
       GROUP BY metric;
@@ -156,10 +156,10 @@ export async function GET() {
       // Metric trend - Last 7 days, hourly buckets
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       const trendReader = await conn.runAndReadAll(`
-      SELECT date_trunc('hour', to_timestamp(sample.start_time_ms/1000)) AS bucket,
-             AVG(passed) AS pass_rate
+      SELECT date_trunc('hour', to_timestamp(CAST(sample->>'startTimeMs' AS BIGINT)/1000)) AS bucket,
+             AVG(CAST(passed AS INTEGER)) AS pass_rate
       FROM results
-      WHERE sample.start_time_ms > ${weekAgo}
+      WHERE CAST(sample->>'startTimeMs' AS BIGINT) > ${weekAgo}
       GROUP BY bucket
       ORDER BY bucket;
     `);
@@ -178,11 +178,11 @@ export async function GET() {
 
       // Metric × Model usage
       const usageReader = await conn.runAndReadAll(`
-      SELECT sample.model AS model, 
+      SELECT sample->>'model' AS model, 
              metric,
              COUNT(*) AS runs
       FROM results
-      GROUP BY sample.model, metric;
+      GROUP BY sample->>'model', metric;
     `);
 
       const rawUsage = convertBigIntsToNumbers(usageReader.getRowObjects());

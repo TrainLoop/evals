@@ -19,7 +19,7 @@ on:
 
 jobs:
   test-python:
-    name: Python SDK Tests
+    name: Python SDK Tests (Lean)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -53,14 +53,33 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
+      - name: Install optional integration test dependencies
+        run: |
+          # Install browser dependencies for browser-use tests
+          poetry run playwright install chromium --with-deps
+        continue-on-error: true
+
       - name: Run linting
         run: |
           poetry run ruff check .
           poetry run mypy .
         continue-on-error: true
 
-      - name: Run tests with coverage
-        run: poetry run pytest --cov --cov-report=xml --cov-report=term-missing -v
+      - name: Run unit tests with coverage
+        run: poetry run pytest tests/unit/ --cov --cov-report=xml --cov-report=term-missing -v
+
+      - name: Run SDK integration tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$OPENAI_API_KEY" ]; then
+            echo "Running SDK integration tests..."
+            poetry run pytest tests/integration/ -v -n auto --tb=short -ra
+          else
+            echo "⚠️ OPENAI_API_KEY not set - skipping integration tests"
+            echo "Add OPENAI_API_KEY to repository secrets to enable integration tests"
+          fi
 
       # - name: Upload coverage reports
       #   uses: codecov/codecov-action@v4

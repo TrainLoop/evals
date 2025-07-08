@@ -14,10 +14,8 @@ from typing import cast
 import fsspec
 from fsspec.spec import AbstractFileSystem
 
-from .logger import create_logger
+from .logger import store_logger as logger
 from .types import CollectedSample, LLMCallLocation, Registry, RegistryEntry
-
-_log = create_logger("trainloop-store")
 
 
 def _now_iso() -> str:
@@ -30,7 +28,7 @@ def update_registry(data_dir: str, loc: LLMCallLocation, tag: str) -> None:
     Never duplicates; tag can be overwritten in place.
     """
     path = Path(data_dir) / "_registry.json"
-    _log.debug("Updating registry at %s", path)
+    logger.debug("Updating registry at %s", path)
 
     # Use fsspec to check if file exists and read it
     path_str = str(path)
@@ -45,7 +43,7 @@ def update_registry(data_dir: str, loc: LLMCallLocation, tag: str) -> None:
             if reg == {}:
                 reg = {"schema": 1, "files": {}}
         except Exception:
-            _log.error("Corrupt registry - recreating")
+            logger.error("Corrupt registry - recreating")
             reg = {"schema": 1, "files": {}}
     else:
         reg = {"schema": 1, "files": {}}
@@ -79,7 +77,7 @@ def update_registry(data_dir: str, loc: LLMCallLocation, tag: str) -> None:
 
     with fsspec.open(path_str, "w") as f:
         f.write(json.dumps(reg, indent=2))  # type: ignore
-    _log.debug(
+    logger.debug(
         "Registry written - %s:%s = %s (count=%d)",
         loc["file"],
         loc["lineNumber"],

@@ -17,6 +17,30 @@ import pytest
 logging.disable(logging.CRITICAL)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_trainloop_instrumentation():
+    """
+    IMPORTANT: This fixture must be called before any tests run because we assume that collect is called BEFORE the openai sdk is created. This is the only way to ensure that these work in pytests.
+    Session-level fixture that automatically sets up TrainLoop instrumentation
+    before any tests run. This ensures that HTTP libraries are instrumented
+    before they are imported by test modules.
+    """
+    # Set up a temporary data folder for the session
+    temp_dir = tempfile.mkdtemp(prefix="trainloop_test_session_")
+    os.environ["TRAINLOOP_DATA_FOLDER"] = temp_dir
+
+    # Install instrumentation globally for the test session
+    import trainloop_llm_logging as tl
+
+    tl.collect()
+
+    yield  # Run all tests
+
+    # Cleanup (optional - temp dirs are cleaned up automatically)
+    if "TRAINLOOP_DATA_FOLDER" in os.environ:
+        del os.environ["TRAINLOOP_DATA_FOLDER"]
+
+
 @pytest.fixture
 def temp_data_dir() -> Generator[str, None, None]:
     """Create a temporary directory for test data."""
@@ -26,7 +50,7 @@ def temp_data_dir() -> Generator[str, None, None]:
 
 
 @pytest.fixture
-def temp_config_file(temp_data_dir) -> str:
+def temp_config_file(temp_data_dir) -> Generator[str, Any, Any]:
     """Create a temporary config file."""
     config_path = os.path.join(temp_data_dir, "trainloop.config.yaml")
     config_data = {
@@ -45,14 +69,14 @@ def temp_config_file(temp_data_dir) -> str:
 def mock_env_vars() -> Generator[None, None, None]:
     """Clean up and restore environment variables."""
     original_env = os.environ.copy()
-    
+
     # Clear all TRAINLOOP_ variables
     for key in list(os.environ.keys()):
-        if key.startswith('TRAINLOOP_'):
+        if key.startswith("TRAINLOOP_"):
             del os.environ[key]
-    
+
     yield
-    
+
     # Restore original environment
     os.environ.clear()
     os.environ.update(original_env)
@@ -62,15 +86,9 @@ def mock_env_vars() -> Generator[None, None, None]:
 def mock_file_exporter():
     """Mock FileExporter for testing without file I/O."""
     from trainloop_llm_logging.exporter import FileExporter
-    
-    with patch.object(FileExporter, '__init__', lambda self: None):
+
+    with patch.object(FileExporter, "__init__", lambda self: None):
         exporter = FileExporter()
-        # Initialize attributes manually to avoid accessing protected members
-        exporter.buffer = []
-        exporter.timer = None
-        # Set public attributes for testing
-        exporter.interval_seconds = 10
-        exporter.batch_size = 5
         yield exporter
 
 
@@ -78,7 +96,7 @@ def mock_file_exporter():
 def sample_llm_request() -> Dict[str, Any]:
     """Sample OpenAI-style request."""
     return {
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "messages": [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Hello, how are you?"},
@@ -95,7 +113,7 @@ def sample_llm_response() -> Dict[str, Any]:
         "id": "chatcmpl-123",
         "object": "chat.completion",
         "created": 1677652288,
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "choices": [
             {
                 "index": 0,
@@ -143,7 +161,7 @@ def sample_collected_data():
         "tag": "test-tag",
         "input": [{"role": "user", "content": "Hello!"}],
         "output": {"role": "assistant", "content": "Hi there!"},
-        "model": "gpt-4",
+        "model": "gpt-4o-mini",
         "modelParams": {"temperature": 0.7},
         "startTimeMs": 1000000,
         "endTimeMs": 1001234,
@@ -173,7 +191,7 @@ def mock_time(monkeypatch):
 def corrupt_registry_file(temp_data_dir) -> str:
     """Create a corrupt registry file."""
     registry_path = os.path.join(temp_data_dir, "_registry.json")
-    with open(registry_path, 'w', encoding='utf-8') as f:
+    with open(registry_path, "w", encoding="utf-8") as f:
         f.write("{ invalid json")
     return registry_path
 

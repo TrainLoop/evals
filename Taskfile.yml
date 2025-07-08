@@ -122,3 +122,58 @@ tasks:
     cmds:
       - task: clean:mocks
       - task: clean:pytest
+
+  # SDK Integration test tasks
+  test:sdk:integration:
+    desc: Run all SDK integration tests with verbose output (requires API keys)
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/ -v -s --tb=short -ra
+
+  test:sdk:integration:sequential:
+    desc: Run all SDK integration tests sequentially with full debugging output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/ -v -s --tb=long -ra
+
+  test:sdk:integration:http:
+    desc: Run core HTTP library integration tests (httpx, requests, http.client)
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_httpx_integration.py tests/integration/test_requests_integration.py tests/integration/test_http_client_integration.py -v -s --tb=short -ra
+
+  test:sdk:integration:openai:
+    desc: Run OpenAI SDK integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_openai_sdk.py -v -s --tb=short -ra
+
+  test:sdk:integration:anthropic:
+    desc: Run Anthropic SDK integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -s --tb=short -ra
+
+  test:sdk:integration:anthropic:debug:
+    desc: Run Anthropic SDK integration tests with full debugging output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -s --tb=long --log-cli-level=DEBUG
+
+  test:sdk:integration:langchain:
+    desc: Run LangChain integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_langchain.py -v -s --tb=short -ra
+
+  test:sdk:integration:litellm:
+    desc: Run LiteLLM integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_litellm.py -v -s --tb=short -ra
+
+  test:sdk:integration:browser-use:
+    desc: Run browser_use integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_browser_use.py -v -s --tb=short -ra

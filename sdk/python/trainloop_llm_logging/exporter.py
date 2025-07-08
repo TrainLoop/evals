@@ -7,67 +7,72 @@ from __future__ import annotations
 import threading
 from typing import List
 import os
-from .logger import create_logger
+from .logger import exporter_logger as logger
 from .store import save_samples, update_registry
 from .types import CollectedSample, LLMCallData
 from .instrumentation.utils import parse_request_body, parse_response_body, caller_site
-
-_log = create_logger("trainloop-exporter")
 
 
 class FileExporter:
     _interval_s = 10
     _batch_len = 5
 
-    def __init__(self, interval: int | None = None, batch_len: int | None = None):
+    def __init__(
+        self,
+        interval: int | None = None,
+        batch_len: int | None = None,
+        flush_immediately: bool = False,
+    ):
         self.buf: List[LLMCallData] = []
         self.lock = threading.Lock()
         self._interval_s = interval or self._interval_s
         self._batch_len = batch_len or self._batch_len
-        self.timer = threading.Timer(self._interval_s, self._flush_loop)
-        self.timer.daemon = True
-        self.timer.start()
+        self._flush_immediately = flush_immediately
+
+        # Start periodic flush timer only when NOT in flush_immediately mode
+        self.timer: threading.Timer | None = None
+        if not self._flush_immediately:
+            self.timer = threading.Timer(self._interval_s, self._flush_loop)
+            self.timer.daemon = True
+            self.timer.start()
 
     # ------------------------------------------------------------------ #
 
     def record_llm_call(self, call: LLMCallData) -> None:
-        _log.info("Recording LLM call: %s", call)
         if not call.get("isLLMRequest"):
             return
         with self.lock:
             self.buf.append(call)
-            if len(self.buf) >= self._batch_len:
+            if self._flush_immediately or len(self.buf) >= self._batch_len:
                 self._export()
 
     # ------------------------------------------------------------------ #
 
     def _export(self) -> None:
-        _log.info("Exporting %d calls", len(self.buf))
         data_dir = os.getenv("TRAINLOOP_DATA_FOLDER")
         if not data_dir:
-            _log.info("TRAINLOOP_DATA_FOLDER not set - export skipped")
+            logger.warning("TRAINLOOP_DATA_FOLDER not set, skipping export")
             self.buf.clear()
             return
 
+        # Copy & clear buffer atomically to avoid writing duplicates if timer
+        # fires while we are exporting (especially when flush_immediately=True).
+        to_write, self.buf = self.buf, []
+
         samples: list[CollectedSample] = []
-        for llm_call in self.buf:
-            _log.info("Exporting LLM call: %s", llm_call)
+        for llm_call in to_write:
             parsed_request = parse_request_body(llm_call.get("requestBodyStr", ""))
             parsed_response = parse_response_body(llm_call.get("responseBodyStr", ""))
 
-            _log.info("Request: %s", parsed_request)
-            _log.info("Response: %s", parsed_response)
-
             if not parsed_request or not parsed_response:
-                _log.info("Invalid request or response - skipping")
                 continue
 
             loc = llm_call.get("location") or caller_site()
             tag = llm_call.get("tag") or ""
-            _log.info("Location: %s", loc)
-            _log.info("Tag: %s", tag)
+            logger.info("Location: %s", loc)
+            logger.info("Tag: %s", tag)
             update_registry(data_dir, loc, tag or "untagged")
-            _log.info("Updated registry")
+            logger.info("Updated registry")
 
             sample = CollectedSample(
                 durationMs=llm_call.get("durationMs", 0),
@@ -85,12 +90,11 @@ class FileExporter:
             samples.append(sample)
 
         save_samples(data_dir, samples)
-        self.buf.clear()
 
     # ------------------------------------------------------------------ #
 
     def _flush_loop(self):
-        _log.info("Flushing %d calls", len(self.buf))
+        logger.info("Flushing %d calls", len(self.buf))
         with self.lock:
             self._export()
         self.timer = threading.Timer(self._interval_s, self._flush_loop)
@@ -104,5 +108,6 @@ class FileExporter:
             self._export()
 
     def shutdown(self):
-        self.timer.cancel()
+        if self.timer:
+            self.timer.cancel()
         self.flush()

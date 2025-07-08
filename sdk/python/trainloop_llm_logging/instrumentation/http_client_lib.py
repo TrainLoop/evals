@@ -6,7 +6,7 @@ request/response data and timing - *without* breaking streaming.
 
 from __future__ import annotations
 import functools
-from typing import Any, List
+from typing import Any, List, Optional, Dict
 import http.client as _http_client
 
 from .utils import (
@@ -18,10 +18,7 @@ from .utils import (
     pop_tag,
 )
 from ..exporter import FileExporter
-from ..logger import create_logger
 from ..types import LLMCallData
-
-_LOG = create_logger("trainloop-http.client")
 
 
 def install(exporter: FileExporter) -> None:
@@ -37,14 +34,17 @@ def install(exporter: FileExporter) -> None:
         self: _http_client.HTTPConnection,
         method: str,
         url: str,
-        body: Any | None = None,
-        headers: dict | None = None,
+        body: Optional[Any] = None,
+        headers: Optional[Dict] = None,
         *a,
         **kw,
     ):
         headers = headers or {}
         tag = pop_tag(headers)  # remove header early (case-insensitive)
-        full_url = f"{self.scheme}://{self.host}{url}"
+
+        # Determine scheme from connection type
+        scheme = "https" if isinstance(self, _http_client.HTTPSConnection) else "http"
+        full_url = f"{scheme}://{self.host}{url}"
 
         if not (is_llm_call(full_url) or tag):
             # Not an LLM request - run as normal
@@ -57,11 +57,62 @@ def install(exporter: FileExporter) -> None:
 
         # ----- fire the real request -------------------------------------
         orig(self, method, url, body, headers, *a, **kw)
-        resp: _http_client.HTTPResponse = self.response
 
-        # ----- tee the socket-file to capture every chunk ----------------
+        # Store info for later when getresponse() is called
+        self._tl_request_info = {  # type: ignore[attr-defined]
+            "method": method,
+            "url": full_url,
+            "req_b": req_b,
+            "tag": tag,
+            "t0": t0,
+            "exporter": exporter,
+        }
+
+    # ---- patch getresponse() to handle instrumentation ----
+    orig_getresponse = _http_client.HTTPConnection.getresponse
+
+    @functools.wraps(orig_getresponse)
+    def getresponse_wrapper(self, *args, **kwargs):
+        resp = orig_getresponse(self, *args, **kwargs)
+
+        # Check if this connection has request info stored
+        if not hasattr(self, "_tl_request_info"):
+            return resp
+
+        info = self._tl_request_info
+        exporter = info["exporter"]
+
+        # Set up response instrumentation
         captured: List[bytes] = []
-        _real_fp = resp.fp  # original buffered reader
+        _real_fp = resp.fp
+        _recorded = False
+
+        def _record_call():
+            """Record the LLM call data once response is read."""
+            nonlocal _recorded
+            if _recorded:
+                return
+            _recorded = True
+
+            body_bytes = b"".join(captured)
+            pretty = format_streamed_content(body_bytes)
+            t1 = now_ms()
+
+            call_data = LLMCallData(
+                status=resp.status,
+                method=info["method"].upper(),
+                url=info["url"],
+                startTimeMs=info["t0"],
+                endTimeMs=t1,
+                durationMs=t1 - info["t0"],
+                tag=str(info["tag"] or ""),
+                location=caller_site(),
+                isLLMRequest=True,
+                headers={},
+                requestBodyStr=cap(info["req_b"]),
+                responseBodyStr=cap(pretty),
+            )
+            exporter.record_llm_call(call_data)
 
         class TeeFP:
             """File-like proxy that duplicates read data into *captured*."""
@@ -69,11 +120,13 @@ def install(exporter: FileExporter) -> None:
             def __init__(self, fp):
                 self._fp = fp
 
-            # The response uses read(), readline(), readinto() and iteration
-            def read(self, *args, **kwargs):  # pylint: disable=invalid-name
+            def read(self, *args, **kwargs):
                 chunk = self._fp.read(*args, **kwargs)
                 if chunk:
                     captured.append(chunk)
+                # If read() returns empty/None, stream is exhausted - record the call
+                if not chunk:
+                    _record_call()
                 return chunk
 
             def readline(self, *args, **kwargs):
@@ -92,40 +145,31 @@ def install(exporter: FileExporter) -> None:
                 for chunk in self._fp:
                     captured.append(chunk)
                     yield chunk
+                # Iterator exhausted - record the call
+                _record_call()
 
             def __getattr__(self, item):
                 return getattr(self._fp, item)
 
         resp.fp = TeeFP(_real_fp)  # type: ignore[assignment]
 
-        # ----- emit to exporter once the user closes the response --------
-        _orig_close = resp.close
+        # Hook into response.read() method to trigger recording
+        _orig_read = resp.read
 
-        def _on_close():
-            try:
-                body_bytes = b"".join(captured)
-                pretty = format_streamed_content(body_bytes)
-                t1 = now_ms()
+        def _read_with_recording(*args, **kwargs):
+            result = _orig_read(*args, **kwargs)
+            # For http.client, reading the full response means we're done
+            # Trigger recording after any successful read
+            _record_call()
+            return result
 
-                call_data = LLMCallData(
-                    status=resp.status,
-                    method=method.upper(),
-                    url=full_url,
-                    startTimeMs=t0,
-                    endTimeMs=t1,
-                    durationMs=t1 - t0,
-                    tag=tag,
-                    location=caller_site(),
-                    isLLMRequest=True,
-                    headers={},
-                    requestBodyStr=cap(req_b),
-                    responseBodyStr=cap(pretty),
-                )
-                exporter.record_llm_call(call_data)
-            finally:
-                _orig_close()
+        resp.read = _read_with_recording
 
-        resp.close = _on_close
+        # Clean up stored info
+        delattr(self, "_tl_request_info")
+
+        return resp
 
     # ---- global patch -------
-    _http_client.HTTPConnection.request = wrapper
+    _http_client.HTTPConnection.request = wrapper  # type: ignore[assignment]
+    _http_client.HTTPConnection.getresponse = getresponse_wrapper  # type: ignore[assignment]
