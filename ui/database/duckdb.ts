@@ -153,9 +153,9 @@ async function initViews(db: DuckDBInstance, ROOT: string) {
             NULL::INTEGER AS rowid,
             NULL::VARCHAR AS tag,
             NULL::VARCHAR AS model,
-            NULL::TIMESTAMP AS durationMs,
-            NULL::TIMESTAMP AS startTimeMs,
-            NULL::TIMESTAMP AS endTimeMs,
+            NULL::DOUBLE AS durationMs,
+            NULL::BIGINT AS startTimeMs,
+            NULL::BIGINT AS endTimeMs,
             NULL::JSON AS input,
             NULL::JSON AS output,
             NULL::JSON AS modelParams,
@@ -172,9 +172,9 @@ async function initViews(db: DuckDBInstance, ROOT: string) {
             * REPLACE
             (
               TRIM(both '"' FROM tag)                  AS tag,          -- clean text
-              epoch_ms(CAST(durationMs  AS BIGINT))    AS durationMs,   -- JS number
-              epoch_ms(CAST(startTimeMs AS BIGINT))    AS startTimeMs,  -- JS number
-              epoch_ms(CAST(endTimeMs   AS BIGINT))    AS endTimeMs,    -- JS number
+              CAST(durationMs  AS DOUBLE)              AS durationMs,   -- duration in ms as number
+              CAST(startTimeMs AS BIGINT)              AS startTimeMs,  -- timestamp in ms
+              CAST(endTimeMs   AS BIGINT)              AS endTimeMs,    -- timestamp in ms
 
               -- rebuild the nested "output" struct with cleaned content
               struct_pack(content := TRIM(both '"' FROM output.content)) AS output
