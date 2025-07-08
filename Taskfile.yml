@@ -123,51 +123,57 @@ tasks:
       - task: clean:mocks
       - task: clean:pytest
 
-  # Integration test tasks
-  test:integration:
-    desc: Run all integration tests in parallel (requires API keys in .env file)
+  # SDK Integration test tasks
+  test:sdk:integration:
+    desc: Run all SDK integration tests with verbose output (requires API keys)
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/ -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/ -v -s --tb=short -ra
 
-  test:integration:sequential:
-    desc: Run all integration tests sequentially (for debugging)
+  test:sdk:integration:sequential:
+    desc: Run all SDK integration tests sequentially with full debugging output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/ -v --tb=long -ra
+      - poetry run pytest tests/integration/ -v -s --tb=long -ra
 
-  test:integration:http:
-    desc: Run core HTTP library integration tests in parallel
+  test:sdk:integration:http:
+    desc: Run core HTTP library integration tests (httpx, requests, http.client)
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_real_api_calls.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_httpx_integration.py tests/integration/test_requests_integration.py tests/integration/test_http_client_integration.py -v -s --tb=short -ra
 
-  test:integration:openai:
-    desc: Run OpenAI integration tests in parallel
+  test:sdk:integration:openai:
+    desc: Run OpenAI SDK integration tests with verbose output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_openai_sdk.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_openai_sdk.py -v -s --tb=short -ra
 
-  test:integration:anthropic:
-    desc: Run Anthropic integration tests in parallel
+  test:sdk:integration:anthropic:
+    desc: Run Anthropic SDK integration tests with verbose output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -s --tb=short -ra
 
-  test:integration:langchain:
-    desc: Run LangChain integration tests in parallel
+  test:sdk:integration:anthropic:debug:
+    desc: Run Anthropic SDK integration tests with full debugging output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_langchain.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_anthropic_sdk.py -v -s --tb=long --log-cli-level=DEBUG
 
-  test:integration:litellm:
-    desc: Run LiteLLM integration tests in parallel
+  test:sdk:integration:langchain:
+    desc: Run LangChain integration tests with verbose output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_litellm.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_langchain.py -v -s --tb=short -ra
 
-  test:integration:browser-use:
-    desc: Run browser_use integration tests in parallel
+  test:sdk:integration:litellm:
+    desc: Run LiteLLM integration tests with verbose output
     dir: '{{.SDK_DIR}}'
     cmds:
-      - poetry run pytest tests/integration/test_browser_use.py -v -n auto --tb=short -ra
+      - poetry run pytest tests/integration/test_litellm.py -v -s --tb=short -ra
+
+  test:sdk:integration:browser-use:
+    desc: Run browser_use integration tests with verbose output
+    dir: '{{.SDK_DIR}}'
+    cmds:
+      - poetry run pytest tests/integration/test_browser_use.py -v -s --tb=short -ra

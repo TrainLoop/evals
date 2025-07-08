@@ -51,6 +51,7 @@ class FileExporter:
     def _export(self) -> None:
         data_dir = os.getenv("TRAINLOOP_DATA_FOLDER")
         if not data_dir:
+            logger.warning("TRAINLOOP_DATA_FOLDER not set, skipping export")
             self.buf.clear()
             return
 

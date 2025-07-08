@@ -8,7 +8,7 @@ _LEVELS = {"ERROR": 40, "WARN": 30, "INFO": 20, "DEBUG": 10}
 _DEFAULT = "WARN"
 
 
-class LazyLogger:
+class LazyLogger(logging.Logger):
     """Lazy logger that creates the actual logger on first access."""
 
     def __init__(self, name: str):
@@ -48,6 +48,12 @@ def _configure_root_once() -> None:
 
     lvl_name = os.getenv("TRAINLOOP_LOG_LEVEL", _DEFAULT).upper()
     lvl = _LEVELS.get(lvl_name, logging.INFO)
+
+    # Note: We can't use our own loggers here since they aren't created yet
+    if "TRAINLOOP_LOG_LEVEL" in os.environ:
+        print(f"[TrainLoop] Using log level from TRAINLOOP_LOG_LEVEL: {lvl_name}")
+    else:
+        print(f"[TrainLoop] TRAINLOOP_LOG_LEVEL not set, using default: {lvl_name}")
 
     # 'force=True' clears anything set up by uvicorn, avoiding duplicate handlers
     logging.basicConfig(

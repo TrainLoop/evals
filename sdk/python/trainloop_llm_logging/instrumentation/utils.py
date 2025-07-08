@@ -1,6 +1,7 @@
 from __future__ import annotations
 import inspect
 import json
+import os
 import time
 import re
 import gzip
@@ -111,7 +112,16 @@ def build_call(**kw) -> Dict[str, Any]:
 def is_llm_call(url: str) -> bool:
     """True if the hostname is in the allow-list."""
     try:
-        return urlparse(url).hostname in set(DEFAULT_HOST_ALLOWLIST)
+        # Use environment variable if set, otherwise fall back to default
+        host_allowlist_env = os.environ.get("TRAINLOOP_HOST_ALLOWLIST")
+        if host_allowlist_env:
+            host_allowlist = set(host_allowlist_env.split(","))
+            logger.debug("Using custom host allowlist from TRAINLOOP_HOST_ALLOWLIST: %s", host_allowlist)
+        else:
+            host_allowlist = set(DEFAULT_HOST_ALLOWLIST)
+            logger.debug("TRAINLOOP_HOST_ALLOWLIST not set, using default: %s", host_allowlist)
+
+        return urlparse(url).hostname in host_allowlist
     except Exception:  # pragma: no cover
         return False
 
