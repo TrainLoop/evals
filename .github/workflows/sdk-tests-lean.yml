@@ -19,7 +19,7 @@ on:
 
 jobs:
   test-python:
-    name: Python SDK Tests
+    name: Python SDK Tests (Lean)
     runs-on: ubuntu-latest
     defaults:
       run:
