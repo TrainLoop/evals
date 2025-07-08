@@ -151,7 +151,7 @@ class TestGzipResponseHandling:
             print(
                 f"Response encoding: {response.headers.get('content-encoding', 'none')}"
             )
-            entries = harness.wait_for_entries(expected_count=1)
+            entries = harness.wait_for_entries(expected_count=1, tag="test-gzip")
             assert len(entries) >= 1, f"Expected at least 1 entry, got {len(entries)}"
             entry = entries[0]
             assert harness.validate_entry(

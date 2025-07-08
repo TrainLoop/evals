@@ -73,18 +73,24 @@ class IntegrationTestHarness:
         return entries
 
     def wait_for_entries(
-        self, expected_count: int = 1, timeout: int = 10
+        self, expected_count: int = 1, timeout: int = 10, tag: str | None = None
     ) -> List[Dict[str, Any]]:
         """Wait for expected number of JSONL entries to be written."""
         start_time = time.time()
         while time.time() - start_time < timeout:
             entries = self.read_jsonl_entries()
+            # Filter by tag if specified
+            if tag:
+                entries = [e for e in entries if e.get("tag") == tag]
             if len(entries) >= expected_count:
                 return entries
             time.sleep(0.1)
 
-        # Return whatever we have
-        return self.read_jsonl_entries()
+        # Return whatever we have (filtered by tag if specified)
+        entries = self.read_jsonl_entries()
+        if tag:
+            entries = [e for e in entries if e.get("tag") == tag]
+        return entries
 
     def validate_entry(
         self,

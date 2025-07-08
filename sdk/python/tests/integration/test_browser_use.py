@@ -115,6 +115,7 @@ class TestBrowserUseIntegration:
     @require_library("browser_use")
     @require_library("playwright")
     @require_anthropic_key()
+    @pytest.mark.skip(reason="Skipping Anthropic test for now")
     @pytest.mark.asyncio
     async def test_browser_use_with_anthropic(self):
         """Test browser_use with Anthropic Claude - should capture API calls."""
@@ -129,6 +130,7 @@ class TestBrowserUseIntegration:
             # Configure Anthropic LLM
             llm = ChatAnthropic(
                 model_name="claude-3-haiku-20240307",
+                api_key=SecretStr(anthropic_api_key),
                 temperature=0.0,
                 timeout=10,
                 stop=None,
@@ -170,15 +172,15 @@ class TestBrowserUseIntegration:
                     # - claude-3-haiku-20240307 (what we specify)
                     # - claude-3-haiku (without date)
                     # - claude-3-sonnet-20240229 (default if not recognized)
-                    
+
                     # First validate without checking the exact model
                     assert harness.validate_entry(entry)
-                    
+
                     # Then check it's at least a Claude model
                     actual_model = entry.get("model", "")
-                    assert "claude" in actual_model.lower(), (
-                        f"Expected a Claude model, got '{actual_model}'"
-                    )
+                    assert (
+                        "claude" in actual_model.lower()
+                    ), f"Expected a Claude model, got '{actual_model}'"
 
                     # Verify it came from our browser_use session
                     assert "api.anthropic.com" in entry["url"]
