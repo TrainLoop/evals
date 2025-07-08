@@ -13,7 +13,8 @@ import os
 from .config import load_config_into_env
 from .exporter import FileExporter
 from .instrumentation import install_patches
-from .logger import create_loggers, register_logger as logger
+from .logger import create_loggers
+from . import logger as logger_module
 from .instrumentation.utils import HEADER_NAME
 
 
@@ -47,7 +48,9 @@ def collect(
 
     create_loggers()
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
-        logger.warning("TRAINLOOP_DATA_FOLDER not set - SDK disabled")
+        logger_module.register_logger.warning(
+            "TRAINLOOP_DATA_FOLDER not set - SDK disabled"
+        )
         return
 
     _EXPORTER = FileExporter(
@@ -56,7 +59,7 @@ def collect(
     install_patches(_EXPORTER)  # monkey-patch outbound HTTP
 
     _IS_INIT = True
-    logger.info("TrainLoop Evals SDK initialized")
+    logger_module.register_logger.info("TrainLoop Evals SDK initialized")
 
 
 def flush() -> None:
@@ -68,4 +71,6 @@ def flush() -> None:
     if _EXPORTER:
         _EXPORTER.flush()
     else:
-        logger.warning("SDK not initialized - call collect() first")
+        logger_module.register_logger.warning(
+            "SDK not initialized - call collect() first"
+        )
