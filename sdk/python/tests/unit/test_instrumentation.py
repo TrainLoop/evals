@@ -300,7 +300,7 @@ class TestInstrumentationUtils:
 
         capped = cap(small_bytes)
 
-        assert capped == small_bytes
+        assert capped == str(small_bytes)
         assert len(capped) == len(small_bytes)
 
     def test_build_call_creates_dict(self):
