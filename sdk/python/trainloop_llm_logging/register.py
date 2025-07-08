@@ -13,7 +13,6 @@ import os
 from .config import load_config_into_env
 from .exporter import FileExporter
 from .instrumentation import install_patches
-from .logger import create_loggers
 from . import logger as logger_module
 from .instrumentation.utils import HEADER_NAME
 
@@ -42,11 +41,8 @@ def collect(
     if _IS_INIT:
         return
 
-    create_loggers()
     print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
-
-    create_loggers()
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
         logger_module.register_logger.warning(
             "TRAINLOOP_DATA_FOLDER not set - SDK disabled"
