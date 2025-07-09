@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0 (2025-07-09)
+[Release Notes](releases/0.8.0.md)
+
+
 ## 0.7.5 (2025-06-27)
 [Release Notes](releases/0.7.5.md)
 
