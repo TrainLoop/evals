@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/types"
+	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/types"
 )
 
 var tlLog = logger.CreateLogger("trainloop-utils")

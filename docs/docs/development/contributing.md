@@ -27,12 +27,12 @@ For detailed architecture information, see our [Architecture Guide](./architectu
 ### Code Contributions
 
 #### Bug Fixes
-- Check existing [issues](https://github.com/TrainLoop/trainloop-evals/issues) for bug reports
-- Follow the [bug reproduction template](https://github.com/TrainLoop/trainloop-evals/issues/new?template=bug_report.md)
+- Check existing [issues](https://github.com/trainloop/evals/issues) for bug reports
+- Follow the [bug reproduction template](https://github.com/trainloop/evals/issues/new?template=bug_report.md)
 - Include tests that verify the fix
 
 #### New Features
-- Open a [feature request](https://github.com/TrainLoop/trainloop-evals/issues/new?template=feature_request.md) first
+- Open a [feature request](https://github.com/trainloop/evals/issues/new?template=feature_request.md) first
 - Discuss the approach with maintainers
 - Implement with comprehensive tests and documentation
 
@@ -72,8 +72,8 @@ For detailed architecture information, see our [Architecture Guide](./architectu
 
 2. **Setup**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/trainloop-evals.git
-   cd trainloop-evals
+   git clone https://github.com/YOUR_USERNAME/evals.git
+   cd evals
    ```
 
 3. **Install dependencies**
@@ -248,8 +248,8 @@ collect("./trainloop/trainloop.config.yaml")
 ### Communication
 
 - Be respectful and inclusive
-- Ask questions in [GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)
-- Use [GitHub Issues](https://github.com/TrainLoop/trainloop-evals/issues) for bugs and feature requests
+- Ask questions in [GitHub Discussions](https://github.com/trainloop/evals/discussions)
+- Use [GitHub Issues](https://github.com/trainloop/evals/issues) for bugs and feature requests
 - Join our community channels for real-time discussion
 
 ### Code of Conduct
@@ -260,9 +260,9 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/). Ple
 
 ### For Contributors
 
-- **Development questions**: Open a [GitHub Discussion](https://github.com/TrainLoop/trainloop-evals/discussions)
-- **Bug reports**: Use the [bug report template](https://github.com/TrainLoop/trainloop-evals/issues/new?template=bug_report.md)
-- **Feature requests**: Use the [feature request template](https://github.com/TrainLoop/trainloop-evals/issues/new?template=feature_request.md)
+- **Development questions**: Open a [GitHub Discussion](https://github.com/trainloop/evals/discussions)
+- **Bug reports**: Use the [bug report template](https://github.com/trainloop/evals/issues/new?template=bug_report.md)
+- **Feature requests**: Use the [feature request template](https://github.com/trainloop/evals/issues/new?template=feature_request.md)
 
 ### For Maintainers
 
@@ -280,7 +280,7 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/). Ple
 
 ## License
 
-By contributing to TrainLoop Evals, you agree that your contributions will be licensed under the [MIT License](https://github.com/TrainLoop/trainloop-evals/blob/main/LICENSE).
+By contributing to TrainLoop Evals, you agree that your contributions will be licensed under the [MIT License](https://github.com/trainloop/evals/blob/main/LICENSE).
 
 ---
 

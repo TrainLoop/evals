@@ -69,7 +69,7 @@ fi
 # Verify configuration
 echo "🔧 Verifying configuration..."
 echo "   Organization: TrainLoop"
-echo "   Project: trainloop-evals"
+echo "   Project: evals"
 echo "   URL: https://docs.trainloop.ai"
 echo "   Base URL: /"
 

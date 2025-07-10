@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging/internal/types"
+	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/logger"
+	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/types"
 
 	"gopkg.in/yaml.v3"
 )

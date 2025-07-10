@@ -22,8 +22,8 @@ This guide walks you through setting up a complete development environment for T
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/TrainLoop/trainloop-evals.git
-cd trainloop-evals
+git clone https://github.com/trainloop/evals.git
+cd evals
 ```
 
 ### 2. Install Python Dependencies
@@ -525,9 +525,9 @@ Once you've made your changes:
 
 ## Getting Help
 
-- **Development questions**: Open a [GitHub Discussion](https://github.com/TrainLoop/trainloop-evals/discussions)
-- **Bug reports**: Use the [bug report template](https://github.com/TrainLoop/trainloop-evals/issues/new?template=bug_report.md)
-- **Feature requests**: Use the [feature request template](https://github.com/TrainLoop/trainloop-evals/issues/new?template=feature_request.md)
+- **Development questions**: Open a [GitHub Discussion](https://github.com/trainloop/evals/discussions)
+- **Bug reports**: Use the [bug report template](https://github.com/trainloop/evals/issues/new?template=bug_report.md)
+- **Feature requests**: Use the [feature request template](https://github.com/trainloop/evals/issues/new?template=feature_request.md)
 
 ## Next Steps
 

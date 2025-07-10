@@ -239,5 +239,5 @@ trainloop eval --config debug.yaml --verbose
 For more help:
 - Use `trainloop <command> --help` for command-specific help
 - Check the [troubleshooting guide](../../guides/debugging.md)
-- Visit [GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)
-- Open an issue on [GitHub](https://github.com/TrainLoop/trainloop-evals/issues)
+- Visit [GitHub Discussions](https://github.com/trainloop/evals/discussions)
+- Open an issue on [GitHub](https://github.com/trainloop/evals/issues)

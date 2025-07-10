@@ -58,4 +58,4 @@ If you have specific questions about how TrainLoop Evals works, please:
 
 - Check the [Guides](../guides/) for practical how-to information
 - Review the [Reference](../reference/) for API details
-- [Open an issue](https://github.com/TrainLoop/trainloop-evals/issues) for technical questions
+- [Open an issue](https://github.com/trainloop/evals/issues) for technical questions

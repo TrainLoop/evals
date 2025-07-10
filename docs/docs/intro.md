@@ -113,13 +113,13 @@ Ready to start evaluating your LLM applications? Here's what you need to do:
 
 Want to see TrainLoop Evals in action? Check out our demo:
 
-- **[Demo Repository](https://github.com/TrainLoop/chat-ui-demo)** - Complete example implementation
+- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete example implementation
 - **[Live Demo](https://evals.trainloop.ai)** - Interactive demo deployment
 
 ## Community and Support
 
-- **[GitHub Repository](https://github.com/TrainLoop/trainloop-evals)** - Source code and issues
-- **[Contributing Guide](https://github.com/TrainLoop/trainloop-evals/blob/main/CONTRIBUTING.md)** - How to contribute
-- **[License](https://github.com/TrainLoop/trainloop-evals/blob/main/LICENSE)** - MIT License
+- **[GitHub Repository](https://github.com/trainloop/evals)** - Source code and issues
+- **[Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md)** - How to contribute
+- **[License](https://github.com/trainloop/evals/blob/main/LICENSE)** - MIT License
 
 Get started today and transform how you evaluate and improve your LLM applications!
