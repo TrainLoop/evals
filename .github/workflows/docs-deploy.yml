@@ -50,10 +50,9 @@ jobs:
         working-directory: docs
         env:
           GIT_USER: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_PASS: ${{ secrets.GITHUB_TOKEN }}
           USE_SSH: false
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --global user.name  "${{ github.actor }}"
           npm run deploy
