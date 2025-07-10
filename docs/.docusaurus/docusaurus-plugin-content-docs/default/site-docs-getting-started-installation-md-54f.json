@@ -1,0 +1,27 @@
+{
+  "id": "getting-started/installation",
+  "title": "Installation",
+  "description": "Get started with TrainLoop Evals by installing the CLI tool and SDKs. This guide covers all installation methods and platform-specific requirements.",
+  "source": "@site/docs/getting-started/installation.md",
+  "sourceDirName": "getting-started",
+  "slug": "/getting-started/installation",
+  "permalink": "/getting-started/installation",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/getting-started/installation.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Getting Started",
+    "permalink": "/category/getting-started"
+  },
+  "next": {
+    "title": "Quick Start Guide",
+    "permalink": "/getting-started/quick-start"
+  }
+}

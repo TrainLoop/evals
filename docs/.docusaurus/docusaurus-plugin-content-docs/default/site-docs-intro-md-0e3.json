@@ -1,0 +1,27 @@
+{
+  "id": "intro",
+  "title": "Introduction to TrainLoop Evals",
+  "description": "Welcome to TrainLoop Evals, a comprehensive framework for automating the collection and evaluation of Large Language Model (LLM) outputs. TrainLoop Evals simplifies the process of testing and improving your AI applications with a focus on developer experience and reliability.",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/intro",
+  "permalink": "/intro",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Quick Start Guide",
+    "permalink": "/getting-started/quick-start"
+  },
+  "next": {
+    "title": "Guides",
+    "permalink": "/category/guides"
+  }
+}

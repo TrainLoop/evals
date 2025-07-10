@@ -1,0 +1,27 @@
+{
+  "id": "development/release-process",
+  "title": "Release Process",
+  "description": "This document describes the TrainLoop Evals release process, including version bumping, changelog management, and publication workflows.",
+  "source": "@site/docs/development/release-process.md",
+  "sourceDirName": "development",
+  "slug": "/development/release-process",
+  "permalink": "/development/release-process",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/development/release-process.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 8,
+  "frontMatter": {
+    "sidebar_position": 8
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "SDK Testing Guide",
+    "permalink": "/development/sdk-testing"
+  },
+  "next": {
+    "title": "Architecture Guide",
+    "permalink": "/development/architecture"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "explanation/index",
+  "title": "Understanding TrainLoop Evals",
+  "description": "This section provides in-depth explanations of TrainLoop Evals concepts, architecture, and design decisions. These guides help you understand the \"why\" behind TrainLoop Evals.",
+  "source": "@site/docs/explanation/index.md",
+  "sourceDirName": "explanation",
+  "slug": "/explanation/",
+  "permalink": "/explanation/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/explanation/index.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Explanation",
+    "permalink": "/category/explanation"
+  },
+  "next": {
+    "title": "Development",
+    "permalink": "/category/development"
+  }
+}
