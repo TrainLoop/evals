@@ -10,7 +10,7 @@ on:
   workflow_dispatch: # Allow manual triggering
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -50,6 +50,7 @@ jobs:
         working-directory: docs
         env:
           GIT_USER: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_SSH: false
         run: |
           git config --global user.email "action@github.com"
