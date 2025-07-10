@@ -9,6 +9,7 @@ This section contains detailed API documentation and reference materials for Tra
 ## CLI Reference
 
 ### Commands
+- **[CLI Overview](./cli/overview.md)** - Complete CLI command reference
 - **[trainloop init](./cli/init.md)** - Initialize a new evaluation workspace
 - **[trainloop eval](./cli/eval.md)** - Run evaluation suites
 - **[trainloop studio](./cli/studio.md)** - Launch the Studio UI
@@ -18,6 +19,9 @@ This section contains detailed API documentation and reference materials for Tra
 ### Configuration
 - **[trainloop.config.yaml](./cli/config.md)** - Configuration file reference
 - **[Environment Variables](./cli/env-vars.md)** - Environment variable reference
+
+### Technical Specifications
+- **[Benchmark Schema](./benchmark-schema.md)** - Data schema for benchmark results
 
 ## SDK Reference
 

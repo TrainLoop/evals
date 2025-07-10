@@ -12,6 +12,7 @@ This section contains information for developers who want to contribute to Train
 - **[Local Development](./local-development.md)** - Set up your development environment
 - **[Building from Source](./building-from-source.md)** - Build all components locally
 - **[Testing](./testing.md)** - Run the test suite
+- **[SDK Testing](./sdk-testing.md)** - Comprehensive SDK testing guide
 - **[Debugging](./debugging.md)** - Debug TrainLoop components
 
 ### Contributing
