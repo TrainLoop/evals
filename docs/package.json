@@ -8,11 +8,15 @@
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
+    "deploy:gh-pages": "docusaurus deploy --out-dir build",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "build:production": "NODE_ENV=production docusaurus build",
+    "test:build": "npm run build && npm run serve -- --no-open",
+    "test:deployment": "./scripts/test-deployment.sh"
   },
   "dependencies": {
     "@docusaurus/core": "3.8.1",

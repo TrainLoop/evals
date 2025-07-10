@@ -24,6 +24,8 @@ const config: Config = {
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'TrainLoop', // Usually your GitHub org/user name.
   projectName: 'trainloop-evals', // Usually your repo name.
+  deploymentBranch: 'gh-pages', // Branch that GitHub Pages will serve from
+  trailingSlash: false, // GitHub Pages adds a trailing slash by default
 
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
@@ -48,21 +50,7 @@ const config: Config = {
           editUrl:
             'https://github.com/TrainLoop/trainloop-evals/tree/main/docs/',
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/TrainLoop/trainloop-evals/tree/main/docs/',
-          // Useful options to enforce blogging best practices
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false, // Disable blog functionality
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -71,14 +59,15 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    // TODO: Replace with TrainLoop social card
+    // image: 'img/social-card.jpg',
     navbar: {
       title: 'TrainLoop Evals',
-      logo: {
-        alt: 'TrainLoop Evals Logo',
-        src: 'img/logo.svg',
-      },
+      // TODO: Add TrainLoop logo
+      // logo: {
+      //   alt: 'TrainLoop Evals Logo',
+      //   src: 'img/logo.svg',
+      // },
       items: [
         {
           type: 'docSidebar',
@@ -86,7 +75,6 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
         {
           href: 'https://github.com/TrainLoop/trainloop-evals',
           label: 'GitHub',
@@ -126,10 +114,6 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            {
-              label: 'Blog',
-              to: '/blog',
-            },
             {
               label: 'GitHub',
               href: 'https://github.com/TrainLoop/trainloop-evals',

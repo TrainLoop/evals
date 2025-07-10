@@ -5,14 +5,14 @@ import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
+  icon: string;
   description: ReactNode;
 };
 
 const FeatureList: FeatureItem[] = [
   {
     title: 'Simplicity First',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    icon: '🚀',
     description: (
       <>
         One environment variable, one function call, one folder of JSON files.
@@ -22,7 +22,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Vendor Independent',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    icon: '🔧',
     description: (
       <>
         Everything stored as newline-delimited JSON with no databases required.
@@ -32,7 +32,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Type-Safe & Extensible',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    icon: '⚡',
     description: (
       <>
         In-code tests with full TypeScript support. Composable system with
@@ -42,11 +42,13 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({title, icon, description}: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        <span className={styles.featureIcon} role="img" aria-label={title}>
+          {icon}
+        </span>
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
