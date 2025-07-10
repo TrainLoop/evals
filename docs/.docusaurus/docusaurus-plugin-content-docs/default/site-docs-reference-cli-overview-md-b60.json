@@ -1,0 +1,27 @@
+{
+  "id": "reference/cli/overview",
+  "title": "CLI Overview",
+  "description": "The TrainLoop CLI provides four main commands for managing your evaluation workflow. This page provides a comprehensive reference for all CLI commands and options.",
+  "source": "@site/docs/reference/cli/overview.md",
+  "sourceDirName": "reference/cli",
+  "slug": "/reference/cli/overview",
+  "permalink": "/reference/cli/overview",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/reference/cli/overview.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1
+  },
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "CLI Reference",
+    "permalink": "/category/cli-reference"
+  },
+  "next": {
+    "title": "Reference",
+    "permalink": "/reference/"
+  }
+}

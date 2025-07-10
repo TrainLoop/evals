@@ -1,0 +1,148 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "path": "/",
+      "versions": [
+        {
+          "name": "current",
+          "label": "Next",
+          "isLast": true,
+          "path": "/",
+          "mainDocId": "getting-started/installation",
+          "docs": [
+            {
+              "id": "development/architecture",
+              "path": "/development/architecture",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/building-from-source",
+              "path": "/development/building-from-source",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/code-style",
+              "path": "/development/code-style",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/contributing",
+              "path": "/development/contributing",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/index",
+              "path": "/development/",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/local-development",
+              "path": "/development/local-development",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/pull-request-process",
+              "path": "/development/pull-request-process",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/release-process",
+              "path": "/development/release-process",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/sdk-testing",
+              "path": "/development/sdk-testing",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "development/testing",
+              "path": "/development/testing",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "explanation/index",
+              "path": "/explanation/",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "getting-started/installation",
+              "path": "/getting-started/installation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "getting-started/quick-start",
+              "path": "/getting-started/quick-start",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "guides/index",
+              "path": "/guides/",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "intro",
+              "path": "/intro",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reference/benchmark-schema",
+              "path": "/reference/benchmark-schema",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reference/cli/overview",
+              "path": "/reference/cli/overview",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "reference/index",
+              "path": "/reference/",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/getting-started",
+              "path": "/category/getting-started",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/guides",
+              "path": "/category/guides",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/reference",
+              "path": "/category/reference",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/cli-reference",
+              "path": "/category/cli-reference",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/explanation",
+              "path": "/category/explanation",
+              "sidebar": "docsSidebar"
+            },
+            {
+              "id": "/category/development",
+              "path": "/category/development",
+              "sidebar": "docsSidebar"
+            }
+          ],
+          "draftIds": [],
+          "sidebars": {
+            "docsSidebar": {
+              "link": {
+                "path": "/category/getting-started",
+                "label": "Getting Started"
+              }
+            }
+          }
+        }
+      ],
+      "breadcrumbs": true
+    }
+  }
+}

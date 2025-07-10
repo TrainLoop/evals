@@ -1,0 +1,24 @@
+{
+  "id": "development/architecture",
+  "title": "Architecture Guide",
+  "description": "This guide provides a comprehensive overview of the TrainLoop Evals architecture, including system design, component interactions, and data flow patterns.",
+  "source": "@site/docs/development/architecture.md",
+  "sourceDirName": "development",
+  "slug": "/development/architecture",
+  "permalink": "/development/architecture",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/TrainLoop/evals/tree/main/docs/docs/development/architecture.md",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "docsSidebar",
+  "previous": {
+    "title": "Release Process",
+    "permalink": "/development/release-process"
+  },
+  "next": {
+    "title": "Building from Source",
+    "permalink": "/development/building-from-source"
+  }
+}
