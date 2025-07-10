@@ -118,8 +118,8 @@ Want to see TrainLoop Evals in action? Check out our demo:
 
 ## Community and Support
 
-- **[GitHub Repository](https://github.com/TrainLoop/trainloop-evals)** - Source code and issues
-- **[Contributing Guide](https://github.com/TrainLoop/trainloop-evals/blob/main/CONTRIBUTING.md)** - How to contribute
-- **[License](https://github.com/TrainLoop/trainloop-evals/blob/main/LICENSE)** - MIT License
+- **[GitHub Repository](https://github.com/trainloop/evals)** - Source code and issues
+- **[Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md)** - How to contribute
+- **[License](https://github.com/trainloop/evals/blob/main/LICENSE)** - MIT License
 
 Get started today and transform how you evaluate and improve your LLM applications!

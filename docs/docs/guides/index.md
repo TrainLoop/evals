@@ -88,7 +88,7 @@ We're actively working on comprehensive guides for each of these topics. Guides 
 
 ## Contributing
 
-Want to contribute a guide? We welcome community contributions! Please see our [Contributing Guide](https://github.com/TrainLoop/trainloop-evals/blob/main/CONTRIBUTING.md) for details.
+Want to contribute a guide? We welcome community contributions! Please see our [Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md) for details.
 
 ## Questions?
 
@@ -96,4 +96,4 @@ If you need help with a specific use case:
 
 - Check the [Reference](../reference/) for API details
 - Review the [Explanation](../explanation/) for conceptual understanding
-- [Open an issue](https://github.com/TrainLoop/trainloop-evals/issues) for questions
+- [Open an issue](https://github.com/trainloop/evals/issues) for questions

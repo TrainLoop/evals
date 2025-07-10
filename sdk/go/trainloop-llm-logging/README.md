@@ -18,11 +18,11 @@ For complete Go SDK documentation, installation guides, and usage examples:
 
 ```bash
 # Install
-go get github.com/TrainLoop/trainloop-evals/sdk/go/trainloop-llm-logging
+go get github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging
 ```
 
 ```go
-import "github.com/TrainLoop/trainloop-evals/sdk/go/trainloop-llm-logging"
+import "github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging"
 
 // Your existing HTTP calls work automatically
 // No code changes required!

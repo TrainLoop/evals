@@ -462,7 +462,7 @@ git push --force-with-lease origin feature/your-feature-name
 
 ### For Contributors
 
-- **Questions about the process**: Open a [GitHub Discussion](https://github.com/TrainLoop/trainloop-evals/discussions)
+- **Questions about the process**: Open a [GitHub Discussion](https://github.com/trainloop/evals/discussions)
 - **Technical questions**: Comment on your PR or open an issue
 - **Urgent issues**: Tag maintainers in your PR
 

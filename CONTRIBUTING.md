@@ -24,8 +24,8 @@ The full documentation includes:
 ### Development Setup
 ```bash
 # 1. Clone the repository
-git clone https://github.com/TrainLoop/trainloop-evals.git
-cd trainloop-evals
+git clone https://github.com/trainloop/evals.git
+cd evals
 
 # 2. Install pipx (if not already installed)
 python -m pip install --user pipx
@@ -58,8 +58,8 @@ npm run dev
 ## 📖 **Getting Help**
 
 - **Documentation**: https://evals.docs.trainloop.ai
-- **Issues**: https://github.com/TrainLoop/trainloop-evals/issues
-- **Discussions**: https://github.com/TrainLoop/trainloop-evals/discussions
+- **Issues**: https://github.com/trainloop/evals/issues
+- **Discussions**: https://github.com/trainloop/evals/discussions
 
 ## 🔍 **Need More Details?**
 

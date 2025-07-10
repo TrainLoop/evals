@@ -52,8 +52,8 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 ## Support
 
-- **[GitHub Issues](https://github.com/TrainLoop/trainloop-evals/issues)** - Bug reports and feature requests
-- **[GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)** - Community support and questions
+- **[GitHub Issues](https://github.com/trainloop/evals/issues)** - Bug reports and feature requests
+- **[GitHub Discussions](https://github.com/trainloop/evals/discussions)** - Community support and questions
 - **[Documentation](https://evals.docs.trainloop.ai)** - Comprehensive guides and tutorials
 
 ## License
@@ -62,4 +62,4 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 ---
 
-**Need help?** Check out our [comprehensive documentation](https://evals.docs.trainloop.ai) or [open an issue](https://github.com/TrainLoop/trainloop-evals/issues).
+**Need help?** Check out our [comprehensive documentation](https://evals.docs.trainloop.ai) or [open an issue](https://github.com/trainloop/evals/issues).

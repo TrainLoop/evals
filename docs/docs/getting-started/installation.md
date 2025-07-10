@@ -270,7 +270,7 @@ nvm use node
 If you encounter issues not covered here:
 
 1. **Check the logs**: Most commands have `--verbose` or `--debug` flags for detailed output
-2. **GitHub Issues**: [Report bugs or request features](https://github.com/TrainLoop/trainloop-evals/issues)
+2. **GitHub Issues**: [Report bugs or request features](https://github.com/trainloop/evals/issues)
 3. **Community**: Join our community discussions
 
 ## Next Steps
@@ -312,8 +312,8 @@ For contributors or those who want to use the latest development version:
 
 ```bash
 # Clone the repository
-git clone https://github.com/TrainLoop/trainloop-evals.git
-cd trainloop-evals
+git clone https://github.com/trainloop/evals.git
+cd evals
 
 # Install CLI from source
 cd cli

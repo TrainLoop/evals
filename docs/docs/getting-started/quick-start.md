@@ -401,7 +401,7 @@ trainloop add suite sample
 ### Getting Help
 
 - **Documentation**: Browse the [guides](../guides/) and [reference](../reference/)
-- **GitHub Issues**: [Report bugs or ask questions](https://github.com/TrainLoop/trainloop-evals/issues)
+- **GitHub Issues**: [Report bugs or ask questions](https://github.com/trainloop/evals/issues)
 - **Examples**: Check the [demo repository](https://github.com/TrainLoop/chat-ui-demo)
 
 ## Congratulations! 🎉

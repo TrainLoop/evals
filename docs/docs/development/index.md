@@ -145,7 +145,7 @@ We're actively working on comprehensive development documentation. Content will 
 
 ## Contributing to This Guide
 
-Want to improve this development guide? We welcome contributions! Please see our [Contributing Guide](https://github.com/TrainLoop/trainloop-evals/blob/main/CONTRIBUTING.md) for details.
+Want to improve this development guide? We welcome contributions! Please see our [Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md) for details.
 
 ## Questions?
 
@@ -153,5 +153,5 @@ If you have development questions:
 
 - Check the [API Reference](../reference/) for detailed specifications
 - Review the [Guides](../guides/) for practical examples
-- [Open an issue](https://github.com/TrainLoop/trainloop-evals/issues) for development questions
+- [Open an issue](https://github.com/trainloop/evals/issues) for development questions
 - Join our community discussions for real-time help

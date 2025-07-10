@@ -112,7 +112,7 @@ process.env.NODE_OPTIONS = '--require=trainloop-llm-logging';
 
 ```go
 // Architecture: HTTP transport wrapping
-import "github.com/TrainLoop/trainloop-evals/sdk/go/trainloop-llm-logging"
+import "github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging"
 
 // Wrap HTTP client
 client := &http.Client{
@@ -600,8 +600,8 @@ def migrate_events(events: List[dict], target_version: str) -> List[dict]:
 
 For architecture-related questions:
 
-- **Design Discussions**: [GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)
-- **Architecture Issues**: [GitHub Issues](https://github.com/TrainLoop/trainloop-evals/issues)
+- **Design Discussions**: [GitHub Discussions](https://github.com/trainloop/evals/discussions)
+- **Architecture Issues**: [GitHub Issues](https://github.com/trainloop/evals/issues)
 - **Implementation Questions**: Comment on relevant pull requests
 
 ---

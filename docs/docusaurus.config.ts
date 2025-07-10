@@ -23,7 +23,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'TrainLoop', // Usually your GitHub org/user name.
-  projectName: 'trainloop-evals', // Usually your repo name.
+  projectName: 'evals', // Usually your repo name.
   deploymentBranch: 'gh-pages', // Branch that GitHub Pages will serve from
   trailingSlash: false, // GitHub Pages adds a trailing slash by default
 
@@ -48,7 +48,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/TrainLoop/trainloop-evals/tree/main/docs/',
+            'https://github.com/trainloop/evals/tree/main/docs/',
         },
         blog: false, // Disable blog functionality
         theme: {
@@ -76,7 +76,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://github.com/TrainLoop/trainloop-evals',
+          href: 'https://github.com/trainloop/evals',
           label: 'GitHub',
           position: 'right',
         },
@@ -103,11 +103,11 @@ const config: Config = {
           items: [
             {
               label: 'GitHub Issues',
-              href: 'https://github.com/TrainLoop/trainloop-evals/issues',
+              href: 'https://github.com/trainloop/evals/issues',
             },
             {
               label: 'GitHub Discussions',
-              href: 'https://github.com/TrainLoop/trainloop-evals/discussions',
+              href: 'https://github.com/trainloop/evals/discussions',
             },
           ],
         },
@@ -116,7 +116,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/TrainLoop/trainloop-evals',
+              href: 'https://github.com/trainloop/evals',
             },
             {
               label: 'Demo',
@@ -138,7 +138,7 @@ const config: Config = {
     //   appId: 'YOUR_APP_ID',
     //   // Public API key: it is safe to commit it
     //   apiKey: 'YOUR_SEARCH_API_KEY',
-    //   indexName: 'trainloop-evals',
+    //   indexName: 'evals',
     //   // Optional: see doc section below
     //   contextualSearch: true,
     //   // Optional: Specify domains where the navigation should occur through window.location instead on history.push

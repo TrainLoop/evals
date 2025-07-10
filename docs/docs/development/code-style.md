@@ -660,7 +660,7 @@ When reviewing code, check for:
 
 If you have questions about code style or need clarification on any guidelines:
 
-- **Open a discussion** on [GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)
+- **Open a discussion** on [GitHub Discussions](https://github.com/trainloop/evals/discussions)
 - **Ask in your pull request** if you're unsure about specific changes
 - **Check existing code** in the repository for examples
 - **Refer to language-specific style guides** for detailed formatting rules
