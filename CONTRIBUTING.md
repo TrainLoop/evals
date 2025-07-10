@@ -4,15 +4,15 @@ Thank you for your interest in contributing to TrainLoop Evals! This document pr
 
 ## 📚 **Complete Contributing Guide**
 
-For comprehensive contributing documentation, please visit our **[Contributing Guide](https://docs.trainloop.ai/development/contributing)** in the documentation site.
+For comprehensive contributing documentation, please visit our **[Contributing Guide](https://evals.docs.trainloop.ai/development/contributing)** in the documentation site.
 
 The full documentation includes:
-- **[Development Setup](https://docs.trainloop.ai/development/local-development)** - Complete environment setup
-- **[Building from Source](https://docs.trainloop.ai/development/building-from-source)** - Build process and commands
-- **[Testing Guide](https://docs.trainloop.ai/development/testing)** - Test framework and execution
-- **[Pull Request Process](https://docs.trainloop.ai/development/pull-request-process)** - PR workflow and guidelines
-- **[Code Style](https://docs.trainloop.ai/development/code-style)** - Coding standards and conventions
-- **[Architecture](https://docs.trainloop.ai/development/architecture)** - System overview and design
+- **[Development Setup](https://evals.docs.trainloop.ai/development/local-development)** - Complete environment setup
+- **[Building from Source](https://evals.docs.trainloop.ai/development/building-from-source)** - Build process and commands
+- **[Testing Guide](https://evals.docs.trainloop.ai/development/testing)** - Test framework and execution
+- **[Pull Request Process](https://evals.docs.trainloop.ai/development/pull-request-process)** - PR workflow and guidelines
+- **[Code Style](https://evals.docs.trainloop.ai/development/code-style)** - Coding standards and conventions
+- **[Architecture](https://evals.docs.trainloop.ai/development/architecture)** - System overview and design
 
 ## 🚀 **Quick Start**
 
@@ -57,10 +57,10 @@ npm run dev
 
 ## 📖 **Getting Help**
 
-- **Documentation**: https://docs.trainloop.ai
+- **Documentation**: https://evals.docs.trainloop.ai
 - **Issues**: https://github.com/TrainLoop/trainloop-evals/issues
 - **Discussions**: https://github.com/TrainLoop/trainloop-evals/discussions
 
 ## 🔍 **Need More Details?**
 
-This is a quick reference. For detailed information on any aspect of contributing, please refer to our comprehensive documentation at **https://docs.trainloop.ai/development/contributing**.
+This is a quick reference. For detailed information on any aspect of contributing, please refer to our comprehensive documentation at **https://evals.docs.trainloop.ai/development/contributing**.

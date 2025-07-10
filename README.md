@@ -36,14 +36,14 @@ trainloop studio
 
 For comprehensive documentation, installation guides, tutorials, and API reference:
 
-**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
 
 ### Quick Links
-- **[Getting Started](https://docs.trainloop.ai/getting-started/installation)** - Installation and setup
-- **[Quick Start Guide](https://docs.trainloop.ai/getting-started/quick-start)** - Complete walkthrough
-- **[SDK Guides](https://docs.trainloop.ai/guides)** - Python, TypeScript, and Go integration
-- **[CLI Reference](https://docs.trainloop.ai/reference)** - Complete command documentation
-- **[Contributing](https://docs.trainloop.ai/development/contributing)** - Development setup and guidelines
+- **[Getting Started](https://evals.docs.trainloop.ai/getting-started/installation)** - Installation and setup
+- **[Quick Start Guide](https://evals.docs.trainloop.ai/getting-started/quick-start)** - Complete walkthrough
+- **[SDK Guides](https://evals.docs.trainloop.ai/guides)** - Python, TypeScript, and Go integration
+- **[CLI Reference](https://evals.docs.trainloop.ai/reference)** - Complete command documentation
+- **[Contributing](https://evals.docs.trainloop.ai/development/contributing)** - Development setup and guidelines
 
 ## Demo
 
@@ -54,7 +54,7 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 - **[GitHub Issues](https://github.com/TrainLoop/trainloop-evals/issues)** - Bug reports and feature requests
 - **[GitHub Discussions](https://github.com/TrainLoop/trainloop-evals/discussions)** - Community support and questions
-- **[Documentation](https://docs.trainloop.ai)** - Comprehensive guides and tutorials
+- **[Documentation](https://evals.docs.trainloop.ai)** - Comprehensive guides and tutorials
 
 ## License
 
@@ -62,4 +62,4 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 ---
 
-**Need help?** Check out our [comprehensive documentation](https://docs.trainloop.ai) or [open an issue](https://github.com/TrainLoop/trainloop-evals/issues).
+**Need help?** Check out our [comprehensive documentation](https://evals.docs.trainloop.ai) or [open an issue](https://github.com/TrainLoop/trainloop-evals/issues).
