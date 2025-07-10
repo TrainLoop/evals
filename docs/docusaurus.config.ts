@@ -22,7 +22,7 @@ const config: Config = {
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'TrainLoop', // Usually your GitHub org/user name.
+  organizationName: 'trainloop', // Usually your GitHub org/user name.
   projectName: 'evals', // Usually your repo name.
   deploymentBranch: 'gh-pages', // Branch that GitHub Pages will serve from
   trailingSlash: false, // GitHub Pages adds a trailing slash by default

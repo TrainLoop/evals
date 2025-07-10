@@ -202,7 +202,7 @@ GOOS=darwin GOARCH=arm64 go build ./...
 Module configuration in `sdk/go/trainloop-llm-logging/go.mod`:
 
 ```go
-module github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging
+module github.com/trainloop/evals/sdk/go/trainloop-llm-logging
 
 go 1.21
 

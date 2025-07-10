@@ -47,7 +47,7 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 ## Demo
 
-- **Demo Repository**: [chat-ui-demo](https://github.com/TrainLoop/chat-ui-demo)
+- **Demo Repository**: [chat-ui-demo](https://github.com/trainloop/chat-ui-demo)
 - **Live Demo**: [evals.trainloop.ai](https://evals.trainloop.ai)
 
 ## Support

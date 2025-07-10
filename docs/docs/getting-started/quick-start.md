@@ -146,7 +146,7 @@ import (
     "os"
     
     "github.com/sashabaranov/go-openai"
-    trainloop "github.com/TrainLoop/trainloop-llm-logging/go/trainloop-llm-logging"
+    trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 )
 
 func main() {
@@ -402,7 +402,7 @@ trainloop add suite sample
 
 - **Documentation**: Browse the [guides](../guides/) and [reference](../reference/)
 - **GitHub Issues**: [Report bugs or ask questions](https://github.com/trainloop/evals/issues)
-- **Examples**: Check the [demo repository](https://github.com/TrainLoop/chat-ui-demo)
+- **Examples**: Check the [demo repository](https://github.com/trainloop/chat-ui-demo)
 
 ## Congratulations! 🎉
 

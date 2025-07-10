@@ -112,7 +112,7 @@ process.env.NODE_OPTIONS = '--require=trainloop-llm-logging';
 
 ```go
 // Architecture: HTTP transport wrapping
-import "github.com/TrainLoop/evals/sdk/go/trainloop-llm-logging"
+import "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 
 // Wrap HTTP client
 client := &http.Client{

@@ -137,7 +137,7 @@ pnpm add trainloop-llm-logging
 Install the Go SDK for Go applications:
 
 ```bash
-go get github.com/TrainLoop/trainloop-llm-logging/go/trainloop-llm-logging
+go get github.com/trainloop/evals/sdk/go/trainloop-llm-logging
 ```
 
 ## Verification
@@ -188,7 +188,7 @@ package main
 
 import (
     "fmt"
-    trainloop "github.com/TrainLoop/trainloop-llm-logging/go/trainloop-llm-logging"
+    trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 )
 
 func main() {
@@ -303,7 +303,7 @@ pip install --upgrade trainloop-llm-logging
 npm update trainloop-llm-logging
 
 # Go SDK
-go get -u github.com/TrainLoop/trainloop-llm-logging/go/trainloop-llm-logging
+go get -u github.com/trainloop/evals/sdk/go/trainloop-llm-logging
 ```
 
 ## Development Installation

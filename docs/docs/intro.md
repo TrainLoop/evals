@@ -113,7 +113,7 @@ Ready to start evaluating your LLM applications? Here's what you need to do:
 
 Want to see TrainLoop Evals in action? Check out our demo:
 
-- **[Demo Repository](https://github.com/TrainLoop/chat-ui-demo)** - Complete example implementation
+- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete example implementation
 - **[Live Demo](https://evals.trainloop.ai)** - Interactive demo deployment
 
 ## Community and Support

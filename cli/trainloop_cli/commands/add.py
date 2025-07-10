@@ -324,7 +324,7 @@ def list_available(
             # Add GitHub URLs for each component
             for comp in components:
                 comp["github_url"] = (
-                    f"https://github.com/TrainLoop/evals/tree/v{version}/registry/{component_type}s/{comp['name']}"
+                    f"https://github.com/trainloop/evals/tree/v{version}/registry/{component_type}s/{comp['name']}"
                 )
 
         except Exception:
@@ -345,7 +345,7 @@ def list_available(
                                     "name": config_data.get("name", item_dir.name),
                                     "description": config_data.get("description", ""),
                                     "tags": config_data.get("tags", []),
-                                    "github_url": f"https://github.com/TrainLoop/evals/tree/v{version}/registry/{component_type}s/{item_dir.name}",
+                                    "github_url": f"https://github.com/trainloop/evals/tree/v{version}/registry/{component_type}s/{item_dir.name}",
                                 }
                                 # Include dependencies for suites
                                 if (
