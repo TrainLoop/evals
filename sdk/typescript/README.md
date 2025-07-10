@@ -1,36 +1,29 @@
-# TrainLoop Evals SDK (TypeScript/JavaScript)
+# TrainLoop TypeScript SDK
 
-Patches Node HTTP libraries so every LLM request is logged for evaluation. Works with both TypeScript and JavaScript projects.
+Zero-touch HTTP instrumentation library for collecting LLM request/response data in Node.js applications.
 
-## Install
+## 📚 Documentation
+
+For complete TypeScript SDK documentation, installation guides, and usage examples:
+
+**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+
+### Quick Links
+- **[TypeScript SDK Guide](https://docs.trainloop.ai/guides/typescript-sdk)** - Complete integration guide
+- **[Installation](https://docs.trainloop.ai/getting-started/installation)** - Install the SDK
+- **[API Reference](https://docs.trainloop.ai/reference/sdk/typescript)** - Complete API documentation
+- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to the SDK
+
+## Quick Start
 
 ```bash
+# Install
 npm install trainloop-llm-logging
 ```
 
-## Usage
-
 ```bash
-export TRAINLOOP_DATA_FOLDER=./trainloop/data # optional, otherwise will use the path at trainloop/trainloop.config.yaml
-NODE_OPTIONS="--require=trainloop-llm-logging" next dev
+# Add to your start script
+NODE_OPTIONS="--require=trainloop-llm-logging" node index.js
 ```
 
-Tag individual calls when needed:
-
-**TypeScript:**
-```ts
-import { trainloopTag } from 'trainloop-llm-logging';
-
-openai.chat.completions.create(..., { headers: { ...trainloopTag("checkout") } })
-```
-
-**JavaScript:**
-```js
-const { trainloopTag } = require('trainloop-llm-logging');
-
-openai.chat.completions.create(..., { headers: { ...trainloopTag("checkout") } })
-```
-
-Logs are written under `$TRAINLOOP_DATA_FOLDER`.
-
-See the [project README](../../README.md) for context.
+For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**

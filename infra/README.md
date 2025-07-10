@@ -1,12 +1,16 @@
-# TrainLoop Infra
+# TrainLoop Infrastructure
 
-Pulumi configuration for deploying the Studio as a small demo on AWS.
+Infrastructure as Code for TrainLoop Evals deployment using Pulumi.
 
-## Usage
+## 📚 Documentation
 
-```bash
-pulumi preview
-pulumi up       # deploy
-```
+For complete infrastructure documentation and deployment guides:
 
-See `Pulumi.trainloop.yaml` for configurable options.
+**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+
+### Quick Links
+- **[Deployment Guide](https://docs.trainloop.ai/guides/deployment)** - Complete deployment instructions
+- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to infrastructure
+- **[Architecture](https://docs.trainloop.ai/development/architecture)** - System overview
+
+For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
