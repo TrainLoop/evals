@@ -1,0 +1,57 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-deploy.yml'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: docs
+        run: npm ci
+        
+      - name: Build documentation
+        working-directory: docs
+        run: npm run build
+        
+      - name: Deploy to GitHub Pages
+        working-directory: docs
+        env:
+          GIT_USER: ${{ github.actor }}
+          USE_SSH: false
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          npm run deploy
