@@ -18,7 +18,11 @@
     "publish:studio": "pipx run scripts/publish.py --skip-sdk --skip-cli",
     "pulumi:bump": "pipx run scripts/bump/bump_pulumi.py",
     "pulumi:destroy": "cd infra && pulumi destroy",
-    "dev": "cd ui && npm run dev"
+    "dev": "cd ui && npm run dev",
+    "docs:dev": "cd docs && npm start",
+    "docs:build": "cd docs && npm run build",
+    "docs:serve": "cd docs && npm run serve",
+    "docs:deploy": "cd docs && npm run deploy"
   },
   "engines": {
     "node": ">=20.0.0"

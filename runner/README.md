@@ -1,22 +1,16 @@
-# TrainLoop Studio Runner
+# TrainLoop Runner
 
-Simple wrapper used by the CLI to serve the prebuilt Studio UI.
+Runner component for TrainLoop Evals.
 
-## Usage
+## 📚 Documentation
 
-```bash
-node bin/run.js
-```
+For complete runner documentation and usage guides:
 
-It expects `TRAINLOOP_DATA_FOLDER` to point to the folder where the SDKs write their files.
+**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
 
-## DuckDB Bindings
+### Quick Links
+- **[Getting Started](https://docs.trainloop.ai/getting-started/installation)** - Installation and setup
+- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to runner
+- **[Architecture](https://docs.trainloop.ai/development/architecture)** - System overview
 
-The runner automatically detects and installs platform-specific DuckDB bindings on first run. This keeps the package size small while ensuring compatibility across different platforms.
-
-Supported platforms:
-- macOS (x64, arm64)
-- Linux (x64, arm64)
-- Windows (x64)
-
-The bindings are installed to the bundle's node_modules directory and do not affect your global npm installation.
+For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**

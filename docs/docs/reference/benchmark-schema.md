@@ -1,6 +1,8 @@
-# Benchmark Data Schema Design
+---
+sidebar_position: 5
+---
 
-## Overview
+# Benchmark Data Schema
 
 The benchmark feature enables comparing evaluation results across multiple LLM providers. This document describes the data schema and JSONL output format for benchmark runs.
 

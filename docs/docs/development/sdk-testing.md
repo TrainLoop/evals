@@ -1,13 +1,17 @@
-# TrainLoop SDK Testing Guide
+---
+sidebar_position: 4
+---
 
-This document describes how to run tests for both Python and TypeScript SDKs.
+# SDK Testing Guide
+
+This document describes how to run tests for both Python and TypeScript SDKs in the TrainLoop Evals ecosystem.
 
 ## Overview
 
 Both SDKs have comprehensive test suites covering:
 - **Unit tests**: Test individual components in isolation
-- **Integration tests**: Test components working together (WIP)
-- **Edge case tests**: Test boundary conditions and error scenarios (WIP)
+- **Integration tests**: Test components working together
+- **Edge case tests**: Test boundary conditions and error scenarios
 
 ## Python SDK Testing
 
@@ -46,7 +50,7 @@ poetry run pytest --cov --cov-report=html
 
 ### Test Structure
 ```
-tests/
+sdk/python/tests/
 ├── conftest.py          # Shared fixtures and configuration
 ├── unit/                # Unit tests
 │   ├── test_config.py
@@ -105,7 +109,7 @@ npm run test:coverage
 
 ### Test Structure
 ```
-tests/
+sdk/typescript/tests/
 ├── setup.ts             # Jest setup and configuration
 ├── test-utils.ts        # Shared test utilities
 ├── unit/                # Unit tests
@@ -149,57 +153,6 @@ The Python test setup (`tests/conftest.py`) provides:
 2. Environment variable management
 3. Mock objects for testing without side effects
 4. Sample request/response data for different LLM providers
-
-## Running Tests
-
-### Python
-```bash
-# Run all tests
-poetry run pytest
-
-# Run with coverage
-poetry run pytest --cov
-
-# Run specific test categories
-poetry run pytest -m unit              # Unit tests only
-poetry run pytest -m integration       # Integration tests only
-poetry run pytest -m edge_case         # Edge case tests only
-
-# Run tests in parallel
-poetry run pytest -n auto
-
-# Run specific test file
-poetry run pytest tests/unit/test_config.py
-
-# Run with verbose output
-poetry run pytest -v
-
-# Generate HTML coverage report
-poetry run pytest --cov --cov-report=html
-```
-
-### TypeScript
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm run test:coverage
-
-# Run specific test categories
-npm run test:unit              # Unit tests only
-npm run test:integration       # Integration tests only
-npm run test:edge             # Edge case tests only
-
-# Run in watch mode
-npm run test:watch
-
-# Run specific test file
-npm test -- config.test.ts
-
-# Generate coverage report
-npm run test:coverage
-```
 
 ## Common Test Scenarios
 
@@ -332,3 +285,73 @@ Both SDKs aim for:
 View coverage reports:
 - Python: `open htmlcov/index.html`
 - TypeScript: `open coverage/lcov-report/index.html`
+
+## Integration with CLI Testing
+
+SDK tests integrate with the broader CLI testing framework:
+
+```bash
+# Run all tests including CLI integration
+pytest
+
+# Run SDK-specific integration tests
+pytest -m sdk
+
+# Run full integration test suite
+pytest -m integration
+```
+
+## Performance Testing
+
+### Python SDK Performance
+```bash
+# Run performance benchmarks
+poetry run pytest tests/performance/ -v
+
+# Profile memory usage
+poetry run pytest --profile tests/unit/test_exporter.py
+```
+
+### TypeScript SDK Performance
+```bash
+# Run performance tests
+npm run test:performance
+
+# Profile memory and CPU usage
+npm run test:profile
+```
+
+## Mock LLM Providers
+
+For testing without hitting real APIs:
+
+### Python
+```python
+from tests.helpers.mock_llm import MockOpenAI, MockAnthropic
+
+@pytest.fixture
+def mock_openai():
+    return MockOpenAI(responses=["Test response"])
+```
+
+### TypeScript
+```typescript
+import { mockLLMProvider } from '../test-utils';
+
+describe('LLM Integration', () => {
+  beforeEach(() => {
+    mockLLMProvider('openai', { response: 'Test response' });
+  });
+});
+```
+
+## Best Practices
+
+1. **Isolate tests**: Each test should be independent
+2. **Use meaningful names**: Test names should describe what is being tested
+3. **Test edge cases**: Include boundary conditions and error scenarios
+4. **Mock external dependencies**: Don't rely on external services
+5. **Keep tests fast**: Unit tests should run in milliseconds
+6. **Clean up resources**: Ensure temporary files and connections are closed
+7. **Use fixtures**: Share common setup code via fixtures
+8. **Test error paths**: Verify error handling works correctly
