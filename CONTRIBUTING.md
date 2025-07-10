@@ -1,28 +1,66 @@
-# Contributing Guide
+# Contributing to TrainLoop Evals
 
-## Setup
+Thank you for your interest in contributing to TrainLoop Evals! This document provides a quick overview to get you started.
 
-### 1. Install pipx
+## 📚 **Complete Contributing Guide**
 
-First, make sure you have pipx installed:
+For comprehensive contributing documentation, please visit our **[Contributing Guide](https://docs.trainloop.ai/development/contributing)** in the documentation site.
 
+The full documentation includes:
+- **[Development Setup](https://docs.trainloop.ai/development/local-development)** - Complete environment setup
+- **[Building from Source](https://docs.trainloop.ai/development/building-from-source)** - Build process and commands
+- **[Testing Guide](https://docs.trainloop.ai/development/testing)** - Test framework and execution
+- **[Pull Request Process](https://docs.trainloop.ai/development/pull-request-process)** - PR workflow and guidelines
+- **[Code Style](https://docs.trainloop.ai/development/code-style)** - Coding standards and conventions
+- **[Architecture](https://docs.trainloop.ai/development/architecture)** - System overview and design
+
+## 🚀 **Quick Start**
+
+### Prerequisites
+- Python 3.9+ with pipx
+- Node.js 20+ for UI development
+- Git for version control
+
+### Development Setup
 ```bash
+# 1. Clone the repository
+git clone https://github.com/TrainLoop/trainloop-evals.git
+cd trainloop-evals
+
+# 2. Install pipx (if not already installed)
 python -m pip install --user pipx
 pipx ensurepath
+
+# 3. Install dependencies
+npm install
+
+# 4. Run tests to verify setup
+npm test
 ```
 
-### 2. Install Dependencies
-
+### Running the Development Server
 ```bash
-# Dependencies installation instructions will go here
+# Documentation site
+npm run docs:dev
+
+# Studio UI
+npm run dev
 ```
 
-### 3. Development Workflow
+## 🤝 **Contributing Workflow**
 
-When contributing to this project, please follow the standard GitHub workflow:
+1. **Fork** the repository
+2. **Create** a feature branch from `main`
+3. **Make** your changes with proper testing
+4. **Run** tests and linting: `npm test`
+5. **Submit** a pull request with clear description
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+## 📖 **Getting Help**
+
+- **Documentation**: https://docs.trainloop.ai
+- **Issues**: https://github.com/TrainLoop/trainloop-evals/issues
+- **Discussions**: https://github.com/TrainLoop/trainloop-evals/discussions
+
+## 🔍 **Need More Details?**
+
+This is a quick reference. For detailed information on any aspect of contributing, please refer to our comprehensive documentation at **https://docs.trainloop.ai/development/contributing**.
