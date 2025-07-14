@@ -1,0 +1,15 @@
+---
+sidebar_position: 3
+---
+
+# Extending Studio
+
+You can customize the Next.js code under `ui/`.
+
+1. Install dependencies with `npm install` in the `ui` folder.
+2. Run `npm run dev` to start the dev server.
+3. Edit components or pages. Hot reload lets you see changes instantly.
+
+The UI queries DuckDB directly. Add new views in `ui/database/duckdb.ts` and create API routes under `ui/app/api` to expose data.
+
+Timing information comes from the `durationMs` field in your event JSONL files. Ensure your instrumentation records start and end times so charts work correctly.

@@ -1,0 +1,27 @@
+---
+sidebar_position: 4
+---
+
+# Deploying Studio
+
+Build the production bundle:
+
+```bash
+cd ui
+npm run build
+```
+
+The build output creates a standalone server. Set `TRAINLOOP_DATA_FOLDER` before starting:
+
+```bash
+export TRAINLOOP_DATA_FOLDER="/var/trainloop/data"
+node ./.next/standalone/server.js
+```
+
+Config discovery matches the CLI cascade:
+1. `--config` flag
+2. `TRAINLOOP_CONFIG_PATH` variable
+3. `trainloop.config.yaml` in your project
+4. Parent directories
+
+Deploy the server behind your preferred reverse proxy. DuckDB keeps data local so no database setup is needed.

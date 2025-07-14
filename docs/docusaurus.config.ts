@@ -70,6 +70,19 @@ const config: Config = {
     ],
   ],
 
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'ui',
+        path: 'ui',
+        routeBasePath: 'ui',
+        sidebarPath: './sidebars-ui.ts',
+        editUrl: 'https://github.com/trainloop/evals/tree/main/docs/ui/',
+      },
+    ],
+  ],
+
   themeConfig: {
     // TODO: Replace with TrainLoop social card
     // image: 'img/social-card.jpg',
