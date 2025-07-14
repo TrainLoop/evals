@@ -468,9 +468,7 @@ git push --force-with-lease origin feature/your-feature-name
 
 ### For Maintainers
 
-- **Review guidelines**: [Maintainer Guide](./maintainer-guide.md)
 - **Release process**: [Release Process](./release-process.md)
-- **Governance**: [Governance](./governance.md)
 
 ---
 

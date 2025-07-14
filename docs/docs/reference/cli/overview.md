@@ -27,7 +27,7 @@ This command creates a `trainloop/` workspace with the following structure:
 - Configuration file with sensible defaults
 - Directory structure for organizing evaluation data
 
-See the [scaffold template documentation](../../../getting-started/quick-start.md#project-initialization) for more details.
+See the [scaffold template documentation](../../getting-started/quick-start.md) for more details.
 
 ### `trainloop eval`
 
@@ -238,6 +238,5 @@ trainloop eval --config debug.yaml --verbose
 
 For more help:
 - Use `trainloop <command> --help` for command-specific help
-- Check the [troubleshooting guide](../../guides/debugging.md)
 - Visit [GitHub Discussions](https://github.com/trainloop/evals/discussions)
 - Open an issue on [GitHub](https://github.com/trainloop/evals/issues)

@@ -22,7 +22,7 @@ export default function BenchmarkNotFound() {
             <CardTitle>Benchmark Not Found</CardTitle>
           </div>
           <CardDescription>
-            The benchmark run you're looking for doesn't exist or has been removed.
+            The benchmark run you&apos;re looking for doesn&apos;t exist or has been removed.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -32,7 +32,7 @@ export default function BenchmarkNotFound() {
           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
             <li>The benchmark ID is incorrect</li>
             <li>The benchmark data has been deleted</li>
-            <li>You don't have access to this benchmark</li>
+            <li>You don&apos;t have access to this benchmark</li>
           </ul>
           <Link href="/benchmarks">
             <Button variant="outline">
