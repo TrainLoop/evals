@@ -58,7 +58,7 @@ For comprehensive documentation, installation guides, tutorials, and API referen
 
 ## License
 
-[License information would go here]
+MIT
 
 ---
 
