@@ -6,12 +6,28 @@ sidebar_position: 2
 
 Get up and running with TrainLoop Evals in under 5 minutes. This guide walks you through setting up your first evaluation project, collecting LLM data, and running your first evaluations.
 
+## What is TrainLoop Evals?
+
+TrainLoop Evals is a complete evaluation framework for LLM applications that consists of three main components:
+
+1. **SDKs** - Zero-touch instrumentation libraries that capture LLM request/response data from your application
+2. **CLI** - Command-line tool that analyzes your captured data using metrics and generates evaluation results
+3. **Studio UI** - Web interface for visualizing results, comparing models, and exploring your data
+
+### How It Works
+
+```
+Your App + SDK → Data Collection → CLI Evaluation → Studio Visualization
+    ↓               ↓                 ↓              ↓
+[LLM Calls]    [events/*.jsonl]   [results/*.json]  [Charts & Tables]
+```
+
 ## Overview
 
 In this quick start, you'll:
 
 1. **Create a workspace** - Set up the TrainLoop directory structure
-2. **Instrument your app** - Add data collection to your LLM calls
+2. **Install and configure SDKs** - Add automatic data collection to your LLM calls
 3. **Write your first metric** - Create a simple evaluation function
 4. **Run evaluations** - Execute your first evaluation suite
 5. **Visualize results** - View results in the Studio UI
@@ -26,21 +42,46 @@ cd my-llm-project
 trainloop init
 ```
 
-This creates the following structure:
+This creates the **trainloop/** folder structure that organizes your evaluation project:
+
 ```
 my-llm-project/
-├── trainloop/
-│   ├── data/                 # Data storage (auto-created)
-│   ├── eval/                 # Your evaluation code
-│   │   ├── metrics/          # Custom metrics
-│   │   └── suites/           # Test suites
-│   └── trainloop.config.yaml # Configuration
-└── .gitignore               # Pre-configured for TrainLoop
+├── trainloop/                  # TrainLoop evaluation workspace
+│   ├── data/                   # Data storage (auto-created)
+│   │   ├── events/             # Raw LLM interactions (.jsonl files)
+│   │   └── results/            # Evaluation results (.json files)
+│   ├── eval/                   # Your evaluation code
+│   │   ├── metrics/            # Custom metrics (Python functions)
+│   │   └── suites/             # Test suites (groups of metrics)
+│   └── trainloop.config.yaml   # Configuration file
+└── .gitignore                  # Pre-configured for TrainLoop
 ```
 
-## Step 2: Set Up Data Collection
+### Why the trainloop/ Folder?
 
-Configure where your LLM interaction data will be stored:
+The `trainloop/` folder is your **evaluation workspace** - separate from your application code. This separation allows you to:
+
+- **Keep evaluation logic organized** - All metrics, suites, and data in one place
+- **Version control evaluations** - Track changes to your evaluation criteria
+- **Share evaluation setups** - Team members can use the same evaluation logic
+- **Run evaluations anywhere** - Works with any application that produces LLM data
+
+## Step 2: Prerequisites
+
+Before starting, you'll need:
+
+1. **API Keys** - For the LLM providers you want to evaluate
+2. **Environment Setup** - Create a `.env` file in your project root:
+
+```bash
+# Create .env file with your API keys
+cat > .env << 'EOF'
+OPENAI_API_KEY=your-openai-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+EOF
+```
+
+3. **Data Folder Configuration** - Tell TrainLoop where to store data:
 
 ```bash
 # Set the data folder environment variable
@@ -50,11 +91,29 @@ export TRAINLOOP_DATA_FOLDER="$(pwd)/trainloop/data"
 echo 'export TRAINLOOP_DATA_FOLDER="$(pwd)/trainloop/data"' >> ~/.bashrc
 ```
 
-## Step 3: Instrument Your Application
+## Step 3: Install and Configure SDK
+
+The TrainLoop SDK automatically captures LLM request/response data from your application with **zero code changes**. Here's how to install it for your language:
+
+### Why Install the SDK?
+
+The SDK provides **automatic data collection** by:
+- **Intercepting LLM calls** - Captures requests and responses transparently
+- **Writing JSONL files** - Saves data to `trainloop/data/events/` for analysis
+- **Adding metadata** - Includes timestamps, model info, and custom tags
+- **Zero performance impact** - Async logging that doesn't slow your app
+
+### Choose Your Language
 
 Choose your application's language and follow the appropriate instructions:
 
 ### Python Application
+
+First, install the TrainLoop Python SDK:
+
+```bash
+pip install trainloop-llm-logging
+```
 
 Create a simple Python script that makes LLM calls:
 
@@ -63,10 +122,10 @@ Create a simple Python script that makes LLM calls:
 import openai
 from trainloop_llm_logging import collect, trainloop_tag
 
-# Initialize TrainLoop collection
+# Initialize TrainLoop collection - this patches OpenAI/Anthropic/etc. automatically
 collect("trainloop/trainloop.config.yaml")
 
-# Set up OpenAI client
+# Set up OpenAI client (works with existing code!)
 client = openai.OpenAI(api_key="your-api-key")
 
 def generate_greeting(name):
@@ -77,7 +136,7 @@ def generate_greeting(name):
             {"role": "system", "content": "You are a friendly assistant."},
             {"role": "user", "content": f"Generate a warm greeting for {name}"}
         ],
-        extra_headers=trainloop_tag("greeting-generation")  # Tag for evaluation
+        extra_headers=trainloop_tag("greeting-generation")  # Optional: tag for evaluation
     )
     return response.choices[0].message.content
 
@@ -92,7 +151,18 @@ Run your application:
 python app.py
 ```
 
+**What happens when you run this:**
+1. The SDK automatically captures the OpenAI API call
+2. Request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
+3. The tag `"greeting-generation"` lets you filter this data during evaluation
+
 ### TypeScript/JavaScript Application
+
+First, install the TrainLoop TypeScript SDK:
+
+```bash
+npm install trainloop-llm-logging
+```
 
 Create a Node.js application:
 
@@ -101,7 +171,7 @@ Create a Node.js application:
 const { OpenAI } = require('openai');
 const { trainloopTag } = require('trainloop-llm-logging');
 
-// Set up OpenAI client
+// Set up OpenAI client (works with existing code!)
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -114,7 +184,7 @@ async function generateGreeting(name) {
       { role: "user", content: `Generate a warm greeting for ${name}` }
     ]
   }, {
-    headers: { ...trainloopTag("greeting-generation") }  // Tag for evaluation
+    headers: { ...trainloopTag("greeting-generation") }  // Optional: tag for evaluation
   });
   
   return response.choices[0].message.content;
@@ -126,12 +196,23 @@ generateGreeting("Alice").then(greeting => {
 });
 ```
 
-Run your application with TrainLoop instrumentation:
+Run your application with automatic TrainLoop instrumentation:
 ```bash
 TRAINLOOP_DATA_FOLDER=./trainloop/data NODE_OPTIONS="--require=trainloop-llm-logging" node app.js
 ```
 
+**What happens when you run this:**
+1. The `--require=trainloop-llm-logging` flag automatically patches HTTP calls
+2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
+3. The tag `"greeting-generation"` lets you filter this data during evaluation
+
 ### Go Application
+
+First, install the TrainLoop Go SDK:
+
+```bash
+go get github.com/trainloop/evals/sdk/go/trainloop-llm-logging
+```
 
 Create a Go application:
 
@@ -150,10 +231,11 @@ import (
 )
 
 func main() {
-    // Initialize TrainLoop
+    // Initialize TrainLoop - this wraps HTTP clients automatically
     trainloop.Init()
+    defer trainloop.Shutdown()  // Ensure data is flushed
     
-    // Set up OpenAI client
+    // Set up OpenAI client (works with existing code!)
     client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
     
     // Generate greeting
@@ -181,9 +263,33 @@ func generateGreeting(client *openai.Client, name string) string {
 }
 ```
 
+Run your application:
+```bash
+TRAINLOOP_DATA_FOLDER=./trainloop/data go run main.go
+```
+
+**What happens when you run this:**
+1. `trainloop.Init()` wraps the HTTP client used by OpenAI
+2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
+3. `trainloop.Shutdown()` ensures all data is flushed to disk
+
 ## Step 4: Write Your First Metric
 
-Create a simple metric to evaluate greeting quality:
+### What are Metrics?
+
+**Metrics** are Python functions that evaluate your LLM outputs. They:
+- Take a `Sample` (request/response pair) as input
+- Return `1` for pass or `0` for fail
+- Define your evaluation criteria (accuracy, tone, format, etc.)
+
+### What are Suites?
+
+**Suites** are groups of metrics that run together. They:
+- Organize related metrics
+- Filter data by tags (e.g., only evaluate "greeting-generation" calls)
+- Generate comprehensive evaluation reports
+
+Let's create metrics to evaluate greeting quality:
 
 ```python
 # trainloop/eval/metrics/greeting_quality.py
@@ -246,6 +352,14 @@ results = tag("greeting-generation").check(
 
 ## Step 6: Run Your First Evaluation
 
+### What Happens During Evaluation?
+
+When you run `trainloop eval`, the CLI:
+1. **Reads event data** from `trainloop/data/events/*.jsonl`
+2. **Applies metrics** to each LLM request/response pair
+3. **Generates verdicts** (pass/fail decisions) for each metric
+4. **Saves results** to `trainloop/data/results/*.json`
+
 Execute your evaluation suite:
 
 ```bash
@@ -267,7 +381,23 @@ You should see output like:
 📈 Results saved to trainloop/data/results/
 ```
 
+### What are Results/Verdicts?
+
+**Results** are the output of your evaluation containing:
+- **Verdicts** - Individual pass/fail decisions for each metric
+- **Scores** - Aggregated metrics (% pass rate, averages, etc.)
+- **Metadata** - Timestamps, model info, tags, etc.
+- **Raw data** - Original request/response pairs for debugging
+
 ## Step 7: Visualize Results
+
+### What is Studio UI?
+
+**Studio UI** is a web interface that helps you:
+- **Explore evaluation results** - Interactive charts and tables
+- **Debug individual calls** - See exactly what your LLM said and why it passed/failed
+- **Track performance over time** - Monitor how metrics change across versions
+- **Compare models** - See which LLM performs best for your use case
 
 Launch the Studio UI to explore your results:
 
@@ -277,10 +407,11 @@ trainloop studio
 
 This opens your browser to `http://localhost:3000` where you can:
 
-- 📊 View evaluation results in interactive charts
-- 📋 Browse individual LLM calls and their evaluations
-- 📈 Track metrics over time
-- 🔍 Filter and search through your data
+- 📊 **View evaluation results** in interactive charts and tables
+- 📋 **Browse individual LLM calls** and their evaluation verdicts
+- 📈 **Track metrics over time** across different runs
+- 🔍 **Filter and search** through your data by tags, models, dates
+- 🔧 **Debug failures** by seeing exact input/output pairs
 
 ## Step 8: Iterate and Improve
 
@@ -324,6 +455,15 @@ trainloop:
 
 ### 📊 Benchmarking
 
+**Benchmarking** lets you compare multiple LLM providers on the same tasks to find the best model for your use case.
+
+#### What Does Benchmarking Give You?
+
+- **Model comparison** - See which LLM performs best on your specific metrics
+- **Cost analysis** - Compare performance vs. cost for different providers
+- **Objective evaluation** - Data-driven model selection instead of guesswork
+- **Regression testing** - Ensure new models don't hurt your performance
+
 Compare multiple LLM providers:
 
 ```bash
@@ -334,6 +474,12 @@ cp trainloop/.env.example trainloop/.env
 # Run benchmarks
 trainloop benchmark
 ```
+
+This will:
+1. **Re-run your prompts** against different LLM providers
+2. **Apply your metrics** to each provider's responses
+3. **Generate comparison results** showing which model performs best
+4. **Display results in Studio UI** with side-by-side comparisons
 
 ### 🎯 Advanced Metrics
 
