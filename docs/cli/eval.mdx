@@ -1,0 +1,44 @@
+---
+id: cli-eval
+title: trainloop eval
+sidebar_position: 3
+---
+
+## Tutorial
+
+After collecting events with the SDK you run `trainloop eval` to produce results.
+
+```bash
+trainloop eval
+```
+
+## How‑to
+
+Run a single suite by name:
+
+```bash
+trainloop eval --suite my_suite
+```
+
+Use a custom config file:
+
+```bash
+trainloop eval --config path/to/custom.yaml
+```
+
+## Reference
+
+Evaluates events from the configured data folder and appends results under `trainloop/data/results/`.
+
+Options:
+
+- `--suite <name>` – run only the specified suite.
+- `--config <path>` – path to `trainloop.config.yaml`.
+
+Configuration files are discovered using a cascade. The command checks the `--config` argument, then the `TRAINLOOP_CONFIG_PATH` environment variable, and finally looks for `trainloop.config.yaml` in parent directories.
+
+## Explanation
+
+`trainloop eval` loads metrics and suites from `trainloop/eval/`. It processes new events in `trainloop/data/events/`. Results are stored alongside the events. When using the LLM judge, traces are consolidated under `trainloop/data/judge_traces/`.
+
+See [Configuration](./config) and [Environment Variables](./env-vars) for more details.

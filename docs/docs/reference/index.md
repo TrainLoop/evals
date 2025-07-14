@@ -9,16 +9,16 @@ This section contains detailed API documentation and reference materials for Tra
 ## CLI Reference
 
 ### Commands
-- **[CLI Overview](./cli/overview.md)** - Complete CLI command reference
-- **[trainloop init](./cli/init.md)** - Initialize a new evaluation workspace
-- **[trainloop eval](./cli/eval.md)** - Run evaluation suites
-- **[trainloop studio](./cli/studio.md)** - Launch the Studio UI
-- **[trainloop add](./cli/add.md)** - Add metrics and suites from registry
-- **[trainloop benchmark](./cli/benchmark.md)** - Compare multiple LLM providers
+- **[CLI Overview](../../cli/overview)** - Complete CLI command reference
+- **[trainloop init](../../cli/init)** - Initialize a new evaluation workspace
+- **[trainloop eval](../../cli/eval)** - Run evaluation suites
+- **[trainloop studio](../../cli/studio)** - Launch the Studio UI
+- **[trainloop add](../../cli/add)** - Add metrics and suites from registry
+- **[trainloop benchmark](../../cli/benchmark)** - Compare multiple LLM providers
 
 ### Configuration
-- **[trainloop.config.yaml](./cli/config.md)** - Configuration file reference
-- **[Environment Variables](./cli/env-vars.md)** - Environment variable reference
+- **[trainloop.config.yaml](../../cli/config)** - Configuration file reference
+- **[Environment Variables](../../cli/env-vars)** - Environment variable reference
 
 ### Technical Specifications
 - **[Benchmark Schema](./benchmark-schema.md)** - Data schema for benchmark results
