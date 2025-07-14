@@ -3,6 +3,8 @@
   "position": 4,
   "link": {
     "type": "generated-index",
-    "description": "Understanding concepts and design decisions"
+    "title": "Understanding TrainLoop Evals",
+    "description": "Deep dive into concepts, design decisions, and best practices for TrainLoop Evals.",
+    "slug": "/explanation"
   }
 }

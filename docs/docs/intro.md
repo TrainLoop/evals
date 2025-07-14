@@ -81,24 +81,14 @@ TrainLoop Evals is perfect for:
 
 ## Architecture Overview
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Your App     │    │   TrainLoop     │    │   Studio UI     │
-│                 │    │   CLI           │    │                 │
-│  ┌───────────┐  │    │  ┌───────────┐  │    │  ┌───────────┐  │
-│  │    SDK    │──┼────┼─▶│   eval    │──┼────┼─▶│   Viz     │  │
-│  └───────────┘  │    │  └───────────┘  │    │  └───────────┘  │
-│                 │    │                 │    │                 │
-│  LLM Calls      │    │  Metrics &      │    │  Charts &       │
-│  Auto-logged    │    │  Suites         │    │  Tables         │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-        │                       │                       │
-        ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   JSONL Files   │    │   Results       │    │   Interactive   │
-│   (events)      │    │   (verdicts)    │    │   Analysis      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+![TrainLoop Evals Flow](/trainloop-evals-flow.png)
+
+TrainLoop Evals provides a complete workflow from data collection to analysis:
+
+- **Multi-language SDKs** automatically capture LLM interactions from your applications
+- **Event storage** preserves all request/response data in JSONL format
+- **Evaluation engine** applies custom metrics and suites to generate results
+- **Studio UI** provides interactive visualization and benchmarking capabilities
 
 ## Getting Started
 

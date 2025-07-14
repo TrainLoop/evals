@@ -16,11 +16,16 @@ TrainLoop Evals is a complete evaluation framework for LLM applications that con
 
 ### How It Works
 
-```
-Your App + SDK → Data Collection → CLI Evaluation → Studio Visualization
-    ↓               ↓                 ↓              ↓
-[LLM Calls]    [events/*.jsonl]   [results/*.json]  [Charts & Tables]
-```
+![TrainLoop Evals Flow](/trainloop-evals-flow.png)
+
+The complete TrainLoop Evals workflow:
+
+1. **Your Application** (Python/TypeScript/Go) makes LLM calls
+2. **TrainLoop SDK** automatically captures request/response data
+3. **Events** are stored as JSONL files in your data folder
+4. **CLI Tool** processes events using your custom metrics and suites
+5. **Evaluation Engine** applies metrics and generates results/benchmarks
+6. **Studio UI** provides interactive visualization and analysis
 
 ## Overview
 

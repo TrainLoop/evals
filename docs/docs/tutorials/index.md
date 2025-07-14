@@ -6,6 +6,12 @@ sidebar_position: 1
 
 Welcome to the TrainLoop Evals tutorials! These step-by-step guides will take you from complete beginner to advanced user.
 
+## TrainLoop Evals Architecture
+
+![TrainLoop Evals Flow](/trainloop-evals-flow.png)
+
+TrainLoop Evals is a comprehensive evaluation framework that captures LLM interactions, applies custom metrics, and provides powerful visualization tools for analysis and model comparison.
+
 ## Learning Path
 
 Follow these tutorials in order for the best learning experience:
