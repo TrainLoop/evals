@@ -268,7 +268,6 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/). Ple
 
 - **Review guidelines**: See [Pull Request Process](./pull-request-process.md)
 - **Release process**: See [Release Process](./release-process.md)
-- **Governance**: See [Governance](./governance.md)
 
 ## Resources
 
