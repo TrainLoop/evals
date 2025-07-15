@@ -63,8 +63,8 @@ By completing these tutorials, you'll be able to:
 
 ## Need Help?
 
-- **Stuck on a tutorial?** Check our [troubleshooting guide](../docs/getting-started/quick-start.md#troubleshooting)
-- **Want to go deeper?** Explore our [guides](../guides/index.md)
+- **Stuck on a tutorial?** Check our [guides](../guides/)
+- **Want to go deeper?** Explore our [guides](../guides/)
 - **Need reference information?** Check our [reference documentation](../reference/index.md)
 
 Ready to start? Begin with the [Quick Start Guide](getting-started.md)!

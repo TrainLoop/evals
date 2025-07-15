@@ -49,16 +49,16 @@ The CLI respects these environment variables:
 |---------|-------------|
 | [`init`](init.md) | Initialize a new TrainLoop project |
 | [`eval`](eval.md) | Run evaluation suites |
-| [`studio`](studio) | Launch the Studio UI |
-| [`add`](add) | Add components from the registry |
-| [`benchmark`](benchmark) | Compare LLM providers |
+| [`studio`](studio.md) | Launch the Studio UI |
+| [`add`](add.md) | Add components from the registry |
+| [`benchmark`](benchmark.md) | Compare LLM providers |
 
 ### Configuration
 
 | Command | Description |
 |---------|-------------|
-| [`config`](config) | Configuration file format and options |
-| [`env-vars`](env-vars) | Environment variable reference |
+| [`config`](config.md) | Configuration file format and options |
+| [`env-vars`](env-vars.md) | Environment variable reference |
 
 ## Quick Examples
 
@@ -170,7 +170,7 @@ trainloop studio
 
 ## Next Steps
 
-- [Initialize a project](init) - Set up your first TrainLoop project
-- [Run evaluations](eval) - Execute your evaluation suites
-- [Launch Studio UI](studio) - Visualize your results
-- [Configuration guide](config) - Configure TrainLoop behavior
+- [Initialize a project](init.md) - Set up your first TrainLoop project
+- [Run evaluations](eval.md) - Execute your evaluation suites
+- [Launch Studio UI](studio.md) - Visualize your results
+- [Configuration guide](config.md) - Configure TrainLoop behavior
