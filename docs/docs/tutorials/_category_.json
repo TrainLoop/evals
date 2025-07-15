@@ -1,10 +1,4 @@
 {
   "label": "Tutorials",
-  "position": 1,
-  "link": {
-    "type": "generated-index",
-    "title": "Tutorials",
-    "description": "Step-by-step tutorials to learn TrainLoop Evals from basics to advanced usage.",
-    "slug": "/tutorials"
-  }
+  "position": 1
 }

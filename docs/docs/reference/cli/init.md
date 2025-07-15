@@ -228,7 +228,7 @@ trainloop init --force
 
 ## See Also
 
-- [eval](eval.md) - Run evaluation suites
-- [studio](studio.md) - Launch Studio UI
-- [Configuration](config.md) - Configure TrainLoop behavior
-- [SDK Reference](../sdk/index.md) - Instrument your application
+- [eval](eval) - Run evaluation suites
+- [studio](studio) - Launch Studio UI
+- [Configuration](config) - Configure TrainLoop behavior
+- [SDK Reference](../sdk/) - Instrument your application

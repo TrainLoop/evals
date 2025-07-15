@@ -892,7 +892,7 @@ You've completed the TrainLoop Evals tutorial series! You now have the knowledge
 
 ## Next Steps
 
-- Explore the [how-to guides](../how-to/index.md) for specific implementation patterns
+- Explore the [guides](../guides/index.md) for specific implementation patterns
 - Check the [reference documentation](../reference/index.md) for detailed API information
 - Join the community and share your experiences
 

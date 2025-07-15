@@ -211,7 +211,7 @@ TrainLoop Evals follows semantic versioning:
 ### Documentation
 
 - **[Tutorials](../tutorials/index.md)** - Step-by-step learning
-- **[How-to Guides](../how-to/index.md)** - Problem-solving guides
+- **[How-to Guides](../guides/index.md)** - Problem-solving guides
 - **[Explanation](../explanation/index.md)** - Conceptual information
 
 ### Community
