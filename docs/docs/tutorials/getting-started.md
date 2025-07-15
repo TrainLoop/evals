@@ -161,6 +161,8 @@ python app.py
 2. Request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
 3. The tag `"greeting-generation"` lets you filter this data during evaluation
 
+> **📚 For complete Python SDK documentation, see [Python SDK API Reference](../reference/sdk/python/api.md)**
+
 ### TypeScript/JavaScript Application
 
 First, install the TrainLoop TypeScript SDK:
@@ -210,6 +212,8 @@ TRAINLOOP_DATA_FOLDER=./trainloop/data NODE_OPTIONS="--require=trainloop-llm-log
 1. The `--require=trainloop-llm-logging` flag automatically patches HTTP calls
 2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
 3. The tag `"greeting-generation"` lets you filter this data during evaluation
+
+> **📚 For complete TypeScript SDK documentation, see [TypeScript SDK API Reference](../reference/sdk/typescript/api.md)**
 
 ### Go Application
 
@@ -277,6 +281,8 @@ TRAINLOOP_DATA_FOLDER=./trainloop/data go run main.go
 1. `trainloop.Init()` wraps the HTTP client used by OpenAI
 2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
 3. `trainloop.Shutdown()` ensures all data is flushed to disk
+
+> **📚 For complete Go SDK documentation, see [Go SDK API Reference](../reference/sdk/go/api.md)**
 
 ## Step 4: Write Your First Metric
 
