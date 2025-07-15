@@ -1,8 +1,10 @@
 {
-  "label": "CLI Reference",
+  "label": "CLI",
   "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "Complete CLI command reference and documentation"
+    "title": "CLI Reference",
+    "description": "Complete command-line interface reference for TrainLoop Evals.",
+    "slug": "/reference/cli"
   }
 }

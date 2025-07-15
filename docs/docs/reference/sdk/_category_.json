@@ -1,0 +1,10 @@
+{
+  "label": "SDKs",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "title": "SDK Reference",
+    "description": "Complete SDK reference for Python, TypeScript, and Go instrumentation libraries.",
+    "slug": "/reference/sdk"
+  }
+}

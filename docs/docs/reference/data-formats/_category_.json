@@ -1,0 +1,10 @@
+{
+  "label": "Data Formats",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "Data Formats",
+    "description": "Complete reference for TrainLoop Evals data formats including events, results, and configuration.",
+    "slug": "/reference/data-formats"
+  }
+}

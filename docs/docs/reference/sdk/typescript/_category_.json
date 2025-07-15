@@ -1,0 +1,10 @@
+{
+  "label": "TypeScript",
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "title": "TypeScript SDK",
+    "description": "TypeScript/JavaScript SDK reference for TrainLoop Evals instrumentation.",
+    "slug": "/reference/sdk/typescript"
+  }
+}
