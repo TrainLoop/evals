@@ -558,6 +558,7 @@ trainloop add suite sample
 ### Getting Help
 
 - **Documentation**: Browse the [guides](../guides/) and [reference](../reference/)
+- **Discord**: Join our [community](https://discord.gg/9NsEzwys) for help and discussions
 - **GitHub Issues**: [Report bugs or ask questions](https://github.com/trainloop/evals/issues)
 - **Examples**: Check the [demo repository](https://github.com/trainloop/chat-ui-demo)
 

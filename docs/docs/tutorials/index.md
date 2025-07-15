@@ -66,5 +66,6 @@ By completing these tutorials, you'll be able to:
 - **Stuck on a tutorial?** Check our [guides](../guides/)
 - **Want to go deeper?** Explore our [guides](../guides/)
 - **Need reference information?** Check our [reference documentation](../reference/index.md)
+- **Join the community?** Ask questions on [Discord](https://discord.gg/9NsEzwys)
 
 Ready to start? Begin with the [Quick Start Guide](getting-started.md)!

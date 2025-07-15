@@ -216,6 +216,7 @@ TrainLoop Evals follows semantic versioning:
 
 ### Community
 
+- **[Discord](https://discord.gg/9NsEzwys)** - Join the community for help and discussions
 - **[GitHub Issues](https://github.com/trainloop/evals/issues)** - Bug reports and feature requests
 - **[Discussions](https://github.com/trainloop/evals/discussions)** - Community questions
 - **[Contributing](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md)** - How to contribute
