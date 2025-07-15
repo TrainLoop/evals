@@ -1,0 +1,24 @@
+---
+id: cli-config
+title: trainloop.config.yaml
+sidebar_position: 7
+---
+
+The CLI loads settings from `trainloop.config.yaml`. A minimal file looks like:
+
+```yaml
+# trainloop.config.yaml
+project: my-evals
+```
+
+Place the file in your project root or inside the `trainloop/` folder. You can override the location with the `--config` option or the [`TRAINLOOP_CONFIG_PATH`](./env-vars#trainloop_config_path) environment variable.
+
+Configuration files are resolved in this order:
+
+1. `--config` argument
+2. `TRAINLOOP_CONFIG_PATH` environment variable
+3. `trainloop.config.yaml` in the current directory
+4. `trainloop/trainloop.config.yaml` in the current directory
+5. The same search repeated in parent directories
+
+Values in nearer files override those found earlier in the search.

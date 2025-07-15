@@ -1,0 +1,48 @@
+---
+id: cli-add
+title: trainloop add
+sidebar_position: 5
+---
+
+## Tutorial
+
+List available registry components:
+
+```bash
+trainloop add --list
+```
+
+Install a metric:
+
+```bash
+trainloop add metric always_pass
+```
+
+## How‑to
+
+Use a local registry while developing new metrics:
+
+```bash
+trainloop add --registry ../registry metric custom_metric
+```
+
+Force overwrite existing files:
+
+```bash
+trainloop add metric my_metric --force
+```
+
+## Reference
+
+Adds metrics or suites from the TrainLoop registry into your project.
+
+Options:
+
+- `--list` – list available components.
+- `--force` – overwrite existing files.
+- `--registry <path>` – use a local registry directory.
+- `--version <tag>` – pull components from a specific CLI version.
+
+## Explanation
+
+Registry components include reusable metrics and suites. After adding them you can modify the source under `trainloop/eval/`. Use [`trainloop_tag`](../docs/getting-started/quick-start.md#trainloop_tag) in your SDK calls to label requests for evaluation.

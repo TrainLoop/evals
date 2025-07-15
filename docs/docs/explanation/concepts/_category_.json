@@ -1,0 +1,10 @@
+{
+  "label": "Concepts",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "title": "Core Concepts",
+    "description": "Understand the fundamental concepts and architecture of TrainLoop Evals.",
+    "slug": "/explanation/concepts"
+  }
+}

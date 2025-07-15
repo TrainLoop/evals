@@ -4,105 +4,225 @@ sidebar_position: 1
 
 # Reference
 
-This section contains detailed API documentation and reference materials for TrainLoop Evals.
+Complete API reference and technical documentation for TrainLoop Evals.
 
-## CLI Reference
+## Overview
 
-### Commands
-- **[CLI Overview](./cli/overview.md)** - Complete CLI command reference
-- **[trainloop init](./cli/init.md)** - Initialize a new evaluation workspace
-- **[trainloop eval](./cli/eval.md)** - Run evaluation suites
-- **[trainloop studio](./cli/studio.md)** - Launch the Studio UI
-- **[trainloop add](./cli/add.md)** - Add metrics and suites from registry
-- **[trainloop benchmark](./cli/benchmark.md)** - Compare multiple LLM providers
+This reference section provides comprehensive technical documentation for all TrainLoop Evals components. Use this section to find detailed information about APIs, configuration options, and data formats.
+
+## Quick Navigation
+
+### Command Line Interface
+
+- **[CLI Overview](cli/index.md)** - Complete command reference
+- **[trainloop init](cli/init.md)** - Initialize projects
+- **[trainloop eval](cli/eval.md)** - Run evaluations
+- **[trainloop studio](cli/studio.md)** - Launch Studio UI
+- **[trainloop add](cli/add.md)** - Add registry components
+- **[trainloop benchmark](cli/benchmark.md)** - Compare models
+- **[Configuration](cli/config.md)** - YAML configuration reference
+- **[Environment Variables](cli/env-vars.md)** - Environment variable reference
+
+### SDKs
+
+- **[SDK Overview](sdk/index.md)** - Multi-language SDK documentation
+- **[Python SDK](sdk/python/api.md)** - Python API reference
+- **[TypeScript SDK](sdk/typescript/api.md)** - TypeScript/JavaScript API reference
+- **[Go SDK](sdk/go/api.md)** - Go API reference
+
+### Data Formats
+
+- **[Data Formats Overview](data-formats/index.md)** - Data format documentation
+- **[Event Data](data-formats/events.md)** - LLM interaction data schema
+- **[Results Data](data-formats/results.md)** - Evaluation results schema
+
+## Component Overview
+
+### TrainLoop CLI
+
+The command-line interface provides:
+- Project initialization and scaffolding
+- Evaluation execution and management
+- Studio UI launching and configuration
+- Registry component management
+- Model benchmarking and comparison
+
+### TrainLoop SDKs
+
+Zero-touch instrumentation libraries for:
+- **Python**: `trainloop-llm-logging` package
+- **TypeScript/JavaScript**: `trainloop-llm-logging` npm package
+- **Go**: `trainloop-llm-logging` module
+
+### Data Pipeline
+
+TrainLoop processes data through these stages:
+1. **Collection** - SDKs capture LLM interactions
+2. **Storage** - Events saved as JSONL files
+3. **Evaluation** - CLI applies metrics to events
+4. **Analysis** - Studio UI provides visualization
+
+## API Patterns
+
+### Consistent Interfaces
+
+All TrainLoop components follow consistent patterns:
+
+```python
+# Python SDK
+collect(config_path)
+trainloop_tag("tag-name")
+```
+
+```bash
+# CLI commands
+trainloop init
+trainloop eval --suite my-suite
+trainloop studio --port 8080
+```
+
+```javascript
+// TypeScript SDK
+trainloopTag("tag-name")
+```
 
 ### Configuration
-- **[trainloop.config.yaml](./cli/config.md)** - Configuration file reference
-- **[Environment Variables](./cli/env-vars.md)** - Environment variable reference
 
-### Technical Specifications
-- **[Benchmark Schema](./benchmark-schema.md)** - Data schema for benchmark results
+All components use consistent configuration:
 
-## SDK Reference
+```yaml
+# trainloop.config.yaml
+trainloop:
+  data_folder: "./data"
+  log_level: "info"
+  
+  judge:
+    models: ["openai/gpt-4o-mini"]
+    
+  benchmark:
+    providers: ["openai/gpt-4o", "anthropic/claude-3-sonnet"]
+```
 
-### Python SDK
-- **[API Reference](./sdk/python/api.md)** - Complete Python API documentation
-- **[Configuration](./sdk/python/config.md)** - Python SDK configuration
-- **[Types](./sdk/python/types.md)** - Type definitions and interfaces
+### Error Handling
 
-### TypeScript SDK
-- **[API Reference](./sdk/typescript/api.md)** - Complete TypeScript API documentation
-- **[Configuration](./sdk/typescript/config.md)** - TypeScript SDK configuration
-- **[Types](./sdk/typescript/types.md)** - Type definitions and interfaces
+All components use consistent error handling:
 
-### Go SDK
-- **[API Reference](./sdk/go/api.md)** - Complete Go API documentation
-- **[Configuration](./sdk/go/config.md)** - Go SDK configuration
-- **[Types](./sdk/go/types.md)** - Type definitions and interfaces
+```python
+# Python - graceful degradation
+try:
+    collect()
+except Exception as e:
+    logger.warning(f"TrainLoop initialization failed: {e}")
+    # Continue without instrumentation
+```
 
-## Evaluation System
+## Integration Examples
 
-### Metrics
-- **[Metric API](./evaluation/metrics.md)** - Writing custom metrics
-- **[Built-in Metrics](./evaluation/builtin-metrics.md)** - Available metrics
-- **[Metric Registry](./evaluation/registry.md)** - Metric discovery and management
+### Basic Workflow
 
-### Test Suites
-- **[Suite API](./evaluation/suites.md)** - Creating test suites
-- **[Suite Configuration](./evaluation/suite-config.md)** - Suite configuration options
-- **[Suite Registry](./evaluation/suite-registry.md)** - Suite discovery and management
+```bash
+# 1. Initialize project
+trainloop init
 
-### LLM Judge
-- **[Judge API](./evaluation/judge.md)** - LLM judge functionality
-- **[Judge Configuration](./evaluation/judge-config.md)** - Judge configuration options
-- **[Judge Prompts](./evaluation/judge-prompts.md)** - Customizing judge prompts
+# 2. Set up environment
+export TRAINLOOP_DATA_FOLDER="$(pwd)/trainloop/data"
+export OPENAI_API_KEY="your-key"
 
-## Studio UI
+# 3. Run instrumented application
+python your_app.py
 
-### API Endpoints
-- **[Events API](./studio/events.md)** - Event data endpoints
-- **[Results API](./studio/results.md)** - Evaluation results endpoints
-- **[Benchmarks API](./studio/benchmarks.md)** - Benchmark data endpoints
+# 4. Run evaluation
+trainloop eval
 
-### Database Schema
-- **[DuckDB Schema](./studio/schema.md)** - Database schema reference
-- **[Data Types](./studio/data-types.md)** - Data type definitions
+# 5. View results
+trainloop studio
+```
 
-## Data Formats
+### CI/CD Integration
 
-### File Formats
-- **[Event Format](./data/events.md)** - LLM event JSONL format
-- **[Result Format](./data/results.md)** - Evaluation result format
-- **[Benchmark Format](./data/benchmarks.md)** - Benchmark data format
+```yaml
+# .github/workflows/eval.yml
+- name: Run evaluations
+  run: |
+    trainloop eval --config ci.config.yaml
+    trainloop benchmark --max-samples 50
+```
 
-### Registry Formats
-- **[Metric Config](./data/metric-config.md)** - Metric configuration format
-- **[Suite Config](./data/suite-config.md)** - Suite configuration format
+### Production Deployment
 
-## Integration
+```dockerfile
+# Dockerfile
+FROM python:3.11
+RUN pip install trainloop-cli
+CMD ["trainloop", "studio", "--host", "0.0.0.0"]
+```
 
-### Cloud Storage
-- **[S3 Integration](./integration/s3.md)** - Amazon S3 setup
-- **[GCS Integration](./integration/gcs.md)** - Google Cloud Storage setup
-- **[Azure Integration](./integration/azure.md)** - Azure Blob Storage setup
+## Performance Considerations
 
-### CI/CD
-- **[GitHub Actions](./integration/github-actions.md)** - GitHub Actions integration
-- **[GitLab CI](./integration/gitlab-ci.md)** - GitLab CI integration
-- **[Jenkins](./integration/jenkins.md)** - Jenkins integration
+### SDK Performance
 
-## Coming Soon
+- **Buffering**: Events are buffered for efficient I/O
+- **Async logging**: Non-blocking data collection
+- **Memory usage**: Configurable buffer sizes
 
-We're actively working on comprehensive reference documentation for each of these topics. Documentation will be added based on community feedback and common use cases.
+### CLI Performance
 
-## Contributing
+- **Parallel processing**: Multiple evaluation processes
+- **Caching**: Results cached to avoid re-evaluation
+- **Incremental processing**: Only process new events
 
-Want to contribute to the documentation? We welcome community contributions! Please see our [Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md) for details.
+### Data Volume
 
-## Questions?
+- **Event size**: Typical event is 1-5KB
+- **Storage growth**: Plan for ~1MB per 1000 events
+- **Retention**: Configure automatic cleanup
 
-If you need help with a specific API or feature:
+## Security Considerations
 
-- Check the [Guides](../guides/) for practical examples
-- Review the [Explanation](../explanation/) for conceptual understanding
-- [Open an issue](https://github.com/trainloop/evals/issues) for questions
+### Data Protection
+
+- **Encryption**: Optional encryption at rest
+- **Access control**: File-based permissions
+- **Audit logging**: All operations logged
+
+### API Security
+
+- **Key management**: Secure API key storage
+- **Rate limiting**: Respect provider limits
+- **Error handling**: No sensitive data in logs
+
+## Versioning and Compatibility
+
+### Semantic Versioning
+
+TrainLoop Evals follows semantic versioning:
+- **Major**: Breaking changes
+- **Minor**: New features, backward compatible
+- **Patch**: Bug fixes
+
+### Compatibility
+
+- **Data formats**: Backward compatible
+- **API interfaces**: Deprecated features marked
+- **Migration tools**: Automatic data migration
+
+## Getting Help
+
+### Documentation
+
+- **[Tutorials](../tutorials/index.md)** - Step-by-step learning
+- **[How-to Guides](../guides/)** - Problem-solving guides
+- **[Explanation](../explanation/index.md)** - Conceptual information
+
+### Community
+
+- **[Discord](https://discord.gg/9NsEzwys)** - Join the community for help and discussions
+- **[GitHub Issues](https://github.com/trainloop/evals/issues)** - Bug reports and feature requests
+- **[Discussions](https://github.com/trainloop/evals/discussions)** - Community questions
+- **[Contributing](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md)** - How to contribute
+
+## See Also
+
+- [Architecture](../explanation/concepts/architecture.md) - System architecture overview
+- [Getting Started](../tutorials/getting-started.md) - Quick start guide
+- [Production Setup](../tutorials/production-setup.md) - Deployment guide

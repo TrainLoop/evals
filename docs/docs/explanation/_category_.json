@@ -1,8 +1,4 @@
 {
   "label": "Explanation",
-  "position": 4,
-  "link": {
-    "type": "generated-index",
-    "description": "Understanding concepts and design decisions"
-  }
+  "position": 4
 }

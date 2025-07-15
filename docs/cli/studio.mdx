@@ -1,0 +1,40 @@
+---
+id: cli-studio
+title: trainloop studio
+sidebar_position: 4
+---
+
+## Tutorial
+
+Run `trainloop studio` to start the local UI on port 3000.
+
+```bash
+trainloop studio
+```
+
+## How‑to
+
+Specify a different port:
+
+```bash
+trainloop studio --port 8080
+```
+
+Launch using a local tarball for development:
+
+```bash
+trainloop studio --local trainloop-studio-runner.tgz
+```
+
+## Reference
+
+Starts the Studio UI using the data folder defined in your configuration. Options:
+
+- `--config <path>` – path to a config file.
+- `--local <tar>` – path to a local Studio build.
+- `--port <number>` – HTTP port.
+- `--host <address>` – host binding address.
+
+## Explanation
+
+The Studio server reads evaluation results from the configured data folder. Ensure `TRAINLOOP_DATA_FOLDER` points to a valid path and that the folder exists. The config cascade matches the [`trainloop eval`](./eval) command. See [Environment Variables](./env-vars) for details.

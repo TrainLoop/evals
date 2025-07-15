@@ -10,7 +10,7 @@
     "deploy": "docusaurus deploy",
     "deploy:gh-pages": "docusaurus deploy --out-dir build",
     "clear": "docusaurus clear",
-    "serve": "docusaurus serve",
+    "dev": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
     "typecheck": "tsc",

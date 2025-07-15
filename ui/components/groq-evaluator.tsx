@@ -39,7 +39,7 @@ export function GroqEvaluator({ referenceText }: GroqEvaluatorProps) {
     <Card>
       <CardHeader>
         <CardTitle>Groq Model Evaluation</CardTitle>
-        <CardDescription>Test your prompts with Groq's LLM models</CardDescription>
+        <CardDescription>Test your prompts with Groq&apos;s LLM models</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">

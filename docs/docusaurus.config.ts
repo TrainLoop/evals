@@ -57,6 +57,31 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'cli',
+        path: 'cli',
+        routeBasePath: 'cli',
+        sidebarPath: './cli/sidebars.ts',
+        editUrl: 'https://github.com/trainloop/evals/tree/main/docs/cli/',
+      },
+    ],
+  ],
+
+  plugins: [
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'ui',
+        path: 'ui',
+        routeBasePath: 'ui',
+        sidebarPath: './sidebars-ui.ts',
+        editUrl: 'https://github.com/trainloop/evals/tree/main/docs/ui/',
+      },
+    ],
+  ],
 
   themeConfig: {
     // TODO: Replace with TrainLoop social card
