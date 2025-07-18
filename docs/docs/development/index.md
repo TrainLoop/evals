@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Use these pages to set up your local environment and understand how to contribute to TrainLoop.
 
-You can also browse our [DeepWiki](https://deepwiki.com/TrainLoop/evals) to chat directly with the codebase instead of digging through docs. It's the purest form of talking to your documentation.
+You can also browse our [DeepWiki](https://deepwiki.com/TrainLoop/evals) to chat directly with the codebase instead of digging through docs.
 
 ## Getting Started
 
