@@ -141,8 +141,13 @@ describe('Config Loading', () => {
       });
       process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
-      // Should throw when data_folder is empty
-      expect(() => loadConfig()).toThrow('TRAINLOOP_DATA_FOLDER not set');
+      // Should warn when data_folder is empty (no longer throws)
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      loadConfig();
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('TRAINLOOP_DATA_FOLDER not set')
+      );
+      consoleSpy.mockRestore();
     });
 
     it('should set default host allowlist if not specified', () => {
