@@ -110,7 +110,7 @@ Want to see TrainLoop Evals in action? Check out our demo:
 
 - **[GitHub Repository](https://github.com/trainloop/evals)** - Source code and issues
 - **[Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md)** - How to contribute
-- **[DeepWiki](https://deepwiki.com/TrainLoop/evals)** - Chat directly with the codebase instead of reading docs. It's the purest form of talking to your documentation.
+- **[DeepWiki](https://deepwiki.com/TrainLoop/evals)** - Chat directly with the codebase instead of reading docs.
 - **[License](https://github.com/trainloop/evals/blob/main/LICENSE)** - MIT License
 
 Get started today and transform how you evaluate and improve your LLM applications!
