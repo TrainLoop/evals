@@ -11,9 +11,11 @@ Tags subsequent LLM calls with a custom identifier.
 
 ### `flush(): Promise<void>`
 Manually flushes buffered events to disk. Only works after `collect()` has been called.
+Note: Despite the async signature, this executes synchronously.
 
 ### `shutdown(): Promise<void>`
 Flushes all buffered events and closes the SDK. Always call this before exiting.
+Note: Despite the async signature, this executes synchronously.
 
 ### `HEADER_NAME`
 The HTTP header name used for tagging requests.
