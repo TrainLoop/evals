@@ -1,6 +1,10 @@
 # 🤖📊 TrainLoop Evals
 
+[![DeepWiki Badge](https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2FTrainLoop%2Fevals)](https://deepwiki.com/TrainLoop/evals)
+
 TrainLoop Evals is a comprehensive LLM evaluation framework designed for developers who need simple, vendor-independent evaluation tools.
+
+[DeepWiki](https://deepwiki.com/TrainLoop/evals) lets you chat directly with this codebase rather than wading through documentation. It's the purest form of talking to your docs.
 
 ## Core Principles
 
