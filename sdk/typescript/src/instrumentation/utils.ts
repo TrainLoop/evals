@@ -207,11 +207,27 @@ export function parseRequestBody(s: string): ParsedRequestBody | undefined {
  * @returns Object with just a 'content' key
  */
 export function parseResponseBody(s: string): ParsedResponseBody | undefined {
-    const body = safeJsonParse<ParsedResponseBody>(s);
-    if (!body || !body.content) {
+    const body = safeJsonParse<any>(s);
+    if (!body) {
         return undefined;
     }
-    return body;
+    
+    // If it already has content field, return that
+    if (body.content) {
+        return { content: body.content };
+    }
+    
+    // Try to extract content from OpenAI/Anthropic response format
+    const content = body?.choices?.[0]?.message?.content || 
+                   body?.choices?.[0]?.text ||
+                   body?.content?.[0]?.text || // Anthropic format
+                   null;
+    
+    if (typeof content === 'string') {
+        return { content };
+    }
+    
+    return undefined;
 }
 
 export const reqBodies = new WeakMap<ClientRequest, Buffer>();
@@ -316,7 +332,9 @@ export function formatStreamedContent(raw: string): string {
 export async function cloneResponseForLogging(res: Response): Promise<string> {
     // If it's not a streaming response or doesn't have a body, just use text()
     if (!res.body || !res.headers.get('content-type')?.includes('text/event-stream')) {
-        return await res.clone().text();
+        const text = await res.clone().text();
+        // Format non-streaming responses too
+        return formatStreamedContent(text);
     }
 
     // For streaming responses, we need to be careful to clone without consuming the stream
