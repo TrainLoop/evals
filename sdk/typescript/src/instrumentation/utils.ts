@@ -248,16 +248,26 @@ export const getFetchHost = (resource: RequestInfo | URL): string | undefined =>
 // Format streamed responses into a meaningful summary for logging
 export function formatStreamedContent(raw: string): string {
     try {
+        // ----- Regular JSON response (non-streaming) -----
+        const js = JSON.parse(raw);
+        const first = js?.choices?.[0];
+        const content = first?.message?.content ?? (typeof first?.text === 'string' ? first.text : undefined);
+        if (typeof content === 'string') {
+            return JSON.stringify({ content });
+        }
+    } catch {
+        // not a plain JSON response, fall through to streaming handlers
+    }
+
+    try {
         // Special handling for OpenAI streaming format
         if (raw.includes('data:') && raw.includes('"choices"')) {
-            // Extract all content pieces from the stream
             const contentPieces: string[] = [];
             const dataLines = raw.split('\n');
 
             for (const line of dataLines) {
                 if (!line.startsWith('data:') || line.includes('[DONE]')) continue;
 
-                // Parse the JSON from each 'data:' line
                 const jsonStr = line.replace('data:', '').trim();
                 if (!jsonStr) continue;
 
@@ -267,10 +277,9 @@ export function formatStreamedContent(raw: string): string {
                 }
             }
 
-            // Join the content pieces to form the complete message
             const fullContent = contentPieces.join('');
             if (fullContent) {
-                return `{ "content": "${fullContent.replace(/"/g, '\\"')}" }`;
+                return JSON.stringify({ content: fullContent });
             }
         }
 
@@ -286,7 +295,6 @@ export function formatStreamedContent(raw: string): string {
                 if (!jsonStr) continue;
 
                 const data = JSON.parse(jsonStr);
-                // Extract text from content_block_delta events
                 if (data.type === 'content_block_delta' && data.delta?.text) {
                     contentPieces.push(data.delta.text);
                 }
@@ -294,14 +302,13 @@ export function formatStreamedContent(raw: string): string {
 
             const fullContent = contentPieces.join('');
             if (fullContent) {
-                return `{ "content": "${fullContent.replace(/"/g, '\\"')}" }`;
+                return JSON.stringify({ content: fullContent });
             }
         }
-    } catch (e) {
+    } catch {
         // Fall back to the raw response if parsing fails
     }
 
-    // For other types of responses or if parsing failed
     return raw.length > 500 ? raw.substring(0, 500) + '... [truncated]' : raw;
 }
 

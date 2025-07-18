@@ -100,6 +100,8 @@ process.env.NODE_OPTIONS = '--require=trainloop-llm-logging';
 // - fetch() calls
 // - http/https module usage
 // - Popular LLM SDK calls
+// Response bodies from common providers are simplified to
+// `{ "content": "<assistant reply>" }` for easier parsing
 ```
 
 **Key Components:**
