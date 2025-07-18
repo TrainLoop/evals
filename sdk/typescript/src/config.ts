@@ -58,9 +58,9 @@ export const loadConfig = () => {
                 : path.resolve(path.dirname(configPath), dataFolder);
             process.env.TRAINLOOP_DATA_FOLDER = absoluteDataFolder;
         } else {
-            throw new Error(
+            console.warn(
                 "TRAINLOOP_DATA_FOLDER not set in environment and not found in config file. " +
-                "Please set the environment variable or provide a valid config file."
+                "SDK will be disabled unless the variable is set."
             );
         }
     }
