@@ -22,12 +22,6 @@ export const loadConfig = () => {
     const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST;
     const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL;
 
-    // If all variables are already set, no need to load config
-    if (dataFolderSet && hostAllowlistSet && logLevelSet) {
-        console.debug("All TrainLoop environment variables already set, skipping config file");
-        return;
-    }
-
     // Determine config path - prioritize env var, then auto-discovery
     const configPath = process.env.TRAINLOOP_CONFIG_PATH ??
         (fs.existsSync(path.join(process.cwd(), "trainloop/trainloop.config.yaml"))
@@ -48,6 +42,9 @@ export const loadConfig = () => {
         console.debug(`TrainLoop config file not found at ${configPath}`);
     }
 
+    // Track what we're using from config vs environment
+    const configUsed: string[] = [];
+
     // Set environment variables, prioritizing existing values
     if (!dataFolderSet) {
         if (configData && configData.data_folder) {
@@ -57,6 +54,7 @@ export const loadConfig = () => {
                 ? dataFolder
                 : path.resolve(path.dirname(configPath), dataFolder);
             process.env.TRAINLOOP_DATA_FOLDER = absoluteDataFolder;
+            configUsed.push("data_folder");
         } else {
             console.warn(
                 "TRAINLOOP_DATA_FOLDER not set in environment and not found in config file. " +
@@ -68,6 +66,7 @@ export const loadConfig = () => {
     if (!hostAllowlistSet) {
         if (configData && configData.host_allowlist) {
             process.env.TRAINLOOP_HOST_ALLOWLIST = configData.host_allowlist.join(",");
+            configUsed.push("host_allowlist");
         } else {
             // Use default host allowlist if not set anywhere
             process.env.TRAINLOOP_HOST_ALLOWLIST = DEFAULT_HOST_ALLOWLIST.join(",");
@@ -77,9 +76,22 @@ export const loadConfig = () => {
     if (!logLevelSet) {
         if (configData && configData.log_level) {
             process.env.TRAINLOOP_LOG_LEVEL = configData.log_level.toUpperCase();
+            configUsed.push("log_level");
         } else {
             // Use default log level if not set anywhere
             process.env.TRAINLOOP_LOG_LEVEL = "WARN";
         }
+    }
+
+    // Log summary of what was loaded
+    if (configUsed.length > 0) {
+        console.debug(`Using config values for: ${configUsed.join(", ")}`);
+    }
+    if (dataFolderSet || hostAllowlistSet || logLevelSet) {
+        const envVars = [];
+        if (dataFolderSet) envVars.push("data_folder");
+        if (hostAllowlistSet) envVars.push("host_allowlist");
+        if (logLevelSet) envVars.push("log_level");
+        console.debug(`Using environment variables for: ${envVars.join(", ")}`);
     }
 };
