@@ -24,19 +24,51 @@ export function trainloopTag(tag: string): Record<string, string> {
 
 // Global exporter instance
 let globalExporter: FileExporter | null = null;
+let isInitialized = false;
 
-const init = async () => {
+/**
+ * Initialize the SDK (idempotent). Does nothing unless
+ * TRAINLOOP_DATA_FOLDER is set.
+ * 
+ * @param flushImmediately - If true, flush each LLM call immediately (useful for testing)
+ */
+export async function collect(flushImmediately: boolean = false): Promise<void> {
+  if (isInitialized) {
+    return;
+  }
+
   // First load the config from the trainloop folder if available
   loadConfig();
+  
+  if (!process.env.TRAINLOOP_DATA_FOLDER) {
+    console.warn("[TrainLoop] TRAINLOOP_DATA_FOLDER not set - SDK disabled");
+    return;
+  }
+
   await import("./instrumentation");
-  globalExporter = new FileExporter();
+  globalExporter = new FileExporter(undefined, undefined, flushImmediately);
   patchHttp(http, globalExporter);
   patchHttp(https, globalExporter);
   patchFetch(globalExporter);
+  
+  isInitialized = true;
+  console.log("[TrainLoop] TrainLoop Evals SDK initialized");
 }
 
-// Initialize the SDK
-init();
+// Initialize the SDK automatically
+collect();
+
+/**
+ * Manually flush any buffered LLM calls to disk.
+ * Useful for testing or when you want to ensure data is written immediately.
+ */
+export async function flush(): Promise<void> {
+  if (globalExporter) {
+    globalExporter.flush();
+  } else {
+    console.warn("[TrainLoop] SDK not initialized - call collect() first");
+  }
+}
 
 /**
  * Graceful shutdown - exports remaining data and cleans up resources
