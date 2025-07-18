@@ -12,11 +12,17 @@ export class FileExporter {
     private exportAtLength = 5;
     private exportAtInterval = 10000;
     private exportingFlag = false;
+    private flushImmediately = false;
 
-    constructor(exportAtInterval?: number, exportAtLength?: number) {
+    constructor(exportAtInterval?: number, exportAtLength?: number, flushImmediately?: boolean) {
         this.exportAtInterval = exportAtInterval ?? this.exportAtInterval;
         this.exportAtLength = exportAtLength ?? this.exportAtLength;
-        this.exportInterval = setInterval(() => this.export(), this.exportAtInterval);
+        this.flushImmediately = flushImmediately ?? false;
+        
+        // Start periodic flush timer only when NOT in flushImmediately mode
+        if (!this.flushImmediately) {
+            this.exportInterval = setInterval(() => this.export(), this.exportAtInterval);
+        }
     }
 
     /**
@@ -27,7 +33,7 @@ export class FileExporter {
         if (callData.isLLMRequest) {
             this.callBuffer.push(callData);
             logger.debug(`Recorded LLM call, new buffer: ${inspect(this.callBuffer)}`);
-            if (this.callBuffer.length >= this.exportAtLength) {
+            if (this.flushImmediately || this.callBuffer.length >= this.exportAtLength) {
                 this.export();
             }
         }
@@ -50,9 +56,14 @@ export class FileExporter {
             return false;
         }
 
+        // Copy & clear buffer atomically to avoid writing duplicates if timer
+        // fires while we are exporting (especially when flushImmediately=true).
+        const toWrite = this.callBuffer;
+        this.callBuffer = [];
+
         try {
             const samples: CollectedSample[] = [];
-            for (const call of this.callBuffer) {
+            for (const call of toWrite) {
                 // Skip if not an LLM request or missing request body
                 if (!call.isLLMRequest || !call.requestBodyStr) {
                     continue;
@@ -98,8 +109,6 @@ export class FileExporter {
             // Save all samples at once
             if (samples.length > 0) {
                 saveSamples(folder, samples);
-                // Clear the buffer after successful export
-                this.callBuffer = [];
             }
             this.exportingFlag = false;
             return true;
