@@ -67,7 +67,7 @@ function checkForEarlyImports(): void {
  * 
  * @param flushImmediately - If true, flush each LLM call immediately (useful for testing)
  */
-export async function collect(flushImmediately: boolean = false): Promise<void> {
+export function collect(flushImmediately: boolean = false): void {
   logger.debug(`collect() called with flushImmediately=${flushImmediately}`);
   
   // Check for early imports before initialization
@@ -82,7 +82,8 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
   // This incurs no runtime cost because the module is cached, but still passes
   // through the patched require hook used in the logger-timing test suite.
   require("./logger");
-  // Additional explicit requires to make module load order observable in tests
+  // Load key internal modules early so their loggers pick up any configuration
+  // that may have been provided via environment variables or config files.
   ["./config", "./instrumentation/fetch", "./instrumentation/http"].forEach((p) => {
     try {
       require(p);
@@ -98,9 +99,8 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
     if (currentFlushMode !== flushImmediately) {
       logger.warn(`SDK already initialized with flushImmediately=${currentFlushMode}, reinitializing with flushImmediately=${flushImmediately}`);
       console.warn(
-        `[TrainLoop] SDK is being reinitialized with different settings.\n` +
-        `Note: When using NODE_OPTIONS="--require=trainloop-llm-logging", the SDK auto-initializes.\n` +
-        `You don't need to call collect() manually unless you want to change settings (e.g., enable instant flush).`
+        `[TrainLoop] SDK is being re-initialized with different settings.\n` +
+        `When using NODE_OPTIONS="--require=trainloop-llm-logging" the SDK auto-initializes, so you typically only need to call collect() if you want to change settings – for example to enable instant-flush during debugging.`
       );
       
       // Shutdown existing exporter
@@ -113,8 +113,7 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
     } else {
       logger.debug("SDK already initialized with same settings, skipping");
       console.info(
-        `[TrainLoop] SDK already initialized. ` +
-        `When using NODE_OPTIONS="--require=trainloop-llm-logging", you don't need to call collect() manually.`
+        `[TrainLoop] SDK already initialized – additional collect() calls are only necessary if you wish to modify settings (e.g., enable/disable instant flush).`
       );
       return;
     }
@@ -175,18 +174,17 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
   isInitialized = true;
   logger.info("TrainLoop Evals SDK initialized successfully");
   console.log("[TrainLoop] TrainLoop Evals SDK initialized");
-
-  // ensure the async signature resolves
-  return Promise.resolve();
 }
 
 // Initialize the SDK automatically (unless disabled)
 if (!process.env.TRAINLOOP_DISABLE_AUTO_INIT) {
   logger.debug("Auto-initializing SDK...");
-  collect().catch((err) => {
+  try {
+    collect();
+  } catch (err) {
     logger.error(`Auto-initialization failed: ${err}`);
     console.error("[TrainLoop] Auto-initialization failed:", err);
-  });
+  }
 } else {
   logger.debug("Auto-initialization disabled via TRAINLOOP_DISABLE_AUTO_INIT");
 }
