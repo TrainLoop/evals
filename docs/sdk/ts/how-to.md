@@ -1,5 +1,48 @@
 # TypeScript SDK How-To
 
+## Initialize the SDK
+
+**Important**: The TrainLoop SDK must be initialized before importing any HTTP client libraries (like OpenAI, Anthropic, Axios, etc.). This ensures proper request interception.
+
+### Correct Import Order
+
+```typescript
+// 1. FIRST: Import and initialize TrainLoop
+import { collect, trainloopTag } from 'trainloop-llm-logging';
+collect(); // Synchronous initialization
+
+// 2. THEN: Import HTTP client libraries
+import OpenAI from 'openai';
+
+// 3. Create clients with TrainLoop headers
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  defaultHeaders: trainloopTag('my-feature')
+});
+```
+
+### Wrong Import Order (Will Show Error)
+
+```typescript
+// ❌ WRONG: Importing OpenAI before TrainLoop
+import OpenAI from 'openai';
+import { collect } from 'trainloop-llm-logging';
+
+collect(); // This will throw an error!
+```
+
+The SDK will display a clear error message if HTTP clients are imported too early:
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║ TrainLoop SDK Warning: HTTP client libraries imported before initialization   ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║ The following libraries were imported before TrainLoop SDK was initialized:   ║
+║ openai                                                                        ║
+║                                                                               ║
+║ This prevents the SDK from capturing LLM calls correctly.                    ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+```
+
 ## Flush data immediately
 Use the `FLUSH_IMMEDIATELY` env var:
 ```bash
@@ -9,7 +52,7 @@ export TRAINLOOP_FLUSH_IMMEDIATELY=true
 Or programmatically:
 ```typescript
 import { collect } from 'trainloop-llm-logging';
-await collect(true);  // Enable instant flush
+collect(true);  // Enable instant flush (now synchronous!)
 ```
 
 ## Tag requests

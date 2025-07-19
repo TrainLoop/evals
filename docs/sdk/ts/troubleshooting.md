@@ -2,31 +2,58 @@
 
 ## Common Issues
 
+### Import Order Error: HTTP Client Libraries Imported Before SDK
+
+**Symptoms**: Error message about HTTP client libraries being imported before TrainLoop initialization.
+
+**Cause**: The SDK needs to patch HTTP libraries before they create client instances. If you import libraries like OpenAI, Anthropic, or Axios before initializing TrainLoop, the SDK can't intercept their requests.
+
+**Solution**: Always import and initialize TrainLoop FIRST:
+```typescript
+// ✅ CORRECT ORDER
+import { collect, trainloopTag } from 'trainloop-llm-logging';
+collect(); // Now synchronous! No await needed
+
+// Then import HTTP clients
+import OpenAI from 'openai';
+```
+
+**Note**: The `collect()` function is now synchronous, allowing initialization at the module level without `await`.
+
 ### Events Not Being Written to Disk
 
 **Symptoms**: No `.jsonl` files appear in the data folder after running your script.
 
 **Causes & Solutions**:
 
-1. **Short-lived scripts exiting too quickly**
+1. **HTTP client imported before SDK**
+   - See "Import Order Error" above
+   - The SDK will show a clear error if this happens
+
+2. **Short-lived scripts exiting too quickly**
    - Solution: Use instant flush mode
    ```typescript
-   await collect(true);  // Enable instant flush
+   collect(true);  // Enable instant flush (synchronous)
    ```
    
-2. **Auto-initialization with NODE_OPTIONS in short scripts**
+3. **Auto-initialization with NODE_OPTIONS in short scripts**
    - Problem: `NODE_OPTIONS="--require=trainloop-llm-logging"` may not flush before exit
    - Solution: Use explicit initialization instead
    ```typescript
    import { collect, shutdown } from 'trainloop-llm-logging';
-   await collect();
+   collect();
    // ... your code ...
-   await shutdown();  // Note: shutdown is async but doesn't return a promise
+   await shutdown();
    ```
 
-3. **Missing await on async operations**
-   - Ensure you're awaiting `collect()`
-   - Note: `flush()` and `shutdown()` are async functions but work synchronously
+4. **Missing TrainLoop headers on OpenAI client**
+   - Ensure you're using `defaultHeaders` with `trainloopTag`:
+   ```typescript
+   const openai = new OpenAI({
+     apiKey: process.env.OPENAI_API_KEY,
+     defaultHeaders: trainloopTag('my-tag')
+   });
+   ```
 
 ### Debug Logs Not Appearing
 

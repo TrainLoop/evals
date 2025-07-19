@@ -8,6 +8,35 @@ npm install trainloop-llm-logging
 
 ## Basic Usage
 
+### Step 1: Import Order is Critical!
+
+**⚠️ Important**: Always import and initialize TrainLoop BEFORE importing any HTTP client libraries.
+
+```javascript
+// ✅ CORRECT: TrainLoop first
+import { collect, trainloopTag } from 'trainloop-llm-logging';
+collect(); // Synchronous - no await needed!
+
+// Then import HTTP clients
+import OpenAI from 'openai';
+
+// ❌ WRONG: This will throw an error
+import OpenAI from 'openai';
+import { collect } from 'trainloop-llm-logging';
+collect(); // Error: OpenAI imported before TrainLoop!
+```
+
+### Step 2: Tag Your LLM Calls
+
+Use `trainloopTag` to categorize your LLM calls:
+
+```javascript
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  defaultHeaders: trainloopTag('my-feature')
+});
+```
+
 ### For Long-Running Applications
 
 Use auto-initialization with NODE_OPTIONS:
@@ -23,8 +52,8 @@ NODE_OPTIONS="--require=trainloop-llm-logging" node index.js
 ```javascript
 import { collect } from 'trainloop-llm-logging';
 
-// Enable instant flush mode
-await collect(true);
+// Enable instant flush mode (synchronous)
+collect(true);
 
 // Your LLM calls here...
 ```
@@ -33,12 +62,47 @@ await collect(true);
 ```javascript
 import { collect, shutdown } from 'trainloop-llm-logging';
 
-await collect();
+collect(); // Synchronous initialization
 
 // Your LLM calls here...
 
 // Always flush before exiting
 await shutdown();
+```
+
+## Complete Example
+
+Here's a complete working example:
+
+```javascript
+// example.js
+import { collect, trainloopTag } from 'trainloop-llm-logging';
+
+// 1. Initialize TrainLoop first (synchronous)
+collect(true); // true = instant flush for short scripts
+
+// 2. Now import OpenAI
+import OpenAI from 'openai';
+
+async function main() {
+  // 3. Create OpenAI client with TrainLoop headers
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    defaultHeaders: trainloopTag('tutorial-example')
+  });
+
+  // 4. Make LLM calls - they'll be automatically captured
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+
+  console.log(completion.choices[0].message.content);
+  
+  // Events are automatically saved to ./trainloop/data/events/
+}
+
+main();
 ```
 
 ## Configuration
