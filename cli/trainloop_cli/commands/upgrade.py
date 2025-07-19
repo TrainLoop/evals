@@ -63,6 +63,8 @@ def upgrade_command() -> None:
 
     _recreate_venv(trainloop_dir)
 
+    import importlib
+    importlib.invalidate_caches()
     version = metadata.version("trainloop-cli")
     _update_config_version(trainloop_dir, version)
 
