@@ -39,7 +39,7 @@ def collect(
     """
     global _IS_INIT, _EXPORTER, _LAST_DATA_FOLDER
 
-    # Ensure config/env is loaded on every call (safe – no-op if already done)
+    print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
 
     data_folder = os.environ.get("TRAINLOOP_DATA_FOLDER")
