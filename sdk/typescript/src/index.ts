@@ -113,7 +113,7 @@ export function collect(flushImmediately: boolean = false): void {
     } else {
       logger.debug("SDK already initialized with same settings, skipping");
       console.info(
-        `[TrainLoop] SDK already initialized – additional collect() calls are only necessary if you wish to modify settings (e.g., enable/disable instant flush).`
+        `[TrainLoop] SDK already initialized - additional collect() calls are only necessary if you wish to modify settings (e.g., enable/disable instant flush).`
       );
       return;
     }
