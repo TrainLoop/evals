@@ -24,38 +24,49 @@ def trainloop_tag(tag: str) -> dict[str, str]:
 
 _IS_INIT = False
 _EXPORTER = None
+_LAST_DATA_FOLDER = None
 
 
 def collect(
     trainloop_config_path: str | None = None, flush_immediately: bool = False
 ) -> None:
     """
-    Initialize the SDK (idempotent).  Does nothing unless
-    TRAINLOOP_DATA_FOLDER is set.
+    Initialize the SDK (idempotent per TRAINLOOP_DATA_FOLDER).
 
-    Args:
-        trainloop_config_path: Path to config file (optional)
-        flush_immediately: If True, flush each LLM call immediately (useful for testing)
+    If called multiple times with a *different* ``TRAINLOOP_DATA_FOLDER`` value we
+    spin up a fresh exporter so that successive test runs (which each point the
+    env-var at a brand-new temp directory) stay fully isolated.
     """
-    global _IS_INIT, _EXPORTER
-    if _IS_INIT:
-        return
+    global _IS_INIT, _EXPORTER, _LAST_DATA_FOLDER
 
-    print("[TrainLoop] Loading config...")
+    # Ensure config/env is loaded on every call (safe – no-op if already done)
     load_config_into_env(trainloop_config_path)
-    if "TRAINLOOP_DATA_FOLDER" not in os.environ:
+
+    data_folder = os.environ.get("TRAINLOOP_DATA_FOLDER")
+    if not data_folder:
         logger_module.register_logger.warning(
             "TRAINLOOP_DATA_FOLDER not set - SDK disabled"
         )
         return
 
-    _EXPORTER = FileExporter(
-        flush_immediately=flush_immediately
-    )  # flushes every 10 s or 5 items (or immediately if flush_immediately=True)
-    install_patches(_EXPORTER)  # monkey-patch outbound HTTP
+    # Re-initialise exporter if (a) we have never initialised OR (b) the data
+    # folder changed since the last call (common in pytest where each test sets
+    # a unique temp directory).
+    should_reinit = (_EXPORTER is None) or (_LAST_DATA_FOLDER != data_folder)
 
-    _IS_INIT = True
-    logger_module.register_logger.info("TrainLoop Evals SDK initialized")
+    if should_reinit:
+        _EXPORTER = FileExporter(flush_immediately=flush_immediately)
+        install_patches(_EXPORTER)  # safe to call multiple times (idempotent)
+        _LAST_DATA_FOLDER = data_folder
+        _IS_INIT = True
+        logger_module.register_logger.info(
+            "TrainLoop Evals SDK initialized (data dir=%s)", data_folder
+        )
+    else:
+        # Exporter is already pointing at the correct directory – optionally
+        # update flush behaviour if the caller asks for immediate flushes.
+        if flush_immediately and not _EXPORTER._flush_immediately:  # type: ignore[attr-defined]
+            _EXPORTER._flush_immediately = True
 
 
 def flush() -> None:
