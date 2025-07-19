@@ -7,6 +7,10 @@ import { createLogger } from "./logger";
 
 const logger = createLogger("trainloop-config");
 
+// Track which config file was last loaded to detect changes
+let lastLoadedConfigPath: string | null = null;
+let configSetEnvVars: Set<string> = new Set();
+
 export const loadConfig = () => {
     /**
      * Load TrainLoop configuration into environment variables.
@@ -22,16 +26,6 @@ export const loadConfig = () => {
      */
     logger.debug("Starting config load process");
     
-    // Check which environment variables are already set
-    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER;
-    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST;
-    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL;
-    
-    logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
-    if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
-    if (hostAllowlistSet) logger.debug(`  TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
-    if (logLevelSet) logger.debug(`  TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
-
     // Determine config path - prioritize env var, then auto-discovery
     logger.debug(`Config path resolution: TRAINLOOP_CONFIG_PATH=${process.env.TRAINLOOP_CONFIG_PATH || "(not set)"}`);
     logger.debug(`Current working directory: ${process.cwd()}`);
@@ -46,6 +40,27 @@ export const loadConfig = () => {
         (fs.existsSync(trainloopSubdirPath) ? trainloopSubdirPath : rootPath);
     
     logger.debug(`Selected config path: ${configPath}`);
+    
+    // Check if config path changed - if so, reset environment vars that were set by config
+    if (lastLoadedConfigPath !== null && lastLoadedConfigPath !== configPath) {
+        logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting config-set env vars`);
+        // Temporarily disable this feature to avoid potential infinite loops
+        // for (const envVar of configSetEnvVars) {
+        //     delete process.env[envVar];
+        //     logger.debug(`Reset ${envVar}`);
+        // }
+        // configSetEnvVars.clear();
+    }
+    
+    // Check which environment variables are already set (excluding those we set from config)
+    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER && !configSetEnvVars.has('TRAINLOOP_DATA_FOLDER');
+    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST && !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST');
+    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL && !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
+    
+    logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
+    if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
+    if (hostAllowlistSet) logger.debug(`  TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
+    if (logLevelSet) logger.debug(`  TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
 
     // Try to load config file
     let configData: TrainloopConfig["trainloop"] | null = null;
@@ -88,6 +103,7 @@ export const loadConfig = () => {
             logger.debug(`Resolved data_folder to: ${absoluteDataFolder}`);
             process.env.TRAINLOOP_DATA_FOLDER = absoluteDataFolder;
             configUsed.push("data_folder");
+            configSetEnvVars.add("TRAINLOOP_DATA_FOLDER");
         } else {
             logger.warn("TRAINLOOP_DATA_FOLDER not set in environment and not found in config file");
             console.warn(
@@ -106,6 +122,7 @@ export const loadConfig = () => {
             logger.debug(`Setting host_allowlist from config: ${allowlist}`);
             process.env.TRAINLOOP_HOST_ALLOWLIST = allowlist;
             configUsed.push("host_allowlist");
+            configSetEnvVars.add("TRAINLOOP_HOST_ALLOWLIST");
         } else {
             // Use default host allowlist if not set anywhere
             const defaultList = DEFAULT_HOST_ALLOWLIST.join(",");
@@ -123,6 +140,7 @@ export const loadConfig = () => {
             logger.debug(`Setting log_level from config: ${level}`);
             process.env.TRAINLOOP_LOG_LEVEL = level;
             configUsed.push("log_level");
+            configSetEnvVars.add("TRAINLOOP_LOG_LEVEL");
         } else {
             // Use default log level if not set anywhere
             logger.debug("Using default log_level: WARN");
@@ -150,4 +168,7 @@ export const loadConfig = () => {
         logger.info(`Using environment variables for: ${envVars.join(", ")}`);
         console.debug(`Using environment variables for: ${envVars.join(", ")}`);
     }
+    
+    // Remember this config path for next time
+    lastLoadedConfigPath = configPath;
 };
