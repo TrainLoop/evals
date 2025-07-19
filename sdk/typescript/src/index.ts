@@ -105,7 +105,7 @@ export function collect(flushImmediately: boolean = false): void {
     console.error(errorMessage);
     
     // Throw error to make it clear this needs to be fixed
-    throw new Error(`TrainLoop SDK must be initialized before importing '${libs}'.\nThis prevents the SDK from capturing LLM calls correctly.\nFix: Move 'import { collect } from \"trainloop-llm-logging\"; await collect();' to the very top of your entry point.`);
+    throw new Error(`TrainLoop SDK must be initialized before importing '${libs}'.\nThis prevents the SDK from capturing LLM calls correctly.\nFix: Move 'import { collect } from \"trainloop-llm-logging\"; collect();' to the very top of your entry point.`);
   }
   
   if (!process.env.TRAINLOOP_DATA_FOLDER) {
