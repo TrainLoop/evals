@@ -1,7 +1,7 @@
 import http, { ClientRequest, IncomingMessage } from "node:http";
 import https from "node:https";
 import { PassThrough } from "node:stream";
-import { EXPECTED_LLM_PROVIDER_URLS } from "../index";
+import { getExpectedLlmProviderUrls } from "../index";
 import { FileExporter } from "../exporter";
 import { getCallerSite, getCallerStack, getAndRemoveHeader, fullUrl, drain, formatStreamedContent, reqBodies } from "./utils";
 import { HEADER_NAME } from "../index";
@@ -63,8 +63,9 @@ export function patchHttp(mod: typeof http | typeof https, exporter: FileExporte
                 const ms = t1 - t0;
                 const host = getHost(opts);
                 logger.debug(`Extracted host: ${host}`);
+                const allowedUrls = getExpectedLlmProviderUrls();
 
-                if (host && EXPECTED_LLM_PROVIDER_URLS.includes(host)) {
+                if (host && allowedUrls.includes(host)) {
                     logger.debug(`Host ${host} is in allowlist, logging LLM call`);
                     // Format the response body if it's a streaming response
                     const formattedBody = formatStreamedContent(body);
