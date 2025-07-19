@@ -120,7 +120,7 @@ export function collect(flushImmediately: boolean = false): void {
 ║ Fix: Move these lines to the very top of your entry point:                   ║
 ║   import { collect } from 'trainloop-llm-logging';                           ║
 ║   await collect();                                                            ║
-║   // then import {${libs}} and other libraries                               ║
+║   // then import ${libs} and other libraries                               ║
 ║                                                                               ║
 ║ The SDK needs to patch HTTP libraries before they create client instances.    ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝`;
