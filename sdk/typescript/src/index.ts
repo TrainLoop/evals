@@ -76,21 +76,6 @@ export function collect(flushImmediately: boolean = false): void {
   // Always load the config in case the config path changed
   logger.debug("Loading config...");
   loadConfig();
-
-  // Trigger an explicit require for the logger module so instrumentation tests
-  // that spy on Module.prototype.require can observe the loading order.
-  // This incurs no runtime cost because the module is cached, but still passes
-  // through the patched require hook used in the logger-timing test suite.
-  require("./logger");
-  // Load key internal modules early so their loggers pick up any configuration
-  // that may have been provided via environment variables or config files.
-  ["./config", "./instrumentation/fetch", "./instrumentation/http"].forEach((p) => {
-    try {
-      require(p);
-    } catch {
-      /* ignore */
-    }
-  });
   
   if (isInitialized) {
     // If SDK is already initialized, check if this is a different configuration
