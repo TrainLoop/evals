@@ -43,19 +43,20 @@ export const loadConfig = () => {
     
     // Check if config path changed - if so, reset environment vars that were set by config
     if (lastLoadedConfigPath !== null && lastLoadedConfigPath !== configPath) {
-        logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting config-set env vars`);
-        // Temporarily disable this feature to avoid potential infinite loops
-        // for (const envVar of configSetEnvVars) {
-        //     delete process.env[envVar];
-        //     logger.debug(`Reset ${envVar}`);
-        // }
-        // configSetEnvVars.clear();
+        logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting previously set env vars`);
+        // Clear internal tracking so subsequent config loads can reapply as needed
+        configSetEnvVars.clear();
     }
     
     // Check which environment variables are already set (excluding those we set from config)
-    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER && !configSetEnvVars.has('TRAINLOOP_DATA_FOLDER');
-    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST && !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST');
-    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL && !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
+    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER;
+    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST &&
+        !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST') &&
+        process.env.TRAINLOOP_HOST_ALLOWLIST !== DEFAULT_HOST_ALLOWLIST.join(",");
+
+    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL && (
+        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL') || process.env.TRAINLOOP_LOG_LEVEL?.toUpperCase() !== "WARN"
+    );
     
     logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
     if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
@@ -128,6 +129,7 @@ export const loadConfig = () => {
             const defaultList = DEFAULT_HOST_ALLOWLIST.join(",");
             logger.debug(`Using default host_allowlist: ${defaultList}`);
             process.env.TRAINLOOP_HOST_ALLOWLIST = defaultList;
+            configSetEnvVars.add("TRAINLOOP_HOST_ALLOWLIST");
         }
     } else {
         logger.debug(`Using existing TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
@@ -145,6 +147,7 @@ export const loadConfig = () => {
             // Use default log level if not set anywhere
             logger.debug("Using default log_level: WARN");
             process.env.TRAINLOOP_LOG_LEVEL = "WARN";
+            configSetEnvVars.add("TRAINLOOP_LOG_LEVEL");
         }
     } else {
         logger.debug(`Using existing TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);

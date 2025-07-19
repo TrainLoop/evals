@@ -59,7 +59,8 @@
     "timekeeper": "^2.3.1",
     "ts-jest": "^29.1.1",
     "typescript": "^5.4.5",
-    "yalc": "^1.0.0-pre.53"
+    "yalc": "^1.0.0-pre.53",
+    "ts-node": "^10.9.1"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

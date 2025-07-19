@@ -1,4 +1,5 @@
-import { getExpectedLlmProviderUrls, HEADER_NAME } from "../index";
+import { getExpectedLlmProviderUrls } from "../env";
+import { HEADER_NAME } from "../constants";
 import { FileExporter } from "../exporter";
 import { getAndRemoveHeader, getCallerSite, getCallerStack, getFetchHost, cloneResponseForLogging } from "./utils";
 import { createLogger } from "../logger";
