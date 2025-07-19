@@ -114,7 +114,7 @@ trainloop:
     process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
     // Step 3: Explicit collect should load the config
-    await sdk.collect(true);
+    sdk.collect(true);
 
     // Verify config was loaded
     expect(process.env.TRAINLOOP_DATA_FOLDER).toContain('data');
@@ -187,7 +187,7 @@ trainloop:
 
     try {
       // Re-initialize to pick up the new log level
-      await sdk.collect(true);
+      sdk.collect(true);
 
       // Debug logs should now appear (with lazy logger fix)
       const debugLogs = consoleSpy.mock.calls

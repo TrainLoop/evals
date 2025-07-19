@@ -118,7 +118,7 @@ describe('Auto-Initialization Integration Test', () => {
     expect(tag).toHaveProperty(sdk.HEADER_NAME, 'late-env-test');
 
     // Explicit collect should pick up new environment
-    await sdk.collect(true);
+    sdk.collect(true);
   });
 
   it('should work with NODE_OPTIONS pattern', async () => {
@@ -176,7 +176,7 @@ describe('Auto-Initialization Integration Test', () => {
     expect(tag).toHaveProperty(sdk.HEADER_NAME, 'disabled-test');
 
     // These should not throw even when SDK is disabled
-    await expect(sdk.collect(true)).resolves.not.toThrow();
+    expect(() => sdk.collect(true)).not.toThrow();
     await expect(sdk.flush()).resolves.not.toThrow();
     await expect(sdk.shutdown()).resolves.not.toThrow();
   });

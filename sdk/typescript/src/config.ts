@@ -52,11 +52,11 @@ export const loadConfig = () => {
     const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER;
     const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST &&
         !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST') &&
-        process.env.TRAINLOOP_HOST_ALLOWLIST !== DEFAULT_HOST_ALLOWLIST.join(",");
+        process.env.TRAINLOOP_HOST_ALLOWLIST !== DEFAULT_HOST_ALLOWLIST.join(',');
 
-    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL && (
-        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL') || process.env.TRAINLOOP_LOG_LEVEL?.toUpperCase() !== "WARN"
-    );
+    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL &&
+        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL') &&
+        process.env.TRAINLOOP_LOG_LEVEL.toUpperCase() !== 'WARN';
     
     logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
     if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
