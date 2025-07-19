@@ -11,10 +11,15 @@ interface Logger {
 
 export function createLogger(scope: string): Logger {
   let logger: Logger | null = null;
+  let cachedLogLevel: string | undefined = undefined;
 
   function getLogger(): Logger {
-    if (!logger) {
-      const env = (process.env.TRAINLOOP_LOG_LEVEL || DEFAULT_LEVEL).toLowerCase() as Level;
+    const currentLogLevel = process.env.TRAINLOOP_LOG_LEVEL;
+    
+    // Invalidate cached logger if log level changed
+    if (!logger || cachedLogLevel !== currentLogLevel) {
+      cachedLogLevel = currentLogLevel;
+      const env = (currentLogLevel || DEFAULT_LEVEL).toLowerCase() as Level;
       const threshold = ORDER[env] ?? ORDER.info;
 
       function log(level: Level, msg: string): void {
