@@ -29,23 +29,84 @@ export function trainloopTag(tag: string): Record<string, string> {
 let globalExporter: FileExporter | null = null;
 let isInitialized = false;
 
+// Track HTTP client libraries that were imported before SDK initialization
+const importedLibraries = new Set<string>();
+
+// Common HTTP client libraries to check
+const HTTP_CLIENT_LIBS = ["openai", "anthropic", "@anthropic-ai/sdk", "axios", "got", "node-fetch", "superagent"];
+
+// Check if problematic libraries are loaded
+function checkForEarlyImports(): void {
+  logger.debug(`Checking for early imports of HTTP client libraries...`);
+  
+  // Check require.cache for any modules that might contain HTTP clients
+  const cacheKeys = Object.keys(require.cache);
+  
+  for (const lib of HTTP_CLIENT_LIBS) {
+    // Check if the library name appears in any cached module path
+    const found = cacheKeys.some(key => {
+      const normalizedKey = key.replace(/\\/g, '/');
+      return normalizedKey.includes(`/node_modules/${lib}/`) || 
+             normalizedKey.includes(`/${lib}/index.js`) ||
+             normalizedKey.endsWith(`/${lib}.js`);
+    });
+    
+    if (found) {
+      logger.debug(`Found early import of ${lib}`);
+      importedLibraries.add(lib);
+    }
+  }
+  
+  logger.debug(`Early imports found: ${Array.from(importedLibraries).join(', ') || 'none'}`);
+}
+
 /**
  * Initialize the SDK (idempotent). Does nothing unless
  * TRAINLOOP_DATA_FOLDER is set.
  * 
  * @param flushImmediately - If true, flush each LLM call immediately (useful for testing)
  */
-export async function collect(flushImmediately: boolean = false): Promise<void> {
+export function collect(flushImmediately: boolean = false): void {
   logger.debug(`collect() called with flushImmediately=${flushImmediately}`);
   
-  if (isInitialized) {
-    logger.debug("SDK already initialized, skipping");
-    return;
-  }
-
-  // First load the config from the trainloop folder if available
+  // Check for early imports before initialization
+  checkForEarlyImports();
+  
+  // Always load the config in case the config path changed
   logger.debug("Loading config...");
   loadConfig();
+  
+  if (isInitialized) {
+    logger.debug("SDK already initialized, skipping full initialization");
+    return;
+  }
+  
+  // Warn about early imports
+  if (importedLibraries.size > 0 && !isInitialized) {
+    const libs = Array.from(importedLibraries).join(", ");
+    const errorMessage = `
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║ TrainLoop SDK Warning: HTTP client libraries imported before initialization   ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║ The following libraries were imported before TrainLoop SDK was initialized:   ║
+║ ${libs.padEnd(77)} ║
+║                                                                               ║
+║ This prevents the SDK from capturing LLM calls correctly.                    ║
+║                                                                               ║
+║ Fix: Move these lines to the very top of your entry point:                   ║
+║   import { collect } from 'trainloop-llm-logging';                           ║
+║   await collect();                                                            ║
+║   // then import {${libs}} and other libraries                               ║
+║                                                                               ║
+║ The SDK needs to patch HTTP libraries before they create client instances.    ║
+╚═══════════════════════════════════════════════════════════════════════════════╝`;
+    
+    logger.error(errorMessage);
+    console.error(errorMessage);
+    
+    // Throw error to make it clear this needs to be fixed
+    throw new Error(`TrainLoop SDK must be initialized before importing '${libs}'.\nThis prevents the SDK from capturing LLM calls correctly.\nFix: Move 'import { collect } from \"trainloop-llm-logging\"; await collect();' to the very top of your entry point.`);
+  }
   
   if (!process.env.TRAINLOOP_DATA_FOLDER) {
     logger.warn("TRAINLOOP_DATA_FOLDER not set - SDK disabled");
@@ -58,7 +119,7 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
   logger.debug(`Log level: ${process.env.TRAINLOOP_LOG_LEVEL}`);
 
   logger.debug("Importing instrumentation module...");
-  await import("./instrumentation");
+  require("./instrumentation");
   
   logger.debug(`Creating FileExporter with flushImmediately=${flushImmediately}`);
   globalExporter = new FileExporter(undefined, undefined, flushImmediately);
@@ -77,12 +138,18 @@ export async function collect(flushImmediately: boolean = false): Promise<void> 
   console.log("[TrainLoop] TrainLoop Evals SDK initialized");
 }
 
-// Initialize the SDK automatically
-logger.debug("Auto-initializing SDK...");
-collect().catch(err => {
-  logger.error(`Auto-initialization failed: ${err}`);
-  console.error("[TrainLoop] Auto-initialization failed:", err);
-});
+// Initialize the SDK automatically (unless disabled)
+if (!process.env.TRAINLOOP_DISABLE_AUTO_INIT) {
+  logger.debug("Auto-initializing SDK...");
+  try {
+    collect();
+  } catch (err) {
+    logger.error(`Auto-initialization failed: ${err}`);
+    console.error("[TrainLoop] Auto-initialization failed:", err);
+  }
+} else {
+  logger.debug("Auto-initialization disabled via TRAINLOOP_DISABLE_AUTO_INIT");
+}
 
 /**
  * Manually flush any buffered LLM calls to disk.
@@ -115,10 +182,10 @@ export async function shutdown(): Promise<void> {
   }
 }
 
-// host allow‑list
-export const EXPECTED_LLM_PROVIDER_URLS = (process.env.TRAINLOOP_HOST_ALLOWLIST ?? DEFAULT_HOST_ALLOWLIST.join(","))
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
-logger.debug(`Configured LLM provider URLs: ${EXPECTED_LLM_PROVIDER_URLS.join(", ")}`);
+// host allow‑list - lazily computed after config is loaded
+export function getExpectedLlmProviderUrls(): string[] {
+  return (process.env.TRAINLOOP_HOST_ALLOWLIST ?? DEFAULT_HOST_ALLOWLIST.join(","))
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
