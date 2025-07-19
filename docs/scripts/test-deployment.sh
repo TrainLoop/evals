@@ -70,7 +70,7 @@ fi
 echo "🔧 Verifying configuration..."
 echo "   Organization: TrainLoop"
 echo "   Project: evals"
-echo "   URL: https://docs.trainloop.ai"
+echo "   URL: https://evals.docs.trainloop.ai"
 echo "   Base URL: /"
 
 # Check build size

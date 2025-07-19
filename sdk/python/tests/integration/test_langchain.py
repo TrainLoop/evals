@@ -49,6 +49,7 @@ class TestLangChainIntegration:
 
     @require_library("langchain_anthropic")
     @require_anthropic_key()
+    @pytest.mark.forked  # run this test in its own subprocess to avoid global state leakage
     def test_langchain_anthropic(self):
         """Test LangChain with Anthropic."""
         with IntegrationTestHarness("langchain_anthropic") as harness:

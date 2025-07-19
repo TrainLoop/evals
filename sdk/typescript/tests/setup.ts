@@ -20,7 +20,8 @@ jest.mock('../src/exporter', () => ({
   FileExporter: jest.fn().mockImplementation(() => ({
     recordLLMCall: jest.fn(),
     shutdown: jest.fn(),
-    clear: jest.fn()
+    clear: jest.fn(),
+    flush: jest.fn()
   }))
 }));
 

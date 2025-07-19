@@ -6,13 +6,12 @@ Zero-touch HTTP instrumentation library for collecting LLM request/response data
 
 For complete Python SDK documentation, installation guides, and usage examples:
 
-**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai/reference/sdk/python/api)**
 
 ### Quick Links
-- **[Python SDK Guide](https://docs.trainloop.ai/guides/python-sdk)** - Complete integration guide
-- **[Installation](https://docs.trainloop.ai/getting-started/installation)** - Install the SDK
-- **[API Reference](https://docs.trainloop.ai/reference/sdk/python)** - Complete API documentation
-- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to the SDK
+- **[Python SDK Guide](https://evals.docs.trainloop.ai/docs/python/quick-start)** - Complete integration guide
+- **[Installation](https://evals.docs.trainloop.ai/getting-started/installation#python-sdk)** - Install the SDK
+- **[Development](https://evals.docs.trainloop.ai/docs/python/development)** - Contributing to the SDK
 
 ## Quick Start
 
@@ -31,4 +30,4 @@ collect("path/to/trainloop.config.yaml")
 # No code changes required!
 ```
 
-For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
+For detailed information, visit **[evals.docs.trainloop.ai/docs/python](https://evals.docs.trainloop.ai/docs/python)**

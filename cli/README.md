@@ -6,13 +6,13 @@ The TrainLoop CLI provides commands for managing your LLM evaluation workflow.
 
 For complete CLI documentation, installation guides, and usage examples:
 
-**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
 
 ### Quick Links
-- **[Installation](https://docs.trainloop.ai/getting-started/installation)** - Install the CLI
-- **[Quick Start](https://docs.trainloop.ai/getting-started/quick-start)** - Get started guide  
-- **[CLI Reference](https://docs.trainloop.ai/reference/cli)** - Complete command reference
-- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to the CLI
+- **[Installation](https://evals.docs.trainloop.ai/getting-started/installation)** - Install the CLI
+- **[Quick Start](https://evals.docs.trainloop.ai/getting-started/quick-start)** - Get started guide  
+- **[CLI Reference](https://evals.docs.trainloop.ai/reference/cli)** - Complete command reference
+- **[Development](https://evals.docs.trainloop.ai/development/local-development)** - Contributing to the CLI
 
 ## Quick Start
 
@@ -30,4 +30,4 @@ trainloop eval
 trainloop studio
 ```
 
-For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
+For detailed information, visit **[evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**

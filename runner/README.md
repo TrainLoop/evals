@@ -6,11 +6,9 @@ Runner component for TrainLoop Evals.
 
 For complete runner documentation and usage guides:
 
-**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
 
 ### Quick Links
-- **[Getting Started](https://docs.trainloop.ai/getting-started/installation)** - Installation and setup
-- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to runner
-- **[Architecture](https://docs.trainloop.ai/development/architecture)** - System overview
+- **[Development](https://evals.docs.trainloop.ai/development/local-development)** - Contributing to runner
 
-For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
+For detailed information, visit **[evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**

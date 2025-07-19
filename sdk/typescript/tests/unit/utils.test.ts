@@ -412,6 +412,17 @@ describe('instrumentation/utils', () => {
   });
 
   describe('formatStreamedContent', () => {
+    it('should extract content from regular JSON responses', () => {
+      const raw = JSON.stringify({
+        id: 'chatcmpl-123',
+        choices: [{ message: { content: 'Hello world!' } }]
+      });
+
+      const result = formatStreamedContent(raw);
+
+      expect(result).toBe('{"content":"Hello world!"}');
+    });
+
     it('should format SSE data events', () => {
       const raw = `data: {"choices": [{"delta": {"content": "Hello"}}]}
 data: {"choices": [{"delta": {"content": " World"}}]}
