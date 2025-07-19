@@ -63,12 +63,19 @@ export function patchFetch(exporter: FileExporter): void {
                         tag: tagValue,
 
                     })
+                } else {
+                    logger.debug(`Host ${host} not in allowlist, skipping`);
                 }
-            })().catch(() => {
+            })().catch((err) => {
                 /* swallow logging errors so they never affect the main flow */
+                logger.error(`Error in fetch logging: ${err}`);
             });
             // Caller receives stream immediately
             return res;
         }) as typeof fetch;
+        
+        logger.debug(`Fetch patching complete. New fetch function: ${globalThis.fetch.name}`);
+    } else {
+        logger.warn("Global fetch not found, skipping patch");
     }
 }
