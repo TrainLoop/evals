@@ -97,3 +97,84 @@ env | grep TRAINLOOP
 import { flush } from 'trainloop-llm-logging';
 await flush();
 ```
+
+## Technical Deep Dive (For SDK Contributors)
+
+This section documents critical implementation details discovered during SDK debugging that future contributors should be aware of.
+
+### Logger Initialization Timing Issue
+
+**Root Cause**: Loggers were originally created at module load time in multiple files:
+- `store.ts` (line 5)
+- `exporter.ts` (line 7) 
+- `instrumentation/fetch.ts` (line 6)
+- `instrumentation/http.ts` (line 10)
+- `instrumentation/utils.ts` (line 6)
+
+**Problem**: These loggers were instantiated BEFORE config file loading, when `TRAINLOOP_LOG_LEVEL` was undefined, causing them to default to "warn" level.
+
+**Module Loading Order**:
+```
+1. User requires SDK
+2. Modules imported → Loggers created with LOG_LEVEL=undefined 
+3. Config loading sets TRAINLOOP_LOG_LEVEL=DEBUG
+4. But loggers already created with wrong level
+```
+
+**Solution Implemented**: Lazy logger initialization using Proxy pattern. Loggers are now created on first use rather than module load time, ensuring they pick up the correct log level from config.
+
+### Auto-initialization with NODE_OPTIONS
+
+**Root Cause**: When using `NODE_OPTIONS="--require=trainloop-llm-logging"`, the SDK auto-initializes before the user's script runs. For short-lived scripts, this causes events to be buffered but never written because:
+- Default behavior uses timer-based flush (10 seconds or 5 events)
+- Short scripts exit before timer fires or batch size reached
+- Events remain buffered in memory
+
+**Critical Code Paths**:
+- Auto-initialization: `src/index.ts` line 59: `collect();`
+- Config loading: `src/config.ts` - loads on first import
+- Flush logic: `src/exporter.ts` - timer-based by default
+
+### Key Architectural Discoveries
+
+**OpenAI SDK Uses Fetch**: The OpenAI SDK uses the native `fetch` API, not `http`/`https` modules. The SDK correctly patches `global.fetch` and verification shows `global.fetch.name` changes from "fetch" to "patchedFetch".
+
+**Config Loading Precedence**: The config loading implementation correctly:
+- Always loads config file even when some env vars are set
+- Uses config values for any unset environment variables  
+- Ensures environment variables take precedence over config values
+- Resolves `data_folder` path relative to config file location
+
+### Testing Considerations
+
+When writing tests for the SDK, be aware of:
+
+1. **Module Loading Order**: Tests must clear module cache between test cases to properly test initialization timing
+2. **Async Timing**: Flush operations may be asynchronous even when they appear synchronous
+3. **Environment Isolation**: Tests must carefully manage environment variables to avoid cross-test contamination
+4. **File System State**: Integration tests should use isolated temporary directories
+
+### Debugging Utilities
+
+For debugging timing issues:
+```typescript
+// Track module loading order
+const Module = require('module');
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function(id) {
+  if (id.includes('logger') || id.includes('config')) {
+    console.log(`[REQUIRE] ${id} - LOG_LEVEL=${process.env.TRAINLOOP_LOG_LEVEL}`);
+  }
+  return originalRequire.apply(this, arguments);
+};
+```
+
+For verifying lazy initialization:
+```typescript
+// Check if logger creates on first use
+import { createLogger } from 'trainloop-llm-logging/dist/logger';
+const logger = createLogger('test');
+// Logger proxy created but not initialized
+logger.debug('This will initialize the logger');
+// Now logger is initialized with current env vars
+```
