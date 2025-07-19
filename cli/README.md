@@ -28,6 +28,9 @@ trainloop eval
 
 # View results
 trainloop studio
+
+# Upgrade project
+trainloop upgrade
 ```
 
 For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
