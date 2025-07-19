@@ -77,8 +77,32 @@ export function collect(flushImmediately: boolean = false): void {
   loadConfig();
   
   if (isInitialized) {
-    logger.debug("SDK already initialized, skipping full initialization");
-    return;
+    // If SDK is already initialized, check if this is a different configuration
+    const currentFlushMode = globalExporter ? globalExporter.isFlushImmediate : false;
+    
+    if (currentFlushMode !== flushImmediately) {
+      logger.warn(`SDK already initialized with flushImmediately=${currentFlushMode}, reinitializing with flushImmediately=${flushImmediately}`);
+      console.warn(
+        `[TrainLoop] SDK is being reinitialized with different settings.\n` +
+        `Note: When using NODE_OPTIONS="--require=trainloop-llm-logging", the SDK auto-initializes.\n` +
+        `You don't need to call collect() manually unless you want to change settings (e.g., enable instant flush).`
+      );
+      
+      // Shutdown existing exporter
+      if (globalExporter) {
+        globalExporter.shutdown();
+      }
+      
+      // Continue with reinitialization
+      isInitialized = false;
+    } else {
+      logger.debug("SDK already initialized with same settings, skipping");
+      console.info(
+        `[TrainLoop] SDK already initialized. ` +
+        `When using NODE_OPTIONS="--require=trainloop-llm-logging", you don't need to call collect() manually.`
+      );
+      return;
+    }
   }
   
   // Warn about early imports

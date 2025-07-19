@@ -14,6 +14,10 @@ export class FileExporter {
     private exportingFlag = false;
     private flushImmediately = false;
 
+    get isFlushImmediate(): boolean {
+        return this.flushImmediately;
+    }
+
     constructor(exportAtInterval?: number, exportAtLength?: number, flushImmediately?: boolean) {
         this.exportAtInterval = exportAtInterval ?? this.exportAtInterval;
         this.exportAtLength = exportAtLength ?? this.exportAtLength;
