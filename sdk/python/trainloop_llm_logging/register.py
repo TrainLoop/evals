@@ -9,7 +9,7 @@ Entry point - mirrors TS `src/index.ts`.
 from __future__ import annotations
 
 import os
-
+import sys
 from .config import load_config_into_env
 from .exporter import FileExporter
 from .instrumentation import install_patches
@@ -40,6 +40,20 @@ def collect(
     global _IS_INIT, _EXPORTER
     if _IS_INIT:
         return
+
+    patched_libs = ["openai", "requests", "httpx"]
+    for lib in patched_libs:
+        if lib in sys.modules:
+            error_message = (
+                f"TrainLoop SDK must be initialized before importing '{lib}'.\n\n"
+                f"This prevents the SDK from capturing LLM calls correctly.\n\n"
+                f"Fix: Move these lines to the very top of your entry point:\n"
+                f"    from trainloop_llm_logging import collect\n"
+                f'    collect("/path/to/trainloop.config.yaml")\n'
+                f"    then import {lib} and other libraries\n\n"
+                f"The SDK needs to patch HTTP libraries before they create client instances."
+            )
+            raise RuntimeError(error_message)
 
     print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
