@@ -1,10 +1,10 @@
 import http, { ClientRequest, IncomingMessage } from "node:http";
 import https from "node:https";
 import { PassThrough } from "node:stream";
-import { EXPECTED_LLM_PROVIDER_URLS } from "../index";
+import { getExpectedLlmProviderUrls } from "../env";
 import { FileExporter } from "../exporter";
 import { getCallerSite, getCallerStack, getAndRemoveHeader, fullUrl, drain, formatStreamedContent, reqBodies } from "./utils";
-import { HEADER_NAME } from "../index";
+import { HEADER_NAME } from "../constants";
 import { createLogger } from "../logger";
 
 const logger = createLogger("trainloop-http");
@@ -23,10 +23,14 @@ function getHost(opts: any): string | undefined {
 }
 
 export function patchHttp(mod: typeof http | typeof https, exporter: FileExporter): void {
+    const moduleName = mod === http ? "http" : "https";
+    logger.debug(`patchHttp() called for ${moduleName} module`);
+    
     const orig = mod.request.bind(mod) as (...args: any[]) => ClientRequest;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function patchedRequest(...args: any[]): ClientRequest {
+        logger.debug(`${moduleName} request initiated`);
         /* figure out user callback, if any (last arg that’s a function) */
         const userCb =
             typeof args[args.length - 1] === "function"
@@ -39,6 +43,9 @@ export function patchHttp(mod: typeof http | typeof https, exporter: FileExporte
         let tagValue: string | undefined;
         if (opts && opts.headers) {
             tagValue = getAndRemoveHeader(opts.headers, HEADER_NAME);
+            if (tagValue) {
+                logger.debug(`Found TrainLoop tag: ${tagValue}`);
+            }
         }
 
         const location = getCallerSite(getCallerStack());
@@ -55,8 +62,11 @@ export function patchHttp(mod: typeof http | typeof https, exporter: FileExporte
                 const t1 = Date.now();
                 const ms = t1 - t0;
                 const host = getHost(opts);
+                logger.debug(`Extracted host: ${host}`);
+                const allowedUrls = getExpectedLlmProviderUrls();
 
-                if (host && EXPECTED_LLM_PROVIDER_URLS.includes(host)) {
+                if (host && allowedUrls.includes(host)) {
+                    logger.debug(`Host ${host} is in allowlist, logging LLM call`);
                     // Format the response body if it's a streaming response
                     const formattedBody = formatStreamedContent(body);
 
@@ -82,7 +92,11 @@ export function patchHttp(mod: typeof http | typeof https, exporter: FileExporte
                         status: res.statusCode,
                         tag: tagValue,
                     })
+                } else {
+                    logger.debug(`Host ${host} not in allowlist, skipping`);
                 }
+            }).catch(err => {
+                logger.error(`Error processing HTTP response: ${err}`);
             });
             userCb?.(res);
         });
@@ -102,4 +116,5 @@ export function patchHttp(mod: typeof http | typeof https, exporter: FileExporte
 
     // preserve public type surface
     (mod.request as typeof patchedRequest) = patchedRequest;
+    logger.debug(`${moduleName} module patching complete`);
 }

@@ -48,6 +48,16 @@ class IntegrationTestHarness:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Before tearing down, make sure any buffered calls are written to disk
+        try:
+            import trainloop_llm_logging as tl
+
+            # Force a flush so that no buffered entries leak into the next test
+            tl.flush()
+        except Exception:
+            # Flushing is best-effort – never fail test cleanup
+            pass
+
         # Clean up
         if self.temp_dir and os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)

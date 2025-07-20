@@ -6,13 +6,13 @@ Shareable metrics and evaluation suites with Python-based config discovery.
 
 For complete registry documentation and usage guides:
 
-**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
+**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
 
 ### Quick Links
-- **[Registry Guide](https://docs.trainloop.ai/guides/registry)** - Using the registry system
-- **[CLI Reference](https://docs.trainloop.ai/reference/cli/add)** - `trainloop add` command
-- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to registry
-- **[Architecture](https://docs.trainloop.ai/development/architecture)** - Registry system design
+- **[Registry Guide](https://evals.docs.trainloop.ai/reference/cli/add)** - Using the registry system
+- **[CLI Reference](https://evals.docs.trainloop.ai/reference/cli/add)** - `trainloop add` command
+- **[Development](https://evals.docs.trainloop.ai/development/local-development)** - Contributing to registry
+- **[Architecture](https://evals.docs.trainloop.ai/development/architecture)** - Registry system design
 
 ## Quick Start
 
@@ -21,4 +21,4 @@ For complete registry documentation and usage guides:
 trainloop add [component-name]
 ```
 
-For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**
+For detailed information, visit **[evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
