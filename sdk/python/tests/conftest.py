@@ -30,9 +30,11 @@ def setup_trainloop_instrumentation():
     os.environ["TRAINLOOP_DATA_FOLDER"] = temp_dir
 
     # Install instrumentation globally for the test session
+
     import trainloop_llm_logging as tl
 
-    tl.collect()
+    # Flush immediately so integration tests can synchronously assert on files
+    tl.collect(flush_immediately=True)
 
     yield  # Run all tests
 
