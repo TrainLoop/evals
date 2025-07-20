@@ -44,21 +44,23 @@ export const loadConfig = () => {
     // Check if config path changed - if so, reset environment vars that were set by config
     if (lastLoadedConfigPath !== null && lastLoadedConfigPath !== configPath) {
         logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting previously set env vars`);
+        logger.debug(`configSetEnvVars before clear: ${Array.from(configSetEnvVars).join(', ')}`);
         // Clear internal tracking so subsequent config loads can reapply as needed
         configSetEnvVars.clear();
+        logger.debug(`configSetEnvVars after clear: ${Array.from(configSetEnvVars).join(', ')}`);
     }
     
     // Check which environment variables are already set (excluding those we set from config)
-    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER;
+    const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER && !configSetEnvVars.has('TRAINLOOP_DATA_FOLDER');
     const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST &&
         !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST') &&
         process.env.TRAINLOOP_HOST_ALLOWLIST !== DEFAULT_HOST_ALLOWLIST.join(',');
 
     const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL &&
-        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL') &&
-        process.env.TRAINLOOP_LOG_LEVEL.toUpperCase() !== 'WARN';
+        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
     
     logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
+    logger.debug(`Current env values: TRAINLOOP_LOG_LEVEL=${process.env.TRAINLOOP_LOG_LEVEL}, tracked in configSetEnvVars=${configSetEnvVars.has('TRAINLOOP_LOG_LEVEL')}`);
     if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
     if (hostAllowlistSet) logger.debug(`  TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
     if (logLevelSet) logger.debug(`  TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
