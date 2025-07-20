@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/jest": "^29.5.11",
+    "@types/jest": "^29.5.6",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.17",
     "chokidar-cli": "^3.0.0",
@@ -59,7 +59,8 @@
     "timekeeper": "^2.3.1",
     "ts-jest": "^29.1.1",
     "typescript": "^5.4.5",
-    "yalc": "^1.0.0-pre.53"
+    "yalc": "^1.0.0-pre.53",
+    "ts-node": "^10.9.1"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

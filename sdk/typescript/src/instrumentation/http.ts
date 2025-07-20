@@ -1,10 +1,10 @@
 import http, { ClientRequest, IncomingMessage } from "node:http";
 import https from "node:https";
 import { PassThrough } from "node:stream";
-import { getExpectedLlmProviderUrls } from "../index";
+import { getExpectedLlmProviderUrls } from "../env";
 import { FileExporter } from "../exporter";
 import { getCallerSite, getCallerStack, getAndRemoveHeader, fullUrl, drain, formatStreamedContent, reqBodies } from "./utils";
-import { HEADER_NAME } from "../index";
+import { HEADER_NAME } from "../constants";
 import { createLogger } from "../logger";
 
 const logger = createLogger("trainloop-http");

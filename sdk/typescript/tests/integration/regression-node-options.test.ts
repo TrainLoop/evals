@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import OpenAI from 'openai';
@@ -114,7 +114,7 @@ trainloop:
     process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
     // Step 3: Explicit collect should load the config
-    await sdk.collect(true);
+    sdk.collect(true);
 
     // Verify config was loaded
     expect(process.env.TRAINLOOP_DATA_FOLDER).toContain('data');
@@ -183,11 +183,11 @@ trainloop:
     process.env.TRAINLOOP_HOST_ALLOWLIST = 'api.openai.com';
 
     // Capture console output to verify debug logs appear
-    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     try {
       // Re-initialize to pick up the new log level
-      await sdk.collect(true);
+      sdk.collect(true);
 
       // Debug logs should now appear (with lazy logger fix)
       const debugLogs = consoleSpy.mock.calls

@@ -4,6 +4,7 @@
 import { loadConfig } from '../../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { createTempDir, cleanupTempDir, createMockConfig } from '../test-utils';
 
 describe('Config Precedence', () => {
@@ -40,7 +41,7 @@ describe('Config Precedence', () => {
     });
     process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
-    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     loadConfig();
 
@@ -76,7 +77,7 @@ describe('Config Precedence', () => {
     });
     process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
-    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     loadConfig();
 
@@ -109,7 +110,7 @@ describe('Config Precedence', () => {
     });
     process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
-    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     loadConfig();
 

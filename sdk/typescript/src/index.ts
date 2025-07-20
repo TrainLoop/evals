@@ -2,10 +2,11 @@ import { patchHttp } from "./instrumentation/http";
 import http from "http";
 import https from "https";
 import { patchFetch } from "./instrumentation/fetch";
-import { FileExporter } from "./exporter"
+import { FileExporter } from "./exporter";
 import { loadConfig } from "./config";
 import { HEADER_NAME, DEFAULT_HOST_ALLOWLIST } from "./constants";
 import { createLogger } from "./logger";
+import { getExpectedLlmProviderUrls } from "./env";
 
 const logger = createLogger("trainloop-init");
 
@@ -16,7 +17,7 @@ const logger = createLogger("trainloop-init");
  *  • shutdown()       - graceful shutdown
  */
 
-export { HEADER_NAME, DEFAULT_HOST_ALLOWLIST };
+export { HEADER_NAME, DEFAULT_HOST_ALLOWLIST, getExpectedLlmProviderUrls };
 
 /**
  * Convenience helper - merge into your fetch/OpenAI headers
@@ -83,9 +84,8 @@ export function collect(flushImmediately: boolean = false): void {
     if (currentFlushMode !== flushImmediately) {
       logger.warn(`SDK already initialized with flushImmediately=${currentFlushMode}, reinitializing with flushImmediately=${flushImmediately}`);
       console.warn(
-        `[TrainLoop] SDK is being reinitialized with different settings.\n` +
-        `Note: When using NODE_OPTIONS="--require=trainloop-llm-logging", the SDK auto-initializes.\n` +
-        `You don't need to call collect() manually unless you want to change settings (e.g., enable instant flush).`
+        `[TrainLoop] SDK is being re-initialized with different settings.\n` +
+        `When using NODE_OPTIONS="--require=trainloop-llm-logging" the SDK auto-initializes, so you typically only need to call collect() if you want to change settings – for example to enable instant-flush during debugging.`
       );
       
       // Shutdown existing exporter
@@ -98,8 +98,7 @@ export function collect(flushImmediately: boolean = false): void {
     } else {
       logger.debug("SDK already initialized with same settings, skipping");
       console.info(
-        `[TrainLoop] SDK already initialized. ` +
-        `When using NODE_OPTIONS="--require=trainloop-llm-logging", you don't need to call collect() manually.`
+        `[TrainLoop] SDK already initialized - additional collect() calls are only necessary if you wish to modify settings (e.g., enable/disable instant flush).`
       );
       return;
     }
@@ -144,7 +143,7 @@ export function collect(flushImmediately: boolean = false): void {
 
   logger.debug("Importing instrumentation module...");
   require("./instrumentation");
-  
+
   logger.debug(`Creating FileExporter with flushImmediately=${flushImmediately}`);
   globalExporter = new FileExporter(undefined, undefined, flushImmediately);
   
@@ -206,10 +205,3 @@ export async function shutdown(): Promise<void> {
   }
 }
 
-// host allow‑list - lazily computed after config is loaded
-export function getExpectedLlmProviderUrls(): string[] {
-  return (process.env.TRAINLOOP_HOST_ALLOWLIST ?? DEFAULT_HOST_ALLOWLIST.join(","))
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}

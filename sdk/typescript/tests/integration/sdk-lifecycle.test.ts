@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import OpenAI from 'openai';
@@ -61,7 +61,7 @@ describe('SDK Lifecycle Integration Test', () => {
     const sdk = await import('../../src');
 
     // Explicitly initialize
-    await expect(sdk.collect(true)).resolves.not.toThrow();
+    expect(() => sdk.collect(true)).not.toThrow();
 
     // Should be able to use trainloopTag
     const tag = sdk.trainloopTag('explicit-init-test');
@@ -117,9 +117,9 @@ describe('SDK Lifecycle Integration Test', () => {
     const sdk = await import('../../src');
 
     // Multiple calls to collect should be idempotent
-    await expect(sdk.collect(true)).resolves.not.toThrow();
-    await expect(sdk.collect(true)).resolves.not.toThrow();
-    await expect(sdk.collect(false)).resolves.not.toThrow();
+    expect(() => sdk.collect(true)).not.toThrow();
+    expect(() => sdk.collect(true)).not.toThrow();
+    expect(() => sdk.collect(false)).not.toThrow();
 
     // Should still work normally
     const tag = sdk.trainloopTag('multi-collect-test');
@@ -133,7 +133,7 @@ describe('SDK Lifecycle Integration Test', () => {
     const sdk = await import('../../src');
 
     // Should initialize without throwing
-    await expect(sdk.collect(true)).resolves.not.toThrow();
+    expect(() => sdk.collect(true)).not.toThrow();
 
     // Functions should still be available but SDK is disabled
     const tag = sdk.trainloopTag('disabled-test');

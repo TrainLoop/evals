@@ -5,13 +5,23 @@ import { DEFAULT_HOST_ALLOWLIST } from "./constants";
 import { TrainloopConfig } from "./types/shared";
 import { createLogger } from "./logger";
 
-const logger = createLogger("trainloop-config");
-
 // Track which config file was last loaded to detect changes
 let lastLoadedConfigPath: string | null = null;
 let configSetEnvVars: Set<string> = new Set();
+let configSetValues: Map<string, string> = new Map(); // Track values set by config
 
-export const loadConfig = () => {
+/**
+ * Reset config state - used for testing
+ * @internal
+ */
+export const resetConfigState = (): void => {
+    lastLoadedConfigPath = null;
+    configSetEnvVars.clear();
+    configSetValues.clear();
+};
+
+export const loadConfig = (): void => {
+    const logger = createLogger("trainloop-config");
     /**
      * Load TrainLoop configuration into environment variables.
      *
@@ -39,29 +49,41 @@ export const loadConfig = () => {
     const configPath = process.env.TRAINLOOP_CONFIG_PATH ??
         (fs.existsSync(trainloopSubdirPath) ? trainloopSubdirPath : rootPath);
     
-    logger.debug(`Selected config path: ${configPath}`);
-    
     // Check if config path changed - if so, reset environment vars that were set by config
     if (lastLoadedConfigPath !== null && lastLoadedConfigPath !== configPath) {
-        logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting config-set env vars`);
-        // Temporarily disable this feature to avoid potential infinite loops
-        // for (const envVar of configSetEnvVars) {
-        //     delete process.env[envVar];
-        //     logger.debug(`Reset ${envVar}`);
-        // }
-        // configSetEnvVars.clear();
+        logger.debug(`Config path changed from ${lastLoadedConfigPath} to ${configPath}, resetting config tracking`);
+        
+        // Clear environment variables that were set by config and haven't been modified by user
+        for (const envVar of configSetEnvVars) {
+            const configValue = configSetValues.get(envVar);
+            const currentValue = process.env[envVar];
+            if (configValue !== undefined && currentValue === configValue) {
+                // Value hasn't been changed by user, safe to clear
+                delete process.env[envVar];
+                logger.debug(`Cleared config-set env var: ${envVar} (was: ${configValue})`);
+            } else {
+                logger.debug(`Preserving user-modified env var: ${envVar} (config: ${configValue}, current: ${currentValue})`);
+            }
+        }
+        
+        // Clear internal tracking so subsequent config loads can reapply as needed
+        configSetEnvVars.clear();
+        configSetValues.clear();
     }
     
     // Check which environment variables are already set (excluding those we set from config)
     const dataFolderSet = !!process.env.TRAINLOOP_DATA_FOLDER && !configSetEnvVars.has('TRAINLOOP_DATA_FOLDER');
-    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST && !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST');
-    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL && !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
+    const hostAllowlistSet = !!process.env.TRAINLOOP_HOST_ALLOWLIST &&
+        !configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST') &&
+        process.env.TRAINLOOP_HOST_ALLOWLIST !== DEFAULT_HOST_ALLOWLIST.join(',');
+
+    logger.debug(`Host allowlist check: value="${process.env.TRAINLOOP_HOST_ALLOWLIST}", tracked=${configSetEnvVars.has('TRAINLOOP_HOST_ALLOWLIST')}, default="${DEFAULT_HOST_ALLOWLIST.join(',')}", set=${hostAllowlistSet}`);
+    
+    const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL &&
+        !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
     
     logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
-    if (dataFolderSet) logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER}`);
-    if (hostAllowlistSet) logger.debug(`  TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
-    if (logLevelSet) logger.debug(`  TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
-
+    
     // Try to load config file
     let configData: TrainloopConfig["trainloop"] | null = null;
     if (fs.existsSync(configPath)) {
@@ -104,6 +126,7 @@ export const loadConfig = () => {
             process.env.TRAINLOOP_DATA_FOLDER = absoluteDataFolder;
             configUsed.push("data_folder");
             configSetEnvVars.add("TRAINLOOP_DATA_FOLDER");
+            configSetValues.set("TRAINLOOP_DATA_FOLDER", absoluteDataFolder); // Track value
         } else {
             logger.warn("TRAINLOOP_DATA_FOLDER not set in environment and not found in config file");
             console.warn(
@@ -123,11 +146,14 @@ export const loadConfig = () => {
             process.env.TRAINLOOP_HOST_ALLOWLIST = allowlist;
             configUsed.push("host_allowlist");
             configSetEnvVars.add("TRAINLOOP_HOST_ALLOWLIST");
+            configSetValues.set("TRAINLOOP_HOST_ALLOWLIST", allowlist); // Track value
         } else {
             // Use default host allowlist if not set anywhere
             const defaultList = DEFAULT_HOST_ALLOWLIST.join(",");
             logger.debug(`Using default host_allowlist: ${defaultList}`);
             process.env.TRAINLOOP_HOST_ALLOWLIST = defaultList;
+            configSetEnvVars.add("TRAINLOOP_HOST_ALLOWLIST");
+            configSetValues.set("TRAINLOOP_HOST_ALLOWLIST", defaultList); // Track value
         }
     } else {
         logger.debug(`Using existing TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST}`);
@@ -141,10 +167,13 @@ export const loadConfig = () => {
             process.env.TRAINLOOP_LOG_LEVEL = level;
             configUsed.push("log_level");
             configSetEnvVars.add("TRAINLOOP_LOG_LEVEL");
+            configSetValues.set("TRAINLOOP_LOG_LEVEL", level); // Track value
         } else {
             // Use default log level if not set anywhere
             logger.debug("Using default log_level: WARN");
             process.env.TRAINLOOP_LOG_LEVEL = "WARN";
+            configSetEnvVars.add("TRAINLOOP_LOG_LEVEL");
+            configSetValues.set("TRAINLOOP_LOG_LEVEL", "WARN"); // Track value
         }
     } else {
         logger.debug(`Using existing TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
