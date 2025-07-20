@@ -4,6 +4,7 @@
 import { loadConfig } from '../../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { jest } from '@jest/globals';
 import { createTempDir, cleanupTempDir, createMockConfig } from '../test-utils';
 
 describe('Config Precedence', () => {
