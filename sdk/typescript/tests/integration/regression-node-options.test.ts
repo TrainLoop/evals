@@ -183,7 +183,7 @@ trainloop:
     process.env.TRAINLOOP_HOST_ALLOWLIST = 'api.openai.com';
 
     // Capture console output to verify debug logs appear
-    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     try {
       // Re-initialize to pick up the new log level

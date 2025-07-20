@@ -85,8 +85,8 @@ describe('Logger Timing Integration Test', () => {
 
     // Check that debug logs are actually being written
     const debugLogs = consoleDebugSpy.mock.calls
-      .filter(call => call[0]?.includes('[DEBUG]'))
-      .map(call => call[0]);
+      .filter(call => (call[0] as string)?.includes('[DEBUG]'))
+      .map(call => call[0] as string);
 
     // With lazy initialization, debug logs should appear
     expect(debugLogs.length).toBeGreaterThan(0);
@@ -146,8 +146,8 @@ describe('Logger Timing Integration Test', () => {
 
     // Check for INFO logs from fetch instrumentation
     const infoLogs = consoleInfoSpy.mock.calls
-      .filter(call => call[0]?.includes('[INFO]'))
-      .map(call => call[0]);
+      .filter(call => (call[0] as string)?.includes('[INFO]'))
+      .map(call => call[0] as string);
 
     // With lazy logger initialization, INFO logs should appear
     expect(infoLogs.some(log => log.includes('START FETCH CALL'))).toBe(true);

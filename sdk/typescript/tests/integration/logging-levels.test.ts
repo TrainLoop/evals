@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { SpyInstance } from 'jest-mock';
 import * as fs from 'fs';
 import * as path from 'path';
 import { collect, shutdown, trainloopTag } from '../../src';
@@ -6,11 +7,11 @@ import OpenAI from 'openai';
 
 describe('Logging Levels Integration Test', () => {
   const testDataFolder = path.join(__dirname, 'test-data-logging');
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleDebugSpy: jest.SpyInstance;
-  let consoleInfoSpy: jest.SpyInstance;
-  let consoleWarnSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
+  let consoleLogSpy: SpyInstance;
+  let consoleDebugSpy: SpyInstance;
+  let consoleInfoSpy: SpyInstance;
+  let consoleWarnSpy: SpyInstance;
+  let consoleErrorSpy: SpyInstance;
 
   beforeEach(() => {
     // Clean up test data folder
@@ -64,8 +65,8 @@ describe('Logging Levels Integration Test', () => {
 
     // Check that debug logs were written
     const debugLogs = consoleDebugSpy.mock.calls
-      .filter(call => call[0]?.includes('[DEBUG]'))
-      .map(call => call[0]);
+      .filter(call => (call[0] as string)?.includes('[DEBUG]'))
+      .map(call => call[0] as string);
 
     expect(debugLogs.length).toBeGreaterThan(0);
     expect(debugLogs.some(log => log.includes('collect() called'))).toBe(true);
@@ -103,8 +104,8 @@ describe('Logging Levels Integration Test', () => {
 
     // Check for INFO logs from fetch instrumentation
     const infoLogs = consoleInfoSpy.mock.calls
-      .filter(call => call[0]?.includes('[INFO]'))
-      .map(call => call[0]);
+      .filter(call => (call[0] as string)?.includes('[INFO]'))
+      .map(call => call[0] as string);
 
     expect(infoLogs.some(log => log.includes('START FETCH CALL'))).toBe(true);
     expect(infoLogs.some(log => log.includes('END FETCH CALL'))).toBe(true);
@@ -124,7 +125,7 @@ describe('Logging Levels Integration Test', () => {
 
     // Check that no debug logs were written
     const debugLogs = consoleDebugSpy.mock.calls
-      .filter(call => call[0]?.includes('[DEBUG]'));
+      .filter(call => (call[0] as string)?.includes('[DEBUG]'));
 
     expect(debugLogs.length).toBe(0);
 
