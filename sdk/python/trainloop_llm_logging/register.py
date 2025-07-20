@@ -22,6 +22,7 @@ def trainloop_tag(tag: str) -> dict[str, str]:
     return {HEADER_NAME: tag}
 
 
+# SDK initialisation state (process-wide)
 _IS_INIT = False
 _EXPORTER = None
 
@@ -29,15 +30,15 @@ _EXPORTER = None
 def collect(
     trainloop_config_path: str | None = None, flush_immediately: bool = False
 ) -> None:
-    """
-    Initialize the SDK (idempotent).  Does nothing unless
-    TRAINLOOP_DATA_FOLDER is set.
+    """Boot-strap the TrainLoop logging SDK (idempotent).
 
-    Args:
-        trainloop_config_path: Path to config file (optional)
-        flush_immediately: If True, flush each LLM call immediately (useful for testing)
+    Calling this function installs outbound-HTTP instrumentation and starts a
+    background exporter that regularly writes captured LLM calls to disk.  If
+    ``TRAINLOOP_DATA_FOLDER`` is not set the SDK remains disabled so the host
+    application keeps running without side-effects.
     """
     global _IS_INIT, _EXPORTER
+
     if _IS_INIT:
         return
 
@@ -66,19 +67,20 @@ def collect(
 
     print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
+
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
         logger_module.register_logger.warning(
-            "TRAINLOOP_DATA_FOLDER not set - SDK disabled"
+            "TRAINLOOP_DATA_FOLDER not set – SDK disabled"
         )
         return
 
-    _EXPORTER = FileExporter(
-        flush_immediately=flush_immediately
-    )  # flushes every 10 s or 5 items (or immediately if flush_immediately=True)
-    install_patches(_EXPORTER)  # monkey-patch outbound HTTP
+    # Create exporter (flushes every 10 s / 5 calls by default, or immediately
+    # when *flush_immediately* is True) and patch HTTP libraries.
+    _EXPORTER = FileExporter(flush_immediately=flush_immediately)
+    install_patches(_EXPORTER)
 
     _IS_INIT = True
-    logger_module.register_logger.info("TrainLoop Evals SDK initialized")
+    logger_module.register_logger.info("TrainLoop LLM logging initialized")
 
 
 def flush() -> None:

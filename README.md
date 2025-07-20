@@ -1,5 +1,7 @@
 # 🤖📊 TrainLoop Evals
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TrainLoop/evals)
+
 TrainLoop Evals is a comprehensive LLM evaluation framework designed for developers who need simple, vendor-independent evaluation tools.
 
 ## Core Principles
@@ -37,6 +39,8 @@ trainloop studio
 For comprehensive documentation, installation guides, tutorials, and API reference:
 
 **👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
+
+**👉 [DeepWiki](https://deepwiki.com/TrainLoop/evals)** - lets you chat directly with this codebase rather than wading through documentation. It's the purest form of talking to your docs.
 
 ### Quick Links
 - **[Getting Started](https://evals.docs.trainloop.ai/getting-started/installation)** - Installation and setup

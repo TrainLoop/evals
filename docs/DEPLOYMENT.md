@@ -4,7 +4,7 @@ This document explains the GitHub Pages deployment setup for the TrainLoop Evals
 
 ## Overview
 
-The documentation site is built using Docusaurus and automatically deployed to GitHub Pages using GitHub Actions. The site is served from the custom domain `docs.trainloop.ai`.
+The documentation site is built using Docusaurus and automatically deployed to GitHub Pages using GitHub Actions. The site is served from the custom domain `evals.docs.trainloop.ai`.
 
 ## Deployment Architecture
 
@@ -17,11 +17,11 @@ The documentation site is built using Docusaurus and automatically deployed to G
 
 2. **Docusaurus Configuration** (`docusaurus.config.ts`)
    - Configured for GitHub Pages deployment
-   - Set up with custom domain `docs.trainloop.ai`
+   - Set up with custom domain `evals.docs.trainloop.ai`
    - Optimized for SEO and performance
 
 3. **Custom Domain Configuration** (`static/CNAME`)
-   - Configures GitHub Pages to serve from `docs.trainloop.ai`
+   - Configures GitHub Pages to serve from `evals.docs.trainloop.ai`
    - Automatically copied to the build output
 
 ## Deployment Process
@@ -68,7 +68,7 @@ Key deployment settings in `docusaurus.config.ts`:
 
 ```typescript
 {
-  url: 'https://docs.trainloop.ai',
+  url: 'https://evals.docs.trainloop.ai',
   baseUrl: '/',
   organizationName: 'TrainLoop',
   projectName: 'trainloop-evals',
@@ -79,7 +79,7 @@ Key deployment settings in `docusaurus.config.ts`:
 
 ### Custom Domain Setup
 
-The custom domain `docs.trainloop.ai` is configured through:
+The custom domain `evals.docs.trainloop.ai` is configured through:
 
 1. **CNAME file** (`static/CNAME`) containing the domain
 2. **DNS configuration** (managed separately) pointing to GitHub Pages
@@ -93,7 +93,7 @@ In the repository settings:
 
 1. **Pages Source**: Deploy from a branch
 2. **Branch**: `gh-pages` (automatically created by the workflow)
-3. **Custom Domain**: `docs.trainloop.ai` (configured via CNAME file)
+3. **Custom Domain**: `evals.docs.trainloop.ai` (configured via CNAME file)
 
 ### Required Permissions
 
@@ -179,7 +179,7 @@ Monitor deployment status through:
 
 - **GitHub Actions tab** in the repository
 - **GitHub Pages settings** showing last deployment
-- **Site availability** at `https://docs.trainloop.ai`
+- **Site availability** at `https://evals.docs.trainloop.ai`
 
 ### Performance Monitoring
 

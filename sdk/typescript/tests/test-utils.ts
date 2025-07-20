@@ -10,6 +10,7 @@ import { patchHttp } from '../src/instrumentation/http';
 import http from "http";
 import https from "https";
 import { FileExporter } from '../src/exporter';
+import { resetConfigState } from '../src/config';
 /**
  * Create a temporary directory for tests
  */
@@ -214,6 +215,9 @@ export function mockEnvVars(vars: Record<string, string>): () => void {
   // Set new vars
   Object.assign(process.env, vars);
 
+  // Reset config state
+  resetConfigState();
+
   // Return cleanup function
   return () => {
     Object.keys(process.env).forEach(key => {
@@ -222,6 +226,7 @@ export function mockEnvVars(vars: Record<string, string>): () => void {
       }
     });
     Object.assign(process.env, originalEnv);
+    resetConfigState(); // Reset config state on cleanup
   };
 }
 
