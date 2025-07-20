@@ -25,11 +25,11 @@ describe('Logging Levels Integration Test', () => {
     delete process.env.TRAINLOOP_CONFIG_PATH;
 
     // Spy on console methods
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
-    consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation(() => {});
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     // Clear module cache to ensure fresh initialization
     jest.resetModules();
