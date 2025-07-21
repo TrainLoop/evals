@@ -2,8 +2,24 @@
 trainloop:
   data_folder: data # Relative to this config file
   host_allowlist:
+    # existing providers
     - api.openai.com
     - api.anthropic.com
+    - generativelanguage.googleapis.com
+    - api.cohere.ai
+    - api.groq.com
+    - api.mistral.ai
+    - api.together.xyz
+    - api.endpoints.anyscale.com
+    - api.perplexity.ai
+    - api.deepinfra.com
+    - api.replicate.com
+    - api-inference.huggingface.co
+    - openai.azure.com
+    - bedrock.us-east-1.amazonaws.com  # duplicate for other regions as needed
+    - bedrock-runtime.eu-central-1.amazonaws.com  # example region; duplicate pattern for your region
+    - bedrock-agent-runtime.us-east-1.amazonaws.com  # example region; duplicate pattern for your region
+
   log_level: warn
   # Judge Configuration
   judge:
