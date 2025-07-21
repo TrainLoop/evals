@@ -146,6 +146,10 @@ if __name__ == "__main__":
     print(f"Generated greeting: {greeting}")
 ```
 
+#### trainloop_tag
+
+The `trainloop_tag()` function allows you to label your LLM requests for evaluation. This is useful for organizing your data and creating targeted evaluation suites.
+
 Run your application:
 ```bash
 python app.py
@@ -272,6 +276,18 @@ TRAINLOOP_DATA_FOLDER=./trainloop/data go run main.go
 1. `trainloop.Init()` wraps the HTTP client used by OpenAI
 2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
 3. `trainloop.Shutdown()` ensures all data is flushed to disk
+
+:::tip Complete Examples Available
+
+Want to see more comprehensive examples? Check out our complete working examples:
+
+- **[Python Examples](../examples/python-examples.md)** - Code generation and letter counting examples with Poetry
+- **[TypeScript/JavaScript Examples](../examples/typescript-examples.md)** - Both TS and JS versions with npm
+- **[Go Examples](../examples/go-examples.md)** - Complete Go implementation with modules
+
+Each example includes setup instructions, evaluation metrics, and sample data.
+
+:::
 
 ## Step 4: Write Your First Metric
 

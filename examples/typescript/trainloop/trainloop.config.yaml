@@ -1,0 +1,23 @@
+# TrainLoop Configuration
+trainloop:
+  data_folder: data # Relative to this config file
+  host_allowlist:
+    - api.openai.com
+    - api.anthropic.com
+  log_level: warn
+  # Judge Configuration
+  judge:
+    env_path: "../.env.judge" # Optional: Path to a .env file to load for the judge (e.g., for API keys)
+    models:
+      - openai/gpt-4.1-2025-04-14
+      - anthropic/claude-sonnet-4-20250514
+    calls_per_model_per_claim: 3
+    temperature: 0.7
+  # Benchmark Configuration (optional)
+  # benchmark:
+  #   providers:
+  #     - openai/gpt-4
+  #     - anthropic/claude-3-sonnet-20240229
+  #     - openai/gpt-3.5-turbo
+  #   temperature: 0.7
+  #   max_samples: 50  # Limit number of samples to benchmark (optional)

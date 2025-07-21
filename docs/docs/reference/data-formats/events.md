@@ -343,5 +343,5 @@ LIMIT 10;
 ## See Also
 
 - [Results Data Format](results.md) - Evaluation results schema
-- [SDK Reference](../sdk/index.md) - How to collect event data
+- [SDK Reference](../sdks/index.md) - How to collect event data
 - [CLI Reference](../cli/eval.md) - How to process event data

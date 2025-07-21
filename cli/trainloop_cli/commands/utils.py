@@ -9,6 +9,16 @@ import yaml
 def find_root(silent_on_error: bool = False) -> Path | None:
     """Walk upward until we hit trainloop.config.yaml; error if missing."""
     cur = Path.cwd()
+
+    # First, check if there's a 'trainloop' folder at the current level
+    trainloop_folder = cur / "trainloop"
+    if (
+        trainloop_folder.is_dir()
+        and (trainloop_folder / "trainloop.config.yaml").exists()
+    ):
+        return trainloop_folder
+
+    # Then walk upward as usual
     for p in [cur, *cur.parents]:
         if (p / "trainloop.config.yaml").exists():
             return p
@@ -17,9 +27,8 @@ def find_root(silent_on_error: bool = False) -> Path | None:
         return None
 
     raise RuntimeError(
-        "❌  trainloop.config.yaml not found. "
-        "Run this command inside the trainloop folder "
-        "or create one with `trainloop init`."
+        "❌  trainloop.config.yaml not found. Run this command inside the trainloop folder or create one with `trainloop init`.\n"
+        "Ensure you are in a TrainLoop project directory (or a subdirectory). You can initialize one with 'trainloop init'."
     )
 
 

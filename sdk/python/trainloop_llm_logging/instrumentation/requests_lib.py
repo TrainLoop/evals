@@ -29,6 +29,19 @@ def install(exporter: FileExporter) -> None:
     """
     import requests  # pylint: disable=import-outside-toplevel
 
+    # Ensure that `requests.adapters` is available for downstream libraries
+    # (e.g. PostHog) that access it directly via `requests.adapters` without
+    # importing the sub-module first.
+    try:
+        import importlib
+
+        if not hasattr(requests, "adapters"):
+            importlib.import_module("requests.adapters")
+    except Exception:  # pragma: no cover
+        # If the import fails we continue – the absence of this attribute will
+        # be surfaced by dependent libraries and highlighted in tests.
+        pass
+
     orig = requests.sessions.Session.request
 
     @functools.wraps(orig)
