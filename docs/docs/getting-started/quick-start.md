@@ -273,18 +273,6 @@ TRAINLOOP_DATA_FOLDER=./trainloop/data go run main.go
 2. LLM request/response data is written to `trainloop/data/events/YYYY-MM-DD.jsonl`
 3. `trainloop.Shutdown()` ensures all data is flushed to disk
 
-:::tip Complete Examples Available
-
-Want to see more comprehensive examples? Check out our complete working examples:
-
-- **[Python Examples](../examples/python-examples.md)** - Code generation and letter counting examples with Poetry
-- **[TypeScript/JavaScript Examples](../examples/typescript-examples.md)** - Both TS and JS versions with npm
-- **[Go Examples](../examples/go-examples.md)** - Complete Go implementation with modules
-
-Each example includes setup instructions, evaluation metrics, and sample data.
-
-:::
-
 ## Step 4: Write Your First Metric
 
 ### What are Metrics?

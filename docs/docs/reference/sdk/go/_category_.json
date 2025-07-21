@@ -1,0 +1,10 @@
+{
+  "label": "Go",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Go SDK",
+    "description": "Go SDK reference for TrainLoop Evals instrumentation.",
+    "slug": "/reference/sdk/go"
+  }
+}

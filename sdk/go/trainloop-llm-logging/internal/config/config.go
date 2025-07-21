@@ -14,22 +14,7 @@ import (
 var log = logger.CreateLogger("trainloop-config")
 
 // DefaultHostAllowlist is the default list of hosts to monitor.
-var DefaultHostAllowlist = []string{
-	// existing providers
-	"api.openai.com",
-	"api.anthropic.com",
-	"generativelanguage.googleapis.com",
-	"api.cohere.ai",
-	"api.groq.com",
-	"api.mistral.ai",
-	"api.together.xyz",
-	"api.endpoints.anyscale.com",
-	"api.perplexity.ai",
-	"api.deepinfra.com",
-	"api.replicate.com",
-	"api-inference.huggingface.co",
-	"openai.azure.com",
-}
+var DefaultHostAllowlist = []string{"api.openai.com", "api.anthropic.com"}
 
 const configFileName = "trainloop.config.yaml"
 

@@ -360,4 +360,4 @@ trainloop eval --output results.json
 - [init](init) - Initialize TrainLoop project
 - [studio](studio) - Launch Studio UI
 - [Configuration](config) - Configure evaluation behavior
-- [SDK Reference](../sdks/) - Collect event data
+- [SDK Reference](../sdk/) - Collect event data

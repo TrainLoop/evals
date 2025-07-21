@@ -73,12 +73,6 @@ TrainLoop Evals is perfect for:
 
 ## How It Works
 
-```
-Your App + SDK → Data Collection → CLI Evaluation → Studio Visualization
-    ↓               ↓                 ↓              ↓
-[LLM Calls]    [events/*.jsonl]   [results/*.json]  [Charts & Tables]
-```
-
 1. **🔧 Instrument** - Add TrainLoop SDK to your application with minimal code changes
 2. **📝 Collect** - Automatically capture LLM requests and responses as JSONL files
 3. **📊 Evaluate** - Define custom metrics and test suites to assess LLM performance
@@ -105,21 +99,11 @@ Ready to start evaluating your LLM applications? Here's what you need to do:
 3. **[Explore the Guides](./guides/)** - Learn advanced features and best practices
 4. **[Check the Reference](./reference/)** - Detailed API documentation
 
-## Examples & Demos
+## Demo
 
-Want to see TrainLoop Evals in action?
+Want to see TrainLoop Evals in action? Check out our demo:
 
-### 📚 Working Examples
-
-Complete code examples in multiple languages:
-
-- **[Python Examples](./examples/python-examples.md)** - Complete Python implementation with Poetry
-- **[TypeScript/JavaScript Examples](./examples/typescript-examples.md)** - Both TypeScript and JavaScript versions
-- **[Go Examples](./examples/go-examples.md)** - Go implementation with modules
-
-### 🎮 Live Demos
-
-- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete chat UI example implementation
+- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete example implementation
 - **[Live Demo](https://evals.trainloop.ai)** - Interactive demo deployment
 
 ## Community and Support
