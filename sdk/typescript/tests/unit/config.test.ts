@@ -5,6 +5,7 @@ import { loadConfig } from '../../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createTempDir, cleanupTempDir, createMockConfig, mockEnvVars } from '../test-utils';
+import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals';
 
 describe('Config Loading', () => {
   let tempDir: string;
@@ -144,7 +145,7 @@ describe('Config Loading', () => {
       process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
       // Should warn when data_folder is empty (no longer throws)
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       loadConfig();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('TRAINLOOP_DATA_FOLDER not set')
