@@ -18,11 +18,12 @@ def cli():
     """
     TrainLoop Evaluations - A lightweight test harness for validating LLM behaviour.
 
-    Run without a command to launch the local viewer (studio).
+    See "help" menu.
     """
     ctx = click.get_current_context()
     if ctx.invoked_subcommand is None:
-        studio_cmd(config_path=None, local_tar_path=None)
+        ctx.get_help()
+        click.echo(ctx.get_help())
 
 
 @cli.command("studio")

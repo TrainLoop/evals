@@ -25,10 +25,10 @@ This reference section provides comprehensive technical documentation for all Tr
 
 ### SDKs
 
-- **[SDK Overview](sdk/index.md)** - Multi-language SDK documentation
-- **[Python SDK](sdk/python/api.md)** - Python API reference
-- **[TypeScript SDK](sdk/typescript/api.md)** - TypeScript/JavaScript API reference
-- **[Go SDK](sdk/go/api.md)** - Go API reference
+- **[SDK Overview](sdks/index.md)** - Multi-language SDK documentation
+- **[Python SDK](sdks/python-api.md)** - Python API reference
+- **[TypeScript SDK](sdks/typescript-api.md)** - TypeScript/JavaScript API reference
+- **[Go SDK](sdks/go-api.md)** - Go API reference
 
 ### Data Formats
 
@@ -223,6 +223,6 @@ TrainLoop Evals follows semantic versioning:
 
 ## See Also
 
-- [Architecture](../explanation/concepts/architecture.md) - System architecture overview
+- [Architecture](../explanation/architecture.md) - System architecture overview
 - [Getting Started](../tutorials/getting-started.md) - Quick start guide
 - [Production Setup](../tutorials/production-setup.md) - Deployment guide

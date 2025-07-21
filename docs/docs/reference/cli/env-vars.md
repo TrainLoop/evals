@@ -291,4 +291,4 @@ TRAINLOOP_LOG_LEVEL=debug trainloop eval --dry-run
 
 - [Configuration](config.md) - Configuration file format
 - [CLI Reference](index.md) - Command line interface overview
-- [SDK Reference](../sdk/index.md) - SDK-specific variables
+- [SDK Reference](../sdks/index.md) - SDK-specific variables

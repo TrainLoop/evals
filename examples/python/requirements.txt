@@ -1,0 +1,4 @@
+openai
+python-dotenv
+# TrainLoop evaluation SDK
+-e ../../sdk/python
