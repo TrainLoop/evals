@@ -86,7 +86,7 @@ trainloop eval
 
 **Values**: `true`, `false`
 
-**Default**: `false`
+**Default**: `true`
 
 **Usage**:
 ```bash

@@ -69,6 +69,7 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
     data_folder_set = "TRAINLOOP_DATA_FOLDER" in os.environ
     host_allowlist_set = "TRAINLOOP_HOST_ALLOWLIST" in os.environ
     log_level_set = "TRAINLOOP_LOG_LEVEL" in os.environ
+    flush_immediately_set = "TRAINLOOP_FLUSH_IMMEDIATELY" in os.environ
 
     logger.debug(
         "Environment variable check - TRAINLOOP_DATA_FOLDER: %s",
@@ -83,12 +84,21 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
         "set" if log_level_set else "not set",
     )
     logger.debug(
+        "Environment variable check - TRAINLOOP_FLUSH_IMMEDIATELY: %s",
+        "set" if flush_immediately_set else "not set",
+    )
+    logger.debug(
         "Environment variable check - TRAINLOOP_CONFIG_PATH: %s",
         "set" if trainloop_config_path else "not set",
     )
 
     # If all variables are already set, no need to load config
-    if data_folder_set and host_allowlist_set and log_level_set:
+    if (
+        data_folder_set
+        and host_allowlist_set
+        and log_level_set
+        and flush_immediately_set
+    ):
         print(
             "[TrainLoop] All TrainLoop environment variables already set, skipping config file"
         )
@@ -184,3 +194,20 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
         else:
             # Use default log level if not set anywhere
             os.environ["TRAINLOOP_LOG_LEVEL"] = "WARN"
+            logger.info("Set TRAINLOOP_LOG_LEVEL to default: WARN")
+
+    if not flush_immediately_set:
+        if config_data and "flush_immediately" in config_data:
+            flush_val = str(config_data["flush_immediately"]).lower()
+        else:
+            flush_val = "true"
+        os.environ["TRAINLOOP_FLUSH_IMMEDIATELY"] = flush_val
+        logger.info(
+            "Set TRAINLOOP_FLUSH_IMMEDIATELY from config/default: %s",
+            flush_val,
+        )
+    else:
+        logger.debug(
+            "Using existing TRAINLOOP_FLUSH_IMMEDIATELY: %s",
+            os.environ["TRAINLOOP_FLUSH_IMMEDIATELY"],
+        )

@@ -2,6 +2,7 @@
 trainloop:
   data_folder: data # Relative to this config file
   log_level: warn
+  flush_immediately: true
   # Judge Configuration
   judge:
     env_path: "../.env" # Optional: Path to a .env file to load for the judge (e.g., for API keys)

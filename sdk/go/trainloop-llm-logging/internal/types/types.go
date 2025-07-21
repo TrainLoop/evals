@@ -50,9 +50,10 @@ type LLMCallData struct {
 
 // TrainloopConfigObject represents the 'trainloop' section of the config file.
 type TrainloopConfigObject struct {
-	DataFolder    string   `yaml:"data_folder"`
-	HostAllowlist []string `yaml:"host_allowlist"`
-	LogLevel      string   `yaml:"log_level"`
+	DataFolder       string   `yaml:"data_folder"`
+	HostAllowlist    []string `yaml:"host_allowlist"`
+	LogLevel         string   `yaml:"log_level"`
+	FlushImmediately *bool    `yaml:"flush_immediately"`
 }
 
 // TrainloopConfig is the top-level structure for the config file.

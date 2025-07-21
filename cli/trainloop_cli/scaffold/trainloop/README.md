@@ -65,14 +65,14 @@ response = client.chat.completions.create(
 ```
 
 **Buffering Control:**
-By default, the Python SDK buffers LLM calls and flushes them every 10 seconds or when 5+ calls are buffered. For immediate flushing or manual control:
+By default, the Python SDK flushes each LLM call immediately. To enable buffering and flush manually when needed:
 
 ```python
-# Flush immediately after each LLM call (useful for testing/scripts)
-collect("some/path/to/trainloop.config.yaml", flush_immediately=True)
-
-# Or use default buffering and flush manually when needed
+# Flush immediately after each LLM call (default)
 collect("some/path/to/trainloop.config.yaml")
+
+# Or enable buffering and flush manually when needed
+collect("some/path/to/trainloop.config.yaml", flush_immediately=False)
 # ... your LLM calls ...
 flush()  # Manually flush buffered calls
 ```

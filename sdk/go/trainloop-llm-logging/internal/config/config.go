@@ -53,8 +53,9 @@ func LoadConfigIntoEnv(trainloopConfigPathOpt string) {
 	dataFolderSet := os.Getenv("TRAINLOOP_DATA_FOLDER") != ""
 	hostAllowlistSet := os.Getenv("TRAINLOOP_HOST_ALLOWLIST") != ""
 	logLevelSet := os.Getenv("TRAINLOOP_LOG_LEVEL") != ""
+	flushImmediatelySet := os.Getenv("TRAINLOOP_FLUSH_IMMEDIATELY") != ""
 
-	if dataFolderSet && hostAllowlistSet && logLevelSet {
+	if dataFolderSet && hostAllowlistSet && logLevelSet && flushImmediatelySet {
 		log.Debug("All TrainLoop environment variables already set, skipping config file")
 		return
 	}
@@ -150,6 +151,17 @@ func LoadConfigIntoEnv(trainloopConfigPathOpt string) {
 		} else {
 			os.Setenv("TRAINLOOP_LOG_LEVEL", "WARN") // Default log level
 		}
+	}
+	if !flushImmediatelySet {
+		flushVal := "true"
+		if configData.FlushImmediately != nil {
+			if *configData.FlushImmediately {
+				flushVal = "true"
+			} else {
+				flushVal = "false"
+			}
+		}
+		os.Setenv("TRAINLOOP_FLUSH_IMMEDIATELY", flushVal)
 	}
 	logger.SetLogLevel(os.Getenv("TRAINLOOP_LOG_LEVEL")) // Re-apply log level
 }

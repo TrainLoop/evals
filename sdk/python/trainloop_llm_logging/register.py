@@ -28,7 +28,8 @@ _EXPORTER = None
 
 
 def collect(
-    trainloop_config_path: str | None = None, flush_immediately: bool = False
+    trainloop_config_path: str | None = None,
+    flush_immediately: bool | None = None,
 ) -> None:
     """Boot-strap the TrainLoop logging SDK (idempotent).
 
@@ -58,6 +59,18 @@ def collect(
 
     print("[TrainLoop] Loading config...")
     load_config_into_env(trainloop_config_path)
+
+    env_flush = os.environ.get("TRAINLOOP_FLUSH_IMMEDIATELY")
+    if flush_immediately is None:
+        if env_flush is not None:
+            flush_immediately = env_flush.lower() == "true"
+        else:
+            flush_immediately = True
+            os.environ["TRAINLOOP_FLUSH_IMMEDIATELY"] = "true"
+    else:
+        os.environ["TRAINLOOP_FLUSH_IMMEDIATELY"] = (
+            "true" if flush_immediately else "false"
+        )
 
     if "TRAINLOOP_DATA_FOLDER" not in os.environ:
         logger_module.register_logger.warning(
