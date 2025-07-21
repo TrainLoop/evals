@@ -52,6 +52,7 @@ The CLI respects these environment variables:
 | [`studio`](studio.md) | Launch the Studio UI |
 | [`add`](add.md) | Add components from the registry |
 | [`benchmark`](benchmark.md) | Compare LLM providers |
+| [`upgrade`](upgrade.md) | Upgrade project files and dependencies |
 
 ### Configuration
 
@@ -80,6 +81,9 @@ trainloop add metric accuracy
 
 # Run benchmark
 trainloop benchmark
+
+# Upgrade project
+trainloop upgrade
 ```
 
 ## Configuration Discovery
