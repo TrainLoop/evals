@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	trainloop "trainloop-llm-logging"
+	trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 )
 
 func init() {

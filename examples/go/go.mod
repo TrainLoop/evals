@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/trainloop/evals/sdk/go/trainloop-llm-logging v0.0.0-20250720223115-ce8ded92ad69 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

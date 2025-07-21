@@ -8,9 +8,16 @@ Quick guide to run LLM evaluation examples in Go.
 # Install Go dependencies
 go mod tidy
 
+# Note: If you encounter import issues with trainloop-llm-logging,
+# the examples use the GitHub import path:
+# import trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
+
 # Create .env file with API keys
-cp .env.example .env
-# Edit .env and add your API keys
+cat > .env << EOF
+OPENAI_API_KEY=your-openai-key
+ANTHROPIC_API_KEY=your-anthropic-key  
+GEMINI_API_KEY=your-gemini-key
+EOF
 ```
 
 ## Run Examples
