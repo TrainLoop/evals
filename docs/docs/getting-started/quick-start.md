@@ -146,6 +146,10 @@ if __name__ == "__main__":
     print(f"Generated greeting: {greeting}")
 ```
 
+#### trainloop_tag
+
+The `trainloop_tag()` function allows you to label your LLM requests for evaluation. This is useful for organizing your data and creating targeted evaluation suites.
+
 Run your application:
 ```bash
 python app.py
