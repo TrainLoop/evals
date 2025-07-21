@@ -28,7 +28,7 @@ describe('Config Loading', () => {
       loadConfig();
 
       expect(process.env.TRAINLOOP_DATA_FOLDER).toContain('data');
-      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com,generativelanguage.googleapis.com,api.cohere.ai,api.groq.com,api.mistral.ai,api.together.xyz,api.endpoints.anyscale.com,api.perplexity.ai,api.deepinfra.com,api.replicate.com,api-inference.huggingface.co,openai.azure.com');
       expect(process.env.TRAINLOOP_LOG_LEVEL).toBe('DEBUG');
     });
 
@@ -161,7 +161,7 @@ describe('Config Loading', () => {
 
       loadConfig();
 
-      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com,generativelanguage.googleapis.com,api.cohere.ai,api.groq.com,api.mistral.ai,api.together.xyz,api.endpoints.anyscale.com,api.perplexity.ai,api.deepinfra.com,api.replicate.com,api-inference.huggingface.co,openai.azure.com');
     });
 
     it('should set default log level if not specified', () => {
