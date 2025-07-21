@@ -1,0 +1,9 @@
+{
+  "label": "Go Examples",
+  "position": 3,
+  "link": {
+    "type": "generated-index", 
+    "description": "Complete Go examples using the TrainLoop Go SDK with Go modules for dependency management.",
+    "slug": "/category/examples/go"
+  }
+}

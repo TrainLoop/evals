@@ -118,6 +118,10 @@ const config: Config = {
               to: '/category/getting-started',
             },
             {
+              label: 'Examples',
+              to: '/category/examples',
+            },
+            {
               label: 'Introduction',
               to: '/intro',
             },

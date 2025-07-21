@@ -1,0 +1,9 @@
+{
+  "label": "Python Examples",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Complete Python examples using the TrainLoop Python SDK with Poetry for dependency management.",
+    "slug": "/category/examples/python"
+  }
+}

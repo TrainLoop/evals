@@ -1,0 +1,9 @@
+{
+  "label": "TypeScript/JavaScript Examples", 
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "description": "Complete TypeScript and JavaScript examples using the TrainLoop SDK with npm for dependency management.",
+    "slug": "/category/examples/typescript"
+  }
+}

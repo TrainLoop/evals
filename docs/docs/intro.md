@@ -99,11 +99,21 @@ Ready to start evaluating your LLM applications? Here's what you need to do:
 3. **[Explore the Guides](./guides/)** - Learn advanced features and best practices
 4. **[Check the Reference](./reference/)** - Detailed API documentation
 
-## Demo
+## Examples & Demos
 
-Want to see TrainLoop Evals in action? Check out our demo:
+Want to see TrainLoop Evals in action?
 
-- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete example implementation
+### 📚 Working Examples
+
+Complete code examples in multiple languages:
+
+- **[Python Examples](./examples/python/getting-started.md)** - Complete Python implementation with Poetry
+- **[TypeScript/JavaScript Examples](./examples/typescript/getting-started.md)** - Both TypeScript and JavaScript versions
+- **[Go Examples](./examples/go/getting-started.md)** - Go implementation with modules
+
+### 🎮 Live Demos
+
+- **[Demo Repository](https://github.com/trainloop/chat-ui-demo)** - Complete chat UI example implementation
 - **[Live Demo](https://evals.trainloop.ai)** - Interactive demo deployment
 
 ## Community and Support
