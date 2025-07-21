@@ -1,4 +1,8 @@
-# Python Getting Started
+---
+sidebar_position: 2
+---
+
+# Python Examples
 
 Complete working example demonstrating TrainLoop LLM evaluation with Python.
 

@@ -122,7 +122,7 @@ const config: Config = {
           position: 'left', 
           items: [
             { to: '/reference/cli/', label: 'CLI Reference' },
-            { to: '/reference/sdk/', label: 'SDK Reference' },
+            { to: '/reference/sdks/', label: 'SDK Reference' },
             { to: '/reference/data-formats/', label: 'Data Formats' },
           ]
         },

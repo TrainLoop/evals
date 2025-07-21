@@ -277,9 +277,9 @@ TRAINLOOP_DATA_FOLDER=./trainloop/data go run main.go
 
 Want to see more comprehensive examples? Check out our complete working examples:
 
-- **[Python Examples](../examples/python/getting-started.md)** - Code generation and letter counting examples with Poetry
-- **[TypeScript/JavaScript Examples](../examples/typescript/getting-started.md)** - Both TS and JS versions with npm
-- **[Go Examples](../examples/go/getting-started.md)** - Complete Go implementation with modules
+- **[Python Examples](../examples/python-examples.md)** - Code generation and letter counting examples with Poetry
+- **[TypeScript/JavaScript Examples](../examples/typescript-examples.md)** - Both TS and JS versions with npm
+- **[Go Examples](../examples/go-examples.md)** - Complete Go implementation with modules
 
 Each example includes setup instructions, evaluation metrics, and sample data.
 

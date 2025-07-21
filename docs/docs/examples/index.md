@@ -1,4 +1,8 @@
-# Examples Overview
+---
+sidebar_position: 1
+---
+
+# Examples
 
 Complete working examples demonstrating TrainLoop LLM evaluation across multiple programming languages.
 
@@ -20,9 +24,9 @@ Tests basic counting abilities that humans find trivial but LLMs often fail.
 
 ## Language Examples
 
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />
+- [**Python Examples**](python-examples.md) - Complete Python implementation with Poetry
+- [**TypeScript Examples**](typescript-examples.md) - TypeScript/JavaScript with npm  
+- [**Go Examples**](go-examples.md) - Go implementation with Go modules
 
 ## What You'll Learn
 

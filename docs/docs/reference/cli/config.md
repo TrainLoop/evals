@@ -237,5 +237,5 @@ echo "*.local.config.yaml" >> .gitignore
 ## See Also
 
 - [Environment Variables](env-vars.md) - Environment variable reference
-- [Architecture](../../explanation/concepts/architecture.md) - How configuration fits into the system
+- [Architecture](../../explanation/architecture.md) - How configuration fits into the system
 - [Production Setup](../../tutorials/production-setup.md) - Production configuration examples

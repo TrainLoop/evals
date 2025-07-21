@@ -17,14 +17,14 @@ Step-by-step tutorials for getting started and learning advanced features:
 
 ### 📚 **[Examples](../examples/)**
 Complete working examples in multiple languages:
-- [Python Examples](../examples/python/getting-started.md) - Complete Python implementation
-- [TypeScript Examples](../examples/typescript/getting-started.md) - TypeScript/JavaScript examples  
-- [Go Examples](../examples/go/getting-started.md) - Go implementation
+- [Python Examples](../examples/python-examples.md) - Complete Python implementation
+- [TypeScript Examples](../examples/typescript-examples.md) - TypeScript/JavaScript examples  
+- [Go Examples](../examples/go-examples.md) - Go implementation
 
 ### 📖 **[Reference](../reference/index.md)**
 Comprehensive API and configuration reference:
 - [CLI Reference](../reference/cli/) - All command-line tools
-- [SDK Reference](../reference/sdk/) - Multi-language SDK APIs
+- [SDK Reference](../reference/sdks/) - Multi-language SDK APIs
 - [Data Formats](../reference/data-formats/) - Event and result formats
 
 ## Getting Help

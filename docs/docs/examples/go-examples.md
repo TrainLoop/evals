@@ -1,4 +1,8 @@
-# Go Getting Started
+---
+sidebar_position: 4
+---
+
+# Go Examples
 
 Complete working example demonstrating TrainLoop LLM evaluation with Go.
 

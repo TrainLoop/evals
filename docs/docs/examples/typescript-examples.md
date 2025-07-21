@@ -1,4 +1,8 @@
-# TypeScript/JavaScript Getting Started
+---
+sidebar_position: 3
+---
+
+# TypeScript Examples
 
 Complete working examples demonstrating TrainLoop LLM evaluation with TypeScript and JavaScript.
 

@@ -113,9 +113,9 @@ Want to see TrainLoop Evals in action?
 
 Complete code examples in multiple languages:
 
-- **[Python Examples](./examples/python/getting-started.md)** - Complete Python implementation with Poetry
-- **[TypeScript/JavaScript Examples](./examples/typescript/getting-started.md)** - Both TypeScript and JavaScript versions
-- **[Go Examples](./examples/go/getting-started.md)** - Go implementation with modules
+- **[Python Examples](./examples/python-examples.md)** - Complete Python implementation with Poetry
+- **[TypeScript/JavaScript Examples](./examples/typescript-examples.md)** - Both TypeScript and JavaScript versions
+- **[Go Examples](./examples/go-examples.md)** - Go implementation with modules
 
 ### 🎮 Live Demos
 
