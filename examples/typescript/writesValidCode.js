@@ -1,5 +1,6 @@
 // Notice that trainloop logging should be setup via NODE_OPTIONS="--require=trainloop-llm-logging"
-const { trainloopTag } = require('trainloop-llm-logging');
+const { trainloopTag, collect } = require('trainloop-llm-logging');
+collect(true);
 
 const { makeAiRequest } = require('./aiRequest');
 

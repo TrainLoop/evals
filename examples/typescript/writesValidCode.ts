@@ -1,5 +1,7 @@
 // Notice that trainloop logging should be setup via --require flag in package.json script
-import { trainloopTag } from 'trainloop-llm-logging';
+import { trainloopTag, collect } from 'trainloop-llm-logging';
+collect(true);
+
 import { makeAiRequest } from './aiRequest';
 
 // Example usage

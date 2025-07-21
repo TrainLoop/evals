@@ -6,17 +6,13 @@ import { makeAiRequest } from './aiRequest';
 
 // Example usage
 async function main() {
-    const sentence = "I love strawberries";
-    const promptText = `
-Count the occurrences of each letter in the following sentence: <sentence>${sentence}</sentence>.
-Output your answer in a code block with each letter and its count on a separate line.
-Use the exact format: <letter> - <count>
-Only include letters that appear in the word.
-Sort the letters alphabetically.
-`;
+    const passive = "The quarterly report was prepared by the finance team.";
+    const promptText = `Rewrite the sentence below in ACTIVE voice, preserving meaning.  
+Sentence: "${passive}"
+Only output the rewritten sentence.`;
 
-    // Tag this request for the letter counting evaluation suite
-    const headers = trainloopTag("letter-counting");
+    // Tag this request for the active voice evaluation suite
+    const headers = trainloopTag("active-voice");
     const response = await makeAiRequest(promptText, "gpt-4o-mini", 500, headers);
     
     if (response) {
@@ -27,4 +23,4 @@ Sort the letters alphabetically.
 
 if (require.main === module) {
     main().catch(console.error);
-}
+} 
