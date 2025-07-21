@@ -11,22 +11,7 @@ from ..types import ParsedRequestBody, ParsedResponseBody, LLMCallLocation
 from ..logger import instrumentation_utils_logger as logger
 
 _MAX_BODY = 2 * 1024 * 1024  # 2 MB
-DEFAULT_HOST_ALLOWLIST = [
-    # existing providers
-    "api.openai.com",
-    "api.anthropic.com",
-    "generativelanguage.googleapis.com",
-    "api.cohere.ai",
-    "api.groq.com",
-    "api.mistral.ai",
-    "api.together.xyz",
-    "api.endpoints.anyscale.com",
-    "api.perplexity.ai",
-    "api.deepinfra.com",
-    "api.replicate.com",
-    "api-inference.huggingface.co",
-    "openai.azure.com"
-]
+DEFAULT_HOST_ALLOWLIST = ["api.openai.com", "api.anthropic.com"]
 HEADER_NAME = "X-Trainloop-Tag"
 
 

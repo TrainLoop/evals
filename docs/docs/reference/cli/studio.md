@@ -135,4 +135,4 @@ trainloop studio --host 0.0.0.0 --port 3000
 
 - [eval](eval.md) - Generate data for Studio UI
 - [Configuration](config.md) - Configure Studio behavior
-- [Architecture](../../explanation/architecture.md) - How Studio UI fits into the system
+- [Architecture](../../explanation/concepts/architecture.md) - How Studio UI fits into the system

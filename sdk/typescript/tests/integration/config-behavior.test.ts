@@ -118,9 +118,7 @@ describe('Config Loading Behavior Integration Test', () => {
 
     // Should use defaults
     expect(process.env.TRAINLOOP_DATA_FOLDER).toBeUndefined();
-    expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.openai.com');
-    expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.anthropic.com');
-    expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('generativelanguage.googleapis.com');
+    expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com');
     expect(process.env.TRAINLOOP_LOG_LEVEL).toBe('WARN');
   });
 });

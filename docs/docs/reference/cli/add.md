@@ -239,5 +239,5 @@ To contribute components to the public registry:
 ## See Also
 
 - [Tutorials](../../tutorials/index.md) - Learn to write custom metrics
-- [Architecture](../../explanation/architecture.md) - System architecture overview
+- [Architecture](../../explanation/concepts/architecture) - System architecture overview
 - [Contributing Guide](https://github.com/trainloop/evals/blob/main/CONTRIBUTING.md) - How to contribute components

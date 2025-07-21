@@ -162,6 +162,6 @@ TrainLoop Evals maintains backward compatibility:
 
 ## See Also
 
-- [Architecture](../../explanation/architecture.md) - How data flows through the system
-- [SDK Reference](../sdks/index.md) - How to collect event data
+- [Architecture](../../explanation/concepts/architecture.md) - How data flows through the system
+- [SDK Reference](../sdk/index.md) - How to collect event data
 - [CLI Reference](../cli/index.md) - How to process data
