@@ -68,9 +68,6 @@ const config: Config = {
         editUrl: 'https://github.com/trainloop/evals/tree/main/docs/cli/',
       },
     ],
-  ],
-
-  plugins: [
     [
       '@docusaurus/plugin-content-docs',
       {
@@ -95,10 +92,39 @@ const config: Config = {
       // },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'docsSidebar',
+          to: '/intro',
+          label: 'Introduction',
+          position: 'left'
+        },
+        {
+          type: 'dropdown',
+          label: 'Getting Started',
           position: 'left',
-          label: 'Documentation',
+          items: [
+            { to: '/getting-started/installation', label: 'Installation' },
+            { to: '/getting-started/quick-start', label: 'Quick Start' },
+            { to: '/tutorials/getting-started', label: 'Tutorial' },
+          ]
+        },
+        {
+          type: 'dropdown', 
+          label: 'Guides & Tutorials',
+          position: 'left',
+          items: [
+            { to: '/tutorials/', label: 'Tutorials' },
+            { to: '/category/examples', label: 'Examples' },
+            { to: '/guides/', label: 'How-to Guides' },
+          ]
+        },
+        {
+          type: 'dropdown',
+          label: 'Reference',
+          position: 'left', 
+          items: [
+            { to: '/reference/cli/', label: 'CLI Reference' },
+            { to: '/reference/sdk/', label: 'SDK Reference' },
+            { to: '/reference/data-formats/', label: 'Data Formats' },
+          ]
         },
         {
           href: 'https://github.com/trainloop/evals',

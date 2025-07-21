@@ -54,13 +54,12 @@ collect("trainloop/trainloop.config.yaml")
 collect(flush_immediately=True, tags=["production"])
 ```
 
-### trainloop_tag(tag, **metadata)
+### trainloop_tag(tag)
 
 Generate headers for tagging LLM calls.
 
 **Parameters**:
 - `tag` (str): Tag name
-- `**metadata`: Additional metadata
 
 **Returns**: Dict of headers for OpenAI `extra_headers`
 
@@ -68,9 +67,7 @@ Generate headers for tagging LLM calls.
 ```python
 # Basic tagging
 headers = trainloop_tag("greeting")
-
-# With metadata
-headers = trainloop_tag("customer-support", priority="high", version="1.0")
+headers = trainloop_tag("customer-support")
 ```
 
 ### flush()

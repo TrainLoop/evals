@@ -42,13 +42,12 @@ TRAINLOOP_DATA_FOLDER=./data NODE_OPTIONS="--require=trainloop-llm-logging" node
 
 ## API Reference
 
-### trainloopTag(tag, metadata?)
+### trainloopTag(tag)
 
 Generate headers for tagging LLM calls.
 
 **Parameters**:
 - `tag` (string): Tag name
-- `metadata` (object, optional): Additional metadata
 
 **Returns**: Object with headers for HTTP requests
 
@@ -56,12 +55,7 @@ Generate headers for tagging LLM calls.
 ```javascript
 // Basic tagging
 const headers = trainloopTag("greeting");
-
-// With metadata
-const headers = trainloopTag("customer-support", { 
-    priority: "high", 
-    version: "1.0" 
-});
+const headers = trainloopTag("customer-support");
 ```
 
 ### shutdown()

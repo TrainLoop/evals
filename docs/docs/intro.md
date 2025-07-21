@@ -73,6 +73,12 @@ TrainLoop Evals is perfect for:
 
 ## How It Works
 
+```
+Your App + SDK → Data Collection → CLI Evaluation → Studio Visualization
+    ↓               ↓                 ↓              ↓
+[LLM Calls]    [events/*.jsonl]   [results/*.json]  [Charts & Tables]
+```
+
 1. **🔧 Instrument** - Add TrainLoop SDK to your application with minimal code changes
 2. **📝 Collect** - Automatically capture LLM requests and responses as JSONL files
 3. **📊 Evaluate** - Define custom metrics and test suites to assess LLM performance

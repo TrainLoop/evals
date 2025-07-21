@@ -84,29 +84,23 @@ Gracefully shutdown TrainLoop and flush buffered events.
 defer trainloop.Shutdown()
 ```
 
-### TrainloopTag(tag string, metadata map[string]string) context.Context
+### TrainloopTag(tag string) map[string]string
 
-Create a context with TrainLoop tags for HTTP requests.
+Create headers with TrainLoop tags for HTTP requests.
 
 **Parameters**:
 - `tag` (string): Tag name
-- `metadata` (map[string]string): Additional metadata
 
-**Returns**: Context with TrainLoop headers
+**Returns**: Map of headers for HTTP requests
 
 **Example**:
 ```go
 // Basic tagging
-ctx := trainloop.TrainloopTag("greeting", nil)
+headers := trainloop.TrainloopTag("greeting")
+headers2 := trainloop.TrainloopTag("customer-support")
 
-// With metadata
-ctx := trainloop.TrainloopTag("customer-support", map[string]string{
-    "priority": "high",
-    "version": "1.0",
-})
-
-// Use with HTTP client
-req, _ := http.NewRequestWithContext(ctx, "POST", url, body)
+// Use with your HTTP client
+// Add headers to your request as needed
 ```
 
 ### Collect(ctx context.Context, data interface{})
