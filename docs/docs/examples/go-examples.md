@@ -195,6 +195,6 @@ go/
 
 ## Next Steps
 
-- [View Python Examples](../python/getting-started.md)
-- [View TypeScript Examples](../typescript/getting-started.md)
-- [Learn about Custom Metrics](../../tutorials/advanced-metrics.md)
+- [View Python Examples](python-examples.md)
+- [View TypeScript Examples](typescript-examples.md)
+- [Learn about Custom Metrics](../tutorials/advanced-metrics.md)

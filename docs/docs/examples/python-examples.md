@@ -128,6 +128,6 @@ AI Response: def factorial(n):
 
 ## Next Steps
 
-- [View TypeScript Examples](../typescript/getting-started.md)
-- [View Go Examples](../go/getting-started.md)
-- [Learn about Custom Metrics](../../tutorials/advanced-metrics.md)
+- [View TypeScript Examples](typescript-examples.md)
+- [View Go Examples](go-examples.md)
+- [Learn about Custom Metrics](../tutorials/advanced-metrics.md)

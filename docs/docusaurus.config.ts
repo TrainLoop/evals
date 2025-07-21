@@ -112,7 +112,7 @@ const config: Config = {
           position: 'left',
           items: [
             { to: '/tutorials/', label: 'Tutorials' },
-            { to: '/category/examples', label: 'Examples' },
+            { to: '/examples/', label: 'Examples' },
             { to: '/guides/', label: 'How-to Guides' },
           ]
         },
@@ -145,7 +145,7 @@ const config: Config = {
             },
             {
               label: 'Examples',
-              to: '/category/examples',
+              to: '/examples/',
             },
             {
               label: 'Introduction',

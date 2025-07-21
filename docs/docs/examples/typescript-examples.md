@@ -165,6 +165,6 @@ def factorial(n):
 
 ## Next Steps
 
-- [View Python Examples](../python/getting-started.md)
-- [View Go Examples](../go/getting-started.md) 
-- [Learn about Custom Metrics](../../tutorials/advanced-metrics.md)
+- [View Python Examples](python-examples.md)
+- [View Go Examples](go-examples.md) 
+- [Learn about Custom Metrics](../tutorials/advanced-metrics.md)
