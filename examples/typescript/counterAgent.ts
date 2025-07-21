@@ -20,6 +20,7 @@ Sort the letters alphabetically.
     if (response) {
         console.log("AI Response:", response);
     }
+    process.exit(0);
 }
 
 if (require.main === module) {

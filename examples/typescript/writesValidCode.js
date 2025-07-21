@@ -1,6 +1,5 @@
-// Notice that this is imported BEFORE openai is imported! This is critical!
-const { collect, trainloopTag } = require('trainloop-llm-logging');
-collect(true);
+// Notice that trainloop logging should be setup via NODE_OPTIONS="--require=trainloop-llm-logging"
+const { trainloopTag } = require('trainloop-llm-logging');
 
 const { makeAiRequest } = require('./aiRequest');
 
@@ -19,6 +18,7 @@ Output only the code in a single code block, no explanations.`;
     if (response) {
         console.log("AI Response:", response);
     }
+    process.exit(0);
 }
 
 if (require.main === module) {

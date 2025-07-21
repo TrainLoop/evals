@@ -17,6 +17,7 @@ Output only the code in a single code block, no explanations.`;
     if (response) {
         console.log("AI Response:", response);
     }
+    process.exit(0);
 }
 
 if (require.main === module) {
