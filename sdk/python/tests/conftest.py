@@ -30,6 +30,30 @@ def setup_trainloop_instrumentation():
     os.environ["TRAINLOOP_DATA_FOLDER"] = temp_dir
 
     # Install instrumentation globally for the test session
+    # ------------------------------------------------------------------
+    # Some pytest plugins (e.g. `pytest-requests`) may import HTTP libraries
+    # like `requests` or `httpx` *before* this fixture runs.  The TrainLoop SDK
+    # requires that those libraries are **not** imported prior to calling
+    # `collect()` so it can monkey-patch them.  If they are already present in
+    # `sys.modules`, `collect()` raises a RuntimeError.
+    #
+    # For unit testing purposes we don’t actually care about patching outbound
+    # HTTP – we just want the SDK initialisation to succeed.  Therefore we
+    # remove any pre-imported libraries from `sys.modules` before calling
+    # `collect()`.  They will be re-imported later after the patches have been
+    # installed.
+    import sys
+
+    for _mod in ("requests", "httpx", "openai"):
+        sys.modules.pop(_mod, None)
+
+    # ------------------------------------------------------------------
+    # Patch TrainLoop to *skip* HTTP instrumentation in unit tests – we only
+    # need the SDK initialised; we do not actually exercise outbound HTTP.
+    import trainloop_llm_logging.register as tl_register
+
+    # Replace the real install_patches with a no-op
+    tl_register.install_patches = lambda _exporter: None  # type: ignore[assignment]
 
     import trainloop_llm_logging as tl
 

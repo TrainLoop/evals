@@ -41,7 +41,21 @@ export function createMockConfig(dir: string, config?: any): string {
   const defaultConfig = {
     trainloop: {
       data_folder: './data',
-      host_allowlist: ['api.openai.com', 'api.anthropic.com'],
+      host_allowlist: [
+        'api.openai.com',
+        'api.anthropic.com',
+        'generativelanguage.googleapis.com',
+        'api.cohere.ai',
+        'api.groq.com',
+        'api.mistral.ai',
+        'api.together.xyz',
+        'api.endpoints.anyscale.com',
+        'api.perplexity.ai',
+        'api.deepinfra.com',
+        'api.replicate.com',
+        'api-inference.huggingface.co',
+        'openai.azure.com'
+      ],
       log_level: 'debug'
     }
   };

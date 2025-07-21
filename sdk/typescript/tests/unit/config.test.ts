@@ -5,6 +5,7 @@ import { loadConfig } from '../../src/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createTempDir, cleanupTempDir, createMockConfig, mockEnvVars } from '../test-utils';
+import { describe, it, beforeEach, afterEach, expect, jest } from '@jest/globals';
 
 describe('Config Loading', () => {
   let tempDir: string;
@@ -28,7 +29,9 @@ describe('Config Loading', () => {
       loadConfig();
 
       expect(process.env.TRAINLOOP_DATA_FOLDER).toContain('data');
-      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.openai.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('generativelanguage.googleapis.com');
       expect(process.env.TRAINLOOP_LOG_LEVEL).toBe('DEBUG');
     });
 
@@ -142,7 +145,7 @@ describe('Config Loading', () => {
       process.env.TRAINLOOP_CONFIG_PATH = configPath;
 
       // Should warn when data_folder is empty (no longer throws)
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       loadConfig();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('TRAINLOOP_DATA_FOLDER not set')
@@ -161,7 +164,9 @@ describe('Config Loading', () => {
 
       loadConfig();
 
-      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toBe('api.openai.com,api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.openai.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('api.anthropic.com');
+      expect(process.env.TRAINLOOP_HOST_ALLOWLIST).toContain('generativelanguage.googleapis.com');
     });
 
     it('should set default log level if not specified', () => {

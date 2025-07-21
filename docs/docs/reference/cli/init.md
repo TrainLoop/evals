@@ -188,7 +188,7 @@ After running `trainloop init`:
    export TRAINLOOP_DATA_FOLDER="$(pwd)/trainloop/data"
    ```
 
-3. **Install SDK in your application** (see [SDK documentation](../sdk/index.md))
+3. **Install SDK in your application** (see [SDK documentation](../sdks/index.md))
 
 4. **Run your application** to collect data
 
@@ -231,4 +231,4 @@ trainloop init --force
 - [eval](eval) - Run evaluation suites
 - [studio](studio) - Launch Studio UI
 - [Configuration](config) - Configure TrainLoop behavior
-- [SDK Reference](../sdk/) - Instrument your application
+- [SDK Reference](../sdks/) - Instrument your application

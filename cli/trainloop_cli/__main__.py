@@ -6,6 +6,7 @@ from trainloop_cli.commands.eval import eval_command as eval_cmd
 from trainloop_cli.commands.studio import studio_command as studio_cmd
 from trainloop_cli.commands.add import add_command
 from trainloop_cli.commands.benchmark import benchmark_command as benchmark_cmd
+from trainloop_cli.commands.upgrade import upgrade_command as upgrade_cmd
 
 
 @click.group(
@@ -17,11 +18,12 @@ def cli():
     """
     TrainLoop Evaluations - A lightweight test harness for validating LLM behaviour.
 
-    Run without a command to launch the local viewer (studio).
+    See "help" menu.
     """
     ctx = click.get_current_context()
     if ctx.invoked_subcommand is None:
-        studio_cmd(config_path=None, local_tar_path=None)
+        ctx.get_help()
+        click.echo(ctx.get_help())
 
 
 @cli.command("studio")
@@ -105,6 +107,12 @@ def add(component_type, name, force, version, list_components, registry):
 def benchmark():
     """Compare evaluation results across multiple LLM providers."""
     benchmark_cmd()
+
+
+@cli.command("upgrade")
+def upgrade():
+    """Upgrade TrainLoop to the latest release and refresh project files."""
+    upgrade_cmd()
 
 
 def main():

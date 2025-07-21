@@ -39,6 +39,23 @@ trainloop:
   data_folder: "./data"
   log_level: "info"  # debug, info, warn, error
   
+  # Host filtering for SDK instrumentation (optional)
+  # Overrides the default allowlist when specified
+  host_allowlist:
+    - api.openai.com
+    - api.anthropic.com
+    - generativelanguage.googleapis.com
+    - api.cohere.ai
+    - api.groq.com
+    - api.mistral.ai
+    - api.together.xyz
+    - api.endpoints.anyscale.com
+    - api.perplexity.ai
+    - api.deepinfra.com
+    - api.replicate.com
+    - api-inference.huggingface.co
+    - openai.azure.com
+  
   # Data retention (days)
   data_retention:
     events: 30
@@ -237,5 +254,5 @@ echo "*.local.config.yaml" >> .gitignore
 ## See Also
 
 - [Environment Variables](env-vars.md) - Environment variable reference
-- [Architecture](../../explanation/concepts/architecture.md) - How configuration fits into the system
+- [Architecture](../../explanation/architecture.md) - How configuration fits into the system
 - [Production Setup](../../tutorials/production-setup.md) - Production configuration examples
