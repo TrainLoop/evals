@@ -1,11 +1,8 @@
 trainloop:
   data_folder: data
-  host_allowlist:
-  - api.openai.com
-  - api.anthropic.com
   log_level: warn
   judge:
-    env_path: ../.env.judge
+    env_path: ../.env
     models:
     - openai/gpt-4.1-2025-04-14
     - anthropic/claude-sonnet-4-20250514
