@@ -75,10 +75,7 @@ Before starting, you'll need:
 
 ```bash
 # Create .env file with your API keys
-cat > .env << 'EOF'
-OPENAI_API_KEY=your-openai-key-here
-ANTHROPIC_API_KEY=your-anthropic-key-here
-EOF
+cp .env.example .env
 ```
 
 3. **Data Folder Configuration** - Tell TrainLoop where to store data:

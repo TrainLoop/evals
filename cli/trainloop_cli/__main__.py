@@ -47,9 +47,12 @@ def init(force: bool):
 
 @cli.command("eval")
 @click.option("--suite", help="Run only the specified suite instead of all suites.")
-def run_eval(suite):
+@click.option(
+    "--no-breakdown", is_flag=True, help="Disable per-metric breakdown in summary."
+)
+def run_eval(suite, no_breakdown):
     """Discover suites, apply metrics to new events, append verdicts to data/results/."""
-    eval_cmd(suite=suite)
+    eval_cmd(suite=suite, no_breakdown=no_breakdown)
 
 
 @cli.command("add")

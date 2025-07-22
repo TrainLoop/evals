@@ -15,7 +15,7 @@ import sys
 from collections import defaultdict, Counter
 from dataclasses import asdict
 from pathlib import Path
-from typing import List, Optional, Dict, Set, Iterator, Tuple, Union, cast
+from typing import List, Optional, Dict, Set, Iterator, Tuple, Union, cast, Any
 from datetime import datetime
 import fsspec
 from fsspec.spec import AbstractFileSystem
@@ -123,7 +123,98 @@ def _write_results(
         print(f"Error writing results for suite '{suite_name}' to {out_file_str}: {e}")
 
 
-def _print_summary(all_results: Dict[str, List[Result]]):
+def _analyze_results_by_metric(
+    all_results: Dict[str, List[Result]],
+) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Analyze results grouped by suite and then by metric."""
+    analysis = {}
+
+    for suite_name, results in all_results.items():
+        analysis[suite_name] = {}
+
+        # Group by metric
+        metrics = defaultdict(list)
+        for result in results:
+            metric_name = result.metric
+            metrics[metric_name].append(result)
+
+        # Analyze each metric
+        for metric_name, metric_results in metrics.items():
+            total = len(metric_results)
+            passed = sum(1 for r in metric_results if r.passed)
+            failed = total - passed
+
+            # Collect failure reasons
+            failure_reasons = defaultdict(int)
+            for r in metric_results:
+                if not r.passed:
+                    reason = r.reason if r.reason is not None else "Unknown reason"
+                    failure_reasons[reason] += 1
+
+            analysis[suite_name][metric_name] = {
+                "total": total,
+                "passed": passed,
+                "failed": failed,
+                "pass_rate": passed / total if total > 0 else 0,
+                "failure_reasons": dict(failure_reasons),
+            }
+
+    return analysis
+
+
+def _print_metric_breakdown(analysis: Dict[str, Dict[str, Dict[str, Any]]]):
+    """Print detailed per-metric breakdown."""
+    print(f"\n{HEADER_COLOR}--- Per-Metric Breakdown ---{RESET_COLOR}")
+
+    for suite_name, metrics in analysis.items():
+        print(f"\n{EMPHASIS_COLOR}🔍 {suite_name.upper()}{RESET_COLOR}")
+        print("-" * 60)
+
+        total_suite_passed = 0
+        total_suite_evaluations = 0
+
+        for metric_name, metric_data in metrics.items():
+            total = metric_data["total"]
+            passed = metric_data["passed"]
+            failed = metric_data["failed"]
+            pass_rate = metric_data["pass_rate"]
+
+            total_suite_passed += passed
+            total_suite_evaluations += total
+
+            # Status indicator
+            if passed == total:
+                status = OK
+            elif passed == 0:
+                status = BAD
+            else:
+                status = "⚠️"  # Warning for mixed results
+
+            print(
+                f"  {status} {metric_name:<35} {passed:>2}/{total:<2} ({pass_rate:>6.1%})"
+            )
+
+            # Show failure reasons if any
+            if failed > 0 and metric_data["failure_reasons"]:
+                for reason, count in metric_data["failure_reasons"].items():
+                    if count > 1:
+                        print(f"      └─ {reason}")
+                        print(f"         ({count} instances)")
+                    else:
+                        print(f"      └─ {reason}")
+
+        # Suite summary
+        suite_pass_rate = (
+            total_suite_passed / total_suite_evaluations
+            if total_suite_evaluations > 0
+            else 0
+        )
+        print(
+            f"  📊 Suite Summary: {total_suite_passed}/{total_suite_evaluations} ({suite_pass_rate:.1%})"
+        )
+
+
+def _print_summary(all_results: Dict[str, List[Result]], no_breakdown: bool = False):
     """Prints a pass/fail summary to the console."""
     print(f"\n{HEADER_COLOR}--- Evaluation Summary ---{RESET_COLOR}")
     if not all_results:
@@ -171,12 +262,18 @@ def _print_summary(all_results: Dict[str, List[Result]]):
                         print(
                             f"    (for {metric} on {EMPHASIS_COLOR}{tag}{RESET_COLOR})"
                         )
-    print("------------------------")
+        print("------------------------")
+
+    # Add per-metric breakdown (unless disabled)
+    if not no_breakdown:
+        analysis = _analyze_results_by_metric(all_results)
+        _print_metric_breakdown(analysis)
 
 
 def run_evaluations(
     project_root_dir: Path,
     suite_filter_names: Optional[List[str]] = None,
+    no_breakdown: bool = False,
 ) -> int:
     """
     Main entry point for running evaluations.
@@ -240,10 +337,12 @@ def run_evaluations(
             )
             # Consider if this should be an error (return 1) or not.
             # For now, if no suites are found (e.g. new project), it's not an error itself.
-            _print_summary(collected_results)  # Will print 'No results to summarize'
+            _print_summary(
+                collected_results, no_breakdown
+            )  # Will print 'No results to summarize'
             return 0  # No suites run, so technically no failures.
 
-    _print_summary(collected_results)
+    _print_summary(collected_results, no_breakdown)
 
     # Determine overall exit code: 0 if all metrics in all run suites passed, 1 otherwise.
     if (

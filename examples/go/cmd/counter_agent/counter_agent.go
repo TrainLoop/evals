@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"trainloop-go-examples/ai_request"
 	trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 )
 
@@ -14,6 +15,9 @@ func init() {
 }
 
 func main() {
+	// Ensure data is flushed when the program exits
+	defer trainloop.Shutdown()
+
 	sentence := "I love strawberries"
 	promptText := fmt.Sprintf(`
 Count the occurrences of each letter in the following sentence: <sentence>%s</sentence>.
@@ -25,7 +29,7 @@ Sort the letters alphabetically.
 
 	// Tag this request for the letter counting evaluation suite
 	headers := trainloop.TrainloopTag("letter-counting")
-	response, err := MakeAIRequest(promptText, "gpt-4", 500, headers)
+	response, err := ai_request.MakeAIRequest(promptText, "gpt-4", 500, headers)
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}

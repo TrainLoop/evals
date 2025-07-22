@@ -69,7 +69,7 @@ def _check_and_reexecute_if_needed() -> None:
 # --------------------------------------------------------------------------- #
 # Public entry-point (invoked by Click)
 # --------------------------------------------------------------------------- #
-def eval_command(suite: Optional[str] = None) -> None:
+def eval_command(suite: Optional[str] = None, no_breakdown: bool = False) -> None:
     """
     Run evaluation suites.
 
@@ -115,5 +115,5 @@ def eval_command(suite: Optional[str] = None) -> None:
     )
     print("-" * 40)  # Separator line
 
-    exit_code = run_evaluations(project_root_path, suites_to_run)
+    exit_code = run_evaluations(project_root_path, suites_to_run, no_breakdown)
     sys.exit(exit_code)

@@ -31,11 +31,7 @@ go mod tidy
 # import trainloop "github.com/trainloop/evals/sdk/go/trainloop-llm-logging"
 
 # Create .env file with API keys
-cat > .env << EOF
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key  
-GEMINI_API_KEY=your-gemini-key
-EOF
+cp .env.example .env
 ```
 
 ## Run Examples

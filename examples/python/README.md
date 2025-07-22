@@ -13,11 +13,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create .env file with API keys
-cat > .env << EOF
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key  
-GEMINI_API_KEY=your-gemini-key
-EOF
+cp .env.example .env
 ```
 
 ## Run Examples
@@ -28,6 +24,12 @@ python writes_valid_code.py
 
 # Letter counting example (evaluates counting accuracy)
 python counter_agent.py
+
+# Customer support tone example (evaluates polite responses)
+python polite_responder.py
+
+# Active voice transformation example (evaluates style rewriting)
+python active_voice_rewriter.py
 
 # Run each script 3-4 times to collect samples
 # Check collected data in trainloop/data/events/
@@ -70,6 +72,18 @@ Tests basic counting abilities that humans find trivial but LLMs often fail.
 - Prompts to count each letter in "strawberry"
 - Measures: format compliance, counting accuracy
 - Common failure: counting 'r' as 2 instead of 3 due to tokenization
+
+### Customer Support Tone (`polite_responder.py`)
+Tests whether models can produce polite, empathetic customer service responses.
+- Prompts for a response to an angry customer complaint
+- Measures: politeness/apology, word count limit (≤120 words)
+- Evaluates tone, empathy, and solution-oriented approach
+
+### Active Voice Transformation (`active_voice_rewriter.py`)
+Tests simple style transformation from passive to active voice.
+- Prompts to rewrite a passive sentence in active voice
+- Measures: successful voice transformation while preserving meaning
+- Evaluates basic writing style adaptation
 
 Results are saved in `trainloop/data/results/`
 

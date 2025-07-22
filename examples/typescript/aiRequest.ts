@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 

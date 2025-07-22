@@ -7,8 +7,10 @@
     "letter-counting:ts": "npx ts-node counterAgent.ts",
     "code-generation:js": "node writesValidCode.js",
     "letter-counting:js": "node counterAgent.js",
-    "start": "NODE_OPTIONS=\"--require=trainloop-llm-logging\" node index.js",
-    "test-no-logging": "node index.js",
+    "polite-responder:ts": "npx ts-node politeResponder.ts",
+    "polite-responder:js": "node politeResponder.js",
+    "active-voice:ts": "npx ts-node activeVoiceRewriter.ts",
+    "active-voice:js": "node activeVoiceRewriter.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -22,6 +24,6 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "ts-node": "^10.9.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.8.3"
   }
 }
