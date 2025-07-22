@@ -13,11 +13,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create .env file with API keys
-cat > .env << EOF
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key  
-GEMINI_API_KEY=your-gemini-key
-EOF
+cp .env.example .env
 ```
 
 ## Run Examples

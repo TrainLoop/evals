@@ -9,11 +9,7 @@ Quick guide to run LLM evaluation examples in TypeScript and JavaScript.
 npm install
 
 # Create .env file with API keys
-cat > .env << EOF
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key  
-GEMINI_API_KEY=your-gemini-key
-EOF
+cp .env.example .env
 ```
 
 ## Run Examples
