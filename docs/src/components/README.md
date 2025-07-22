@@ -1,39 +1,35 @@
-# Universal Markdown Download Components
+# Universal Markdown Download Component
 
-These components allow users to download the raw markdown source of any documentation page.
+This component allows users to download or copy the raw markdown source of any documentation page.
 
-## Available Components
+## Available Component
 
 ### `<DownloadMarkdownButton />`
-A compact button that appears automatically in the breadcrumb area of every docs page.
+A flexible button that can download or copy markdown, appearing automatically in breadcrumbs.
 
 **Props:**
+- `action?: 'download' | 'copy'` (default: 'download')
+- `iconOnly?: boolean` (default: false) 
 - `size?: 'small' | 'normal'` (default: 'small')
 - `variant?: 'primary' | 'secondary' | 'outline'` (default: 'outline') 
 - `filename?: string` (auto-detected from page URL)
 - `githubUrl?: string` (auto-constructed from page path)
 
-### `<DownloadMarkdown />`
-Full-featured download component with both download and copy functionality.
-
-**Props:**
-- `filename?: string` (auto-detected from page URL)
-- `githubUrl?: string` (auto-constructed from page path)
-
 ## Usage
 
-These components are available globally in all MDX files:
+The component is available globally in all MDX files:
 
 ```jsx
-// Automatic detection (recommended)
-<DownloadMarkdownButton />
-<DownloadMarkdown />
+// Breadcrumb usage (automatic)
+<DownloadMarkdownButton iconOnly={true} action="download" />
+<DownloadMarkdownButton iconOnly={true} action="copy" />
+
+// Manual usage
+<DownloadMarkdownButton action="download" />
+<DownloadMarkdownButton action="copy" />
 
 // Custom filename
 <DownloadMarkdownButton filename="custom-name.md" />
-
-// Custom GitHub URL
-<DownloadMarkdown githubUrl="https://raw.githubusercontent.com/TrainLoop/evals/main/docs/specific-file.md" />
 ```
 
 ## Features
