@@ -82,3 +82,26 @@
 [data-theme='dark'] .navbar-llm-cheatsheet-icon:hover::before {
   border-bottom-color: var(--ifm-color-gray-100);
 }
+
+/* Breadcrumb Markdown buttons */
+.breadcrumb-markdown-button {
+  background: none;
+  border: none;
+  font-size: 1.1em;
+  padding: 4px 6px;
+  margin: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+  color: var(--ifm-color-content-secondary);
+}
+
+.breadcrumb-markdown-button:hover {
+  opacity: 0.7;
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+.breadcrumb-markdown-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

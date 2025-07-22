@@ -10,8 +10,9 @@ export default function DocBreadcrumbsWrapper(props: Props): JSX.Element {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
       <DocBreadcrumbs {...props} />
-      <div style={{ marginLeft: 'auto' }}>
-        <DownloadMarkdownButton size="small" variant="outline" />
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+        <DownloadMarkdownButton iconOnly={true} action="download" />
+        <DownloadMarkdownButton iconOnly={true} action="copy" />
       </div>
     </div>
   );

@@ -6,16 +6,23 @@ interface DownloadMarkdownButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
   filename?: string;
   githubUrl?: string;
+  iconOnly?: boolean;
+  action?: 'download' | 'copy';
 }
 
 const DownloadMarkdownButton: React.FC<DownloadMarkdownButtonProps> = ({ 
   size = 'small',
   variant = 'outline',
   filename,
-  githubUrl
+  githubUrl,
+  iconOnly = false,
+  action = 'download'
 }) => {
   const location = useLocation();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  
+  const isLoading = action === 'download' ? isDownloading : isCopying;
   
   // Auto-detect current page info
   const getPageInfo = () => {
@@ -52,19 +59,23 @@ const DownloadMarkdownButton: React.FC<DownloadMarkdownButtonProps> = ({
   
   const { filename: finalFilename, githubUrl: finalGithubUrl } = getPageInfo();
 
+  const fetchCleanMarkdown = async (): Promise<string> => {
+    const response = await fetch(finalGithubUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch markdown');
+    }
+    const text = await response.text();
+    
+    // Remove front matter and imports for cleaner output
+    const withoutFrontMatter = text.replace(/^---\n[\s\S]*?\n---\n/, '');
+    const withoutImports = withoutFrontMatter.replace(/^import.*;\n/gm, '');
+    return withoutImports.trim();
+  };
+
   const downloadMarkdown = async () => {
     setIsDownloading(true);
     try {
-      const response = await fetch(finalGithubUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch markdown');
-      }
-      const text = await response.text();
-      
-      // Remove front matter and imports for cleaner output
-      const withoutFrontMatter = text.replace(/^---\n[\s\S]*?\n---\n/, '');
-      const withoutImports = withoutFrontMatter.replace(/^import.*;\n/gm, '');
-      const cleanMarkdown = withoutImports.trim();
+      const cleanMarkdown = await fetchCleanMarkdown();
       
       const blob = new Blob([cleanMarkdown], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -87,20 +98,68 @@ const DownloadMarkdownButton: React.FC<DownloadMarkdownButtonProps> = ({
     }
   };
 
-  const buttonClass = `button ${variant === 'primary' ? 'button--primary' : variant === 'secondary' ? 'button--secondary' : 'button--outline button--secondary'} ${size === 'small' ? 'button--sm' : ''}`;
+  const copyMarkdown = async () => {
+    setIsCopying(true);
+    try {
+      const cleanMarkdown = await fetchCleanMarkdown();
+      await navigator.clipboard.writeText(cleanMarkdown);
+      
+      // Brief success feedback without alert
+      setTimeout(() => setIsCopying(false), 1000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      alert('Failed to copy markdown to clipboard. Please try again.');
+      setIsCopying(false);
+    }
+  };
+
+  const handleClick = () => {
+    if (action === 'download') {
+      downloadMarkdown();
+    } else {
+      copyMarkdown();
+    }
+  };
+
+  const getButtonContent = () => {
+    if (isLoading) return '⏳';
+    
+    if (iconOnly) {
+      return action === 'download' ? '📥' : '📋';
+    }
+    
+    const icon = action === 'download' ? '📥' : '📋';
+    const text = action === 'download' 
+      ? (size === 'small' ? '.md' : 'Download .md')
+      : (size === 'small' ? 'Copy' : 'Copy .md');
+    
+    return `${icon} ${text}`;
+  };
+
+  const getTooltip = () => {
+    if (action === 'download') {
+      return 'Download Markdown for this page';
+    } else {
+      return 'Copy Markdown for this page';
+    }
+  };
+
+  const buttonClass = iconOnly 
+    ? 'breadcrumb-markdown-button'
+    : `button ${variant === 'primary' ? 'button--primary' : variant === 'secondary' ? 'button--secondary' : 'button--outline button--secondary'} ${size === 'small' ? 'button--sm' : ''}`;
 
   return (
     <button 
       className={buttonClass}
-      onClick={downloadMarkdown}
-      disabled={isDownloading}
-      title="Download this page as Markdown"
+      onClick={handleClick}
+      disabled={isLoading}
+      title={getTooltip()}
       style={{ 
         fontSize: size === 'small' ? '0.8em' : undefined,
         minWidth: size === 'small' ? 'auto' : undefined 
       }}
     >
-      {isDownloading ? '⏳' : '📥'} {size === 'small' ? '.md' : 'Download .md'}
+      {getButtonContent()}
     </button>
   );
 };
