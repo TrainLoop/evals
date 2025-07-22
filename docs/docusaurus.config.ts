@@ -97,6 +97,12 @@ const config: Config = {
           position: 'left'
         },
         {
+          to: '/llms',
+          label: '🤖 LLM Cheatsheet',
+          position: 'left',
+          className: 'navbar-llm-cheatsheet'
+        },
+        {
           type: 'dropdown',
           label: 'Getting Started',
           position: 'left',
@@ -142,6 +148,10 @@ const config: Config = {
             {
               label: 'Getting Started',
               to: '/category/getting-started',
+            },
+            {
+              label: '🤖 LLM Cheatsheet',
+              to: '/llms',
             },
             {
               label: 'Examples',

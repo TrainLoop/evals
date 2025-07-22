@@ -23,6 +23,11 @@ function HomepageHeader() {
             to="/category/getting-started">
             Get Started - 5min ⏱️
           </Link>
+          <Link
+            className="button button--primary button--lg"
+            to="/llms">
+            🤖 LLM Cheatsheet
+          </Link>
         </div>
       </div>
     </header>

@@ -28,3 +28,24 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Custom styling for LLM Cheatsheet navbar item */
+.navbar-llm-cheatsheet {
+  background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: bold;
+  border: 1px solid rgba(78, 205, 196, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 0 4px;
+}
+
+[data-theme='dark'] .navbar-llm-cheatsheet {
+  background: linear-gradient(90deg, #ff8a80, #80cbc4);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  border-color: rgba(128, 203, 196, 0.3);
+}
