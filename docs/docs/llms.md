@@ -10,8 +10,10 @@ import TabItem from '@theme/TabItem';
 
 # LLM Cheatsheet - TrainLoop Evals
 
-:::tip Download & Share
-**📥 Right-click and "Save As"** to download this page as HTML, or **📋 Ctrl+A then Ctrl+C** to copy all content to share with your LLM.
+<DownloadMarkdown filename="trainloop-llm-cheatsheet.md" />
+
+:::tip
+This comprehensive cheatsheet contains everything an LLM needs to help users implement TrainLoop evaluations. Use the download button above to get the raw markdown.
 :::
 
 This document provides everything an LLM needs to know to help users implement evaluations using TrainLoop's LLM evaluation framework.
