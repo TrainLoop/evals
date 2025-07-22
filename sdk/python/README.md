@@ -31,3 +31,13 @@ collect("path/to/trainloop.config.yaml")
 ```
 
 For detailed information, visit **[evals.docs.trainloop.ai/docs/python](https://evals.docs.trainloop.ai/docs/python)**
+
+## Development & Testing
+
+For SDK development and testing information:
+
+- **Unit Tests**: `poetry run pytest -m unit`
+- **Integration Tests**: `python run_integration_tests.py` (see [INTEGRATION_TESTING.md](./INTEGRATION_TESTING.md))
+- **Documentation**: See [docs/development/sdk-testing.md](../../docs/docs/development/sdk-testing.md)
+
+**Note**: Integration tests cannot use pytest due to import order requirements. Use the standalone test runner instead.

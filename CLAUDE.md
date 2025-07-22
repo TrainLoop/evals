@@ -80,15 +80,14 @@ task test:simple
 
 # Run specific component tests
 task test:cli              # CLI unit tests
-task test:sdk              # SDK unit tests
-task test:sdk:integration  # SDK integration tests
+task test:sdk              # SDK unit tests only
+task test:sdk:integration  # SDK integration tests (uses standalone runner)
 
 # Clean test artifacts
 task clean:all
 
-# Run tests with pytest markers
+# Run tests with pytest markers (UNIT TESTS ONLY)
 pytest -m unit          # Fast unit tests
-pytest -m integration   # End-to-end tests
 pytest -m cli           # CLI command tests
 pytest -m judge         # LLM judge functionality
 pytest -m scaffold      # Template functionality
@@ -96,7 +95,16 @@ pytest -m benchmark     # Benchmark functionality
 
 # Run single test file
 pytest tests/test_cli.py
+
+# IMPORTANT: SDK integration tests cannot use pytest
+# Use standalone runner instead:
+cd sdk/python
+python run_integration_tests.py              # All SDK integration tests
+python run_integration_tests.py --test openai --verbose  # Specific test
 ```
+
+**⚠️ Critical Note for SDK Development:**
+SDK integration tests CANNOT be run through pytest due to import order conflicts. The TrainLoop SDK must initialize before HTTP libraries are imported, but pytest imports them first. Always use the standalone integration test runner for SDK integration testing.
 
 ### CLI Development
 ```bash

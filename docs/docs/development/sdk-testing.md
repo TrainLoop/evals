@@ -24,29 +24,55 @@ poetry install
 ### Running Tests
 
 ```bash
-# Run all tests
-poetry run pytest
+# Run unit tests (recommended)
+poetry run pytest -m unit
 
 # Run with coverage
-poetry run pytest --cov
+poetry run pytest --cov -m unit
 
-# Run specific test categories
+# Run specific unit test categories
 poetry run pytest -m unit              # Unit tests only
-poetry run pytest -m integration       # Integration tests only
 poetry run pytest -m edge_case         # Edge case tests only
 
 # Run tests in parallel
-poetry run pytest -n auto
+poetry run pytest -n auto -m unit
 
 # Run specific test file
 poetry run pytest tests/unit/test_config.py
 
 # Run with verbose output
-poetry run pytest -v
+poetry run pytest -v -m unit
 
 # Generate HTML coverage report
-poetry run pytest --cov --cov-report=html
+poetry run pytest --cov --cov-report=html -m unit
 ```
+
+#### 🚨 Important Note: Integration Tests
+
+**Integration tests cannot be run through pytest** due to a fundamental limitation. The TrainLoop SDK requires initialization before any HTTP libraries (like `requests`, `httpx`, `openai`) are imported. However, pytest and its plugins import these libraries before the SDK can be initialized, preventing proper instrumentation.
+
+For integration testing, use the standalone test runner instead:
+
+```bash
+# Run all integration tests
+python run_integration_tests.py
+
+# Run specific integration tests
+python run_integration_tests.py --test openai
+python run_integration_tests.py --test anthropic
+
+# Run with verbose output
+python run_integration_tests.py --verbose
+
+# Run a specific test category
+python run_integration_tests.py --test litellm --verbose
+```
+
+Available integration tests:
+- `openai` - Tests OpenAI SDK integration
+- `anthropic` - Tests Anthropic SDK integration  
+- `litellm` - Tests LiteLLM integration
+- `httpx` - Tests raw httpx integration
 
 ### Test Structure
 ```
