@@ -60,16 +60,32 @@ const DownloadMarkdownButton: React.FC<DownloadMarkdownButtonProps> = ({
   const { filename: finalFilename, githubUrl: finalGithubUrl } = getPageInfo();
 
   const fetchCleanMarkdown = async (): Promise<string> => {
-    const response = await fetch(finalGithubUrl);
-    if (!response.ok) {
-      throw new Error('Failed to fetch markdown');
+    try {
+      console.log('Fetching markdown from:', finalGithubUrl);
+      const response = await fetch(finalGithubUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      console.log('Fetched text length:', text.length);
+      
+      if (!text || text.trim().length === 0) {
+        throw new Error('No content received from GitHub');
+      }
+      
+      // Remove front matter and imports for cleaner output
+      const withoutFrontMatter = text.replace(/^---\n[\s\S]*?\n---\n/, '');
+      const withoutImports = withoutFrontMatter.replace(/^import.*;\n/gm, '');
+      const cleaned = withoutImports.trim();
+      
+      console.log('Cleaned text length:', cleaned.length);
+      return cleaned;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
     }
-    const text = await response.text();
-    
-    // Remove front matter and imports for cleaner output
-    const withoutFrontMatter = text.replace(/^---\n[\s\S]*?\n---\n/, '');
-    const withoutImports = withoutFrontMatter.replace(/^import.*;\n/gm, '');
-    return withoutImports.trim();
   };
 
   const downloadMarkdown = async () => {
@@ -102,13 +118,45 @@ const DownloadMarkdownButton: React.FC<DownloadMarkdownButtonProps> = ({
     setIsCopying(true);
     try {
       const cleanMarkdown = await fetchCleanMarkdown();
-      await navigator.clipboard.writeText(cleanMarkdown);
       
-      // Brief success feedback without alert
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(cleanMarkdown);
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        const textArea = document.createElement('textarea');
+        textArea.value = cleanMarkdown;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      
+      // Brief success feedback
       setTimeout(() => setIsCopying(false), 1000);
     } catch (error) {
       console.error('Copy failed:', error);
-      alert('Failed to copy markdown to clipboard. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        hasClipboard: !!navigator.clipboard,
+        hasWriteText: !!(navigator.clipboard && navigator.clipboard.writeText),
+        isSecureContext: window.isSecureContext,
+        protocol: window.location.protocol
+      });
+      
+      // More specific error message
+      const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      const errorMsg = isHttps 
+        ? 'Failed to copy markdown to clipboard. Please try again or copy the content manually.'
+        : 'Clipboard access requires HTTPS. Please copy the content manually.';
+      
+      alert(errorMsg);
       setIsCopying(false);
     }
   };
