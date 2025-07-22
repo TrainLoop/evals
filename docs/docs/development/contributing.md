@@ -133,9 +133,11 @@ For detailed architecture information, see our [Architecture Guide](./architectu
 ### Testing Requirements
 
 - **Unit tests** for all new functions and methods
-- **Integration tests** for component interactions
+- **Integration tests** for component interactions (SDK integration tests use standalone runner)
 - **End-to-end tests** for user workflows
 - **Performance tests** for critical paths
+
+**Important for SDK Contributors:** SDK integration tests must use the standalone test runner (`python run_integration_tests.py`) instead of pytest due to import order requirements. See the [Testing Guide](./testing.md#sdk-integration-tests) for details.
 
 ### Code Review Process
 
@@ -173,6 +175,7 @@ The CLI is built with Python using Click framework:
   - `instrumentation/` - HTTP library patches
   - `store.py` - Data persistence
   - `register.py` - Registration API
+- **Integration Testing**: Use `python run_integration_tests.py` (not pytest)
 
 #### TypeScript SDK
 - **Location**: `sdk/typescript/src/`

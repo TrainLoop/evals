@@ -155,18 +155,34 @@ class TestConfigUtils:
 ```bash
 cd sdk/python
 
-# Run all SDK tests
-poetry run pytest
-
-# Run unit tests only
+# Run all SDK unit tests
 poetry run pytest -m unit
 
-# Run integration tests (requires API keys)
-poetry run pytest -m integration
+# Run unit tests only (recommended for development)
+poetry run pytest -m unit
 
-# Run specific test categories
+# Run integration tests (requires API keys) - MUST use standalone runner
+python run_integration_tests.py                    # All integration tests
+python run_integration_tests.py --test openai      # OpenAI only
+python run_integration_tests.py --verbose          # With detailed output
+
+# Run specific unit test categories
 poetry run pytest tests/unit/test_store.py
-poetry run pytest tests/integration/test_openai_sdk.py
+```
+
+#### 🚨 Important: SDK Integration Tests
+
+**SDK integration tests cannot be run through pytest** due to a fundamental architectural limitation. The TrainLoop SDK requires initialization before any HTTP libraries are imported, but pytest imports these libraries before our SDK can instrument them.
+
+**Why this happens:**
+- pytest and its plugins import `requests`, `httpx`, and other HTTP libraries at startup
+- TrainLoop SDK needs to patch these libraries before they're imported
+- Once imported, the libraries cannot be re-patched in the same process
+
+**Solution:** Use the standalone integration test runner:
+```bash
+# Located in sdk/python/run_integration_tests.py
+python run_integration_tests.py --help
 ```
 
 #### Python SDK Test Structure
@@ -262,33 +278,11 @@ pytest --tb=long
 
 ## Integration Testing
 
-### LLM Provider Integration
+### SDK Integration Tests
 
-Integration tests verify SDK compatibility with real LLM providers:
+SDK integration tests verify compatibility with real LLM providers but **cannot be run through pytest**. Due to import order requirements, they use a standalone test runner.
 
-```python
-# tests/integration/test_openai_sdk.py
-import pytest
-from openai import OpenAI
-from trainloop_llm_logging import collect
-
-@pytest.mark.integration
-def test_openai_chat_completion():
-    """Test OpenAI chat completion integration."""
-    collect()
-    
-    client = OpenAI()
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": "Hello"}]
-    )
-    
-    assert response.choices[0].message.content
-    # Verify logging occurred
-    assert os.path.exists("./data/events")
-```
-
-### Environment Setup for Integration Tests
+#### Environment Setup for Integration Tests
 
 ```bash
 # Set up API keys for integration tests
@@ -296,27 +290,46 @@ export OPENAI_API_KEY=your_key_here
 export ANTHROPIC_API_KEY=your_key_here
 export GEMINI_API_KEY=your_key_here
 
-# Run integration tests
-pytest -m integration
+# Run integration tests using standalone runner
+cd sdk/python
+python run_integration_tests.py
 ```
 
-### Integration Test Categories
+#### Integration Test Categories
 
 ```bash
-# HTTP client integration
-task test:sdk:integration:http
+# All integration tests
+task test:sdk:integration
 
-# OpenAI SDK integration
-task test:sdk:integration:openai
+# Specific integration tests
+task test:sdk:integration:openai      # OpenAI SDK integration
+task test:sdk:integration:anthropic   # Anthropic SDK integration
+task test:sdk:integration:litellm     # LiteLLM integration
+task test:sdk:integration:httpx       # Raw httpx integration
 
-# Anthropic SDK integration
-task test:sdk:integration:anthropic
+# With verbose output
+task test:sdk:integration:verbose
+```
 
-# LangChain integration
-task test:sdk:integration:langchain
+#### How SDK Integration Tests Work
 
-# LiteLLM integration
-task test:sdk:integration:litellm
+The standalone integration test runner executes each test as a separate Python process:
+
+1. **Process Isolation**: Each test runs in its own subprocess to avoid import conflicts
+2. **SDK Initialization**: TrainLoop SDK is initialized before importing HTTP libraries
+3. **Real API Calls**: Tests make actual API calls to verify instrumentation
+4. **JSONL Validation**: Tests verify that API calls are properly logged to JSONL files
+5. **Graceful Skipping**: Tests skip automatically if API keys are not available
+
+Example test execution:
+```python
+# This runs as a subprocess with clean imports
+import trainloop_llm_logging as tl
+tl.collect(flush_immediately=True)  # Initialize SDK first
+
+import openai  # Import after SDK initialization
+client = openai.OpenAI()
+response = client.chat.completions.create(...)  # Instrumentation captures this
 ```
 
 ## Performance Testing
