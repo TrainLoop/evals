@@ -49,6 +49,11 @@ class IntegrationTestHarness:
         for _mod in ("requests", "httpx", "openai"):
             sys.modules.pop(_mod, None)
 
+        # Force re-initialization of TrainLoop SDK by resetting the global state
+        import trainloop_llm_logging.register as register_module
+        register_module._IS_INIT = False
+        register_module._EXPORTER = None
+
         # Initialize TrainLoop SDK with auto_flush for reliable testing
         tl.collect(flush_immediately=True)
 
