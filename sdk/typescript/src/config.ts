@@ -81,8 +81,10 @@ export const loadConfig = (): void => {
     
     const logLevelSet = !!process.env.TRAINLOOP_LOG_LEVEL &&
         !configSetEnvVars.has('TRAINLOOP_LOG_LEVEL');
+    const flushImmediatelySet = !!process.env.TRAINLOOP_FLUSH_IMMEDIATELY &&
+        !configSetEnvVars.has('TRAINLOOP_FLUSH_IMMEDIATELY');
     
-    logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}`);
+    logger.debug(`Environment variables already set: data_folder=${dataFolderSet}, host_allowlist=${hostAllowlistSet}, log_level=${logLevelSet}, flush_immediately=${flushImmediatelySet}`);
     
     // Try to load config file
     let configData: TrainloopConfig["trainloop"] | null = null;
@@ -179,21 +181,38 @@ export const loadConfig = (): void => {
         logger.debug(`Using existing TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL}`);
     }
 
+    if (!flushImmediatelySet) {
+        logger.debug("TRAINLOOP_FLUSH_IMMEDIATELY not set, checking config...");
+        let flushVal = "true";
+        if (configData && typeof configData.flush_immediately === 'boolean') {
+            flushVal = String(configData.flush_immediately);
+        }
+        logger.debug(`Setting flush_immediately: ${flushVal}`);
+        process.env.TRAINLOOP_FLUSH_IMMEDIATELY = flushVal;
+        configUsed.push("flush_immediately");
+        configSetEnvVars.add("TRAINLOOP_FLUSH_IMMEDIATELY");
+        configSetValues.set("TRAINLOOP_FLUSH_IMMEDIATELY", flushVal);
+    } else {
+        logger.debug(`Using existing TRAINLOOP_FLUSH_IMMEDIATELY: ${process.env.TRAINLOOP_FLUSH_IMMEDIATELY}`);
+    }
+
     // Log summary of what was loaded
     logger.debug("Config loading complete. Final state:");
     logger.debug(`  TRAINLOOP_DATA_FOLDER: ${process.env.TRAINLOOP_DATA_FOLDER || "(not set)"}`);
     logger.debug(`  TRAINLOOP_HOST_ALLOWLIST: ${process.env.TRAINLOOP_HOST_ALLOWLIST || "(not set)"}`);
     logger.debug(`  TRAINLOOP_LOG_LEVEL: ${process.env.TRAINLOOP_LOG_LEVEL || "(not set)"}`);
+    logger.debug(`  TRAINLOOP_FLUSH_IMMEDIATELY: ${process.env.TRAINLOOP_FLUSH_IMMEDIATELY || "(not set)"}`);
     
     if (configUsed.length > 0) {
         logger.info(`Using config values for: ${configUsed.join(", ")}`);
         console.debug(`Using config values for: ${configUsed.join(", ")}`);
     }
-    if (dataFolderSet || hostAllowlistSet || logLevelSet) {
+    if (dataFolderSet || hostAllowlistSet || logLevelSet || flushImmediatelySet) {
         const envVars = [];
         if (dataFolderSet) envVars.push("data_folder");
         if (hostAllowlistSet) envVars.push("host_allowlist");
         if (logLevelSet) envVars.push("log_level");
+        if (flushImmediatelySet) envVars.push("flush_immediately");
         logger.info(`Using environment variables for: ${envVars.join(", ")}`);
         console.debug(`Using environment variables for: ${envVars.join(", ")}`);
     }

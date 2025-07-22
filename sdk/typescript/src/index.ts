@@ -67,7 +67,7 @@ function checkForEarlyImports(): void {
  * 
  * @param flushImmediately - If true, flush each LLM call immediately (useful for testing)
  */
-export function collect(flushImmediately: boolean = false): void {
+export function collect(flushImmediately?: boolean): void {
   logger.debug(`collect() called with flushImmediately=${flushImmediately}`);
   
   // Check for early imports before initialization
@@ -76,6 +76,14 @@ export function collect(flushImmediately: boolean = false): void {
   // Always load the config in case the config path changed
   logger.debug("Loading config...");
   loadConfig();
+
+  if (flushImmediately === undefined) {
+    const envVal = process.env.TRAINLOOP_FLUSH_IMMEDIATELY;
+    flushImmediately = envVal ? envVal.toLowerCase() === "true" : true;
+    process.env.TRAINLOOP_FLUSH_IMMEDIATELY = flushImmediately ? "true" : "false";
+  } else {
+    process.env.TRAINLOOP_FLUSH_IMMEDIATELY = flushImmediately ? "true" : "false";
+  }
   
   if (isInitialized) {
     // If SDK is already initialized, check if this is a different configuration

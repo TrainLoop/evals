@@ -58,7 +58,7 @@ describe('Config Precedence', () => {
 
     // Should log what came from where
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Using config values for: data_folder, host_allowlist')
+      expect.stringContaining('Using config values for: data_folder, host_allowlist, flush_immediately')
     );
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('Using environment variables for: log_level')
@@ -88,7 +88,7 @@ describe('Config Precedence', () => {
     expect(process.env.TRAINLOOP_LOG_LEVEL).toBe('INFO');
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Using config values for: data_folder, host_allowlist, log_level')
+      expect.stringContaining('Using config values for: data_folder, host_allowlist, log_level, flush_immediately')
     );
 
     consoleSpy.mockRestore();

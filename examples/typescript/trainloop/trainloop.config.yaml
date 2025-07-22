@@ -1,6 +1,7 @@
 trainloop:
   data_folder: data
   log_level: warn
+  flush_immediately: true
   judge:
     env_path: ../.env
     models:
