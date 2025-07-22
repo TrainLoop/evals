@@ -29,23 +29,72 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
 
-/* Custom styling for LLM Cheatsheet navbar item */
-.navbar-llm-cheatsheet {
-  background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: bold;
-  border: 1px solid rgba(78, 205, 196, 0.3);
-  border-radius: 4px;
-  padding: 4px 8px;
+/* Custom styling for LLM Cheatsheet navbar icon */
+.navbar-llm-cheatsheet-icon {
+  position: relative;
+  font-size: 1.2em;
+  padding: 6px 8px;
   margin: 0 4px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+  border: 1px solid rgba(78, 205, 196, 0.2);
 }
 
-[data-theme='dark'] .navbar-llm-cheatsheet {
-  background: linear-gradient(90deg, #ff8a80, #80cbc4);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  border-color: rgba(128, 203, 196, 0.3);
+.navbar-llm-cheatsheet-icon:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(78, 205, 196, 0.2));
+  border-color: rgba(78, 205, 196, 0.4);
+  transform: scale(1.1);
+}
+
+/* Tooltip */
+.navbar-llm-cheatsheet-icon:hover::after {
+  content: "LLM Cheatsheet";
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ifm-color-gray-900);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  opacity: 1;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.navbar-llm-cheatsheet-icon:hover::before {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid var(--ifm-color-gray-900);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+[data-theme='dark'] .navbar-llm-cheatsheet-icon {
+  background: linear-gradient(135deg, rgba(255, 138, 128, 0.1), rgba(128, 203, 196, 0.1));
+  border-color: rgba(128, 203, 196, 0.2);
+}
+
+[data-theme='dark'] .navbar-llm-cheatsheet-icon:hover {
+  background: linear-gradient(135deg, rgba(255, 138, 128, 0.2), rgba(128, 203, 196, 0.2));
+  border-color: rgba(128, 203, 196, 0.4);
+}
+
+[data-theme='dark'] .navbar-llm-cheatsheet-icon:hover::after {
+  background: var(--ifm-color-gray-100);
+  color: var(--ifm-color-gray-900);
+}
+
+[data-theme='dark'] .navbar-llm-cheatsheet-icon:hover::before {
+  border-bottom-color: var(--ifm-color-gray-100);
 }

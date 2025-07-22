@@ -1,7 +1,7 @@
 ---
 title: "LLM Cheatsheet"
 description: "Comprehensive cheatsheet for LLMs to help users implement TrainLoop evaluations"
-sidebar_position: 1
+sidebar_position: 999
 ---
 
 import CodeBlock from '@theme/CodeBlock';
@@ -10,31 +10,9 @@ import TabItem from '@theme/TabItem';
 
 # LLM Cheatsheet - TrainLoop Evals
 
-<div style={{display: 'flex', gap: '10px', marginBottom: '20px'}}>
-  <button 
-    className="button button--primary"
-    onClick={() => {
-      const element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(document.querySelector('.markdown').textContent));
-      element.setAttribute('download', 'trainloop-llm-cheatsheet.md');
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-    }}
-  >
-    📥 Download Cheatsheet
-  </button>
-  <button 
-    className="button button--secondary"
-    onClick={() => {
-      navigator.clipboard.writeText(document.querySelector('.markdown').textContent);
-      alert('Cheatsheet copied to clipboard!');
-    }}
-  >
-    📋 Copy to Clipboard
-  </button>
-</div>
+:::tip Download & Share
+**📥 Right-click and "Save As"** to download this page as HTML, or **📋 Ctrl+A then Ctrl+C** to copy all content to share with your LLM.
+:::
 
 This document provides everything an LLM needs to know to help users implement evaluations using TrainLoop's LLM evaluation framework.
 

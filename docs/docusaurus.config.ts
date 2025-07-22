@@ -97,12 +97,6 @@ const config: Config = {
           position: 'left'
         },
         {
-          to: '/llms',
-          label: '🤖 LLM Cheatsheet',
-          position: 'left',
-          className: 'navbar-llm-cheatsheet'
-        },
-        {
           type: 'dropdown',
           label: 'Getting Started',
           position: 'left',
@@ -131,6 +125,13 @@ const config: Config = {
             { to: '/reference/sdks/', label: 'SDK Reference' },
             { to: '/reference/data-formats/', label: 'Data Formats' },
           ]
+        },
+        {
+          to: '/llms',
+          label: '🤖',
+          position: 'right',
+          className: 'navbar-llm-cheatsheet-icon',
+          'aria-label': 'LLM Cheatsheet'
         },
         {
           href: 'https://github.com/trainloop/evals',
