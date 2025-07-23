@@ -262,6 +262,72 @@ results = tag("customer-support").check(
 )
 ```
 
+#### Advanced Suite Pattern: Custom Logic (Lower-Level API)
+
+For complex evaluation scenarios requiring custom logic, filtering, or conditional evaluation, you can use the **lower-level API** instead of the standard `tag().check()` pattern:
+
+```python
+# File: trainloop/eval/suites/advanced_code_analysis.py
+from trainloop_cli.eval_core.types import Result, Sample
+from trainloop_cli.eval_core.helpers import tag
+from ..metrics import does_compile, fcn_called_bubble_sort, is_readable
+
+# Get raw samples instead of using .check()
+samples = tag("bubble-sort", raw=True)  # raw=True returns List[Sample]
+results = []  # REQUIRED: must be named 'results'
+
+for sample in samples:
+    # Custom logic: only check readability if code compiles
+    compile_success = does_compile(sample)
+    results.append(Result(
+        metric="does_compile",
+        sample=sample,
+        passed=compile_success
+    ))
+    
+    # Conditional evaluation
+    if compile_success:
+        # Only check function name if compilation succeeds
+        bubble_sort_result = fcn_called_bubble_sort(sample)
+        results.append(Result(
+            metric="called_bubble_sort",
+            sample=sample,
+            passed=bubble_sort_result
+        ))
+        
+        # Additional readability check for working code
+        readable_result = is_readable(sample)
+        results.append(Result(
+            metric="code_readability",
+            sample=sample,
+            passed=readable_result
+        ))
+    else:
+        # Skip advanced metrics for non-compiling code
+        results.extend([
+            Result(metric="called_bubble_sort", sample=sample, passed=0),
+            Result(metric="code_readability", sample=sample, passed=0)
+        ])
+```
+
+**Key Differences from Standard Pattern**:
+
+| **Standard Pattern** | **Lower-Level API** |
+|---------------------|-------------------|
+| `tag("name").check(metric1, metric2)` | `tag("name", raw=True)` + manual Result creation |
+| Declarative and concise | Imperative and flexible |
+| Automatic parallel execution | Sequential execution (manual parallelization possible) |
+| All metrics applied uniformly | Custom logic per sample |
+| No filtering or conditional logic | Full control over evaluation flow |
+
+**When to Use Lower-Level API**:
+- **Conditional evaluation**: Only run certain metrics based on sample properties
+- **Data preprocessing**: Transform samples before evaluation
+- **Custom filtering**: Skip samples based on specific criteria  
+- **Dynamic metric selection**: Choose different metrics based on sample content
+- **Complex scoring**: Custom aggregation or weighting of results
+- **Performance optimization**: Skip expensive metrics when possible
+
 ### Relationship: Metrics ↔ Suites
 
 - **Metrics**: Atomic evaluation functions (pure, reusable)
