@@ -127,6 +127,13 @@ const config: Config = {
           ]
         },
         {
+          to: '/llms',
+          label: '🤖',
+          position: 'right',
+          className: 'navbar-llm-cheatsheet-icon',
+          'aria-label': 'LLM Cheatsheet'
+        },
+        {
           href: 'https://github.com/trainloop/evals',
           label: 'GitHub',
           position: 'right',
@@ -142,6 +149,10 @@ const config: Config = {
             {
               label: 'Getting Started',
               to: '/category/getting-started',
+            },
+            {
+              label: '🤖 LLM Cheatsheet',
+              to: '/llms',
             },
             {
               label: 'Examples',
