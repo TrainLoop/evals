@@ -14,22 +14,7 @@ import (
 var log = logger.CreateLogger("trainloop-config")
 
 // DefaultHostAllowlist is the default list of hosts to monitor.
-var DefaultHostAllowlist = []string{
-	// existing providers
-	"api.openai.com",
-	"api.anthropic.com",
-	"generativelanguage.googleapis.com",
-	"api.cohere.ai",
-	"api.groq.com",
-	"api.mistral.ai",
-	"api.together.xyz",
-	"api.endpoints.anyscale.com",
-	"api.perplexity.ai",
-	"api.deepinfra.com",
-	"api.replicate.com",
-	"api-inference.huggingface.co",
-	"openai.azure.com",
-}
+var DefaultHostAllowlist = []string{"api.openai.com", "api.anthropic.com"}
 
 const configFileName = "trainloop.config.yaml"
 
@@ -53,9 +38,8 @@ func LoadConfigIntoEnv(trainloopConfigPathOpt string) {
 	dataFolderSet := os.Getenv("TRAINLOOP_DATA_FOLDER") != ""
 	hostAllowlistSet := os.Getenv("TRAINLOOP_HOST_ALLOWLIST") != ""
 	logLevelSet := os.Getenv("TRAINLOOP_LOG_LEVEL") != ""
-	flushImmediatelySet := os.Getenv("TRAINLOOP_FLUSH_IMMEDIATELY") != ""
 
-	if dataFolderSet && hostAllowlistSet && logLevelSet && flushImmediatelySet {
+	if dataFolderSet && hostAllowlistSet && logLevelSet {
 		log.Debug("All TrainLoop environment variables already set, skipping config file")
 		return
 	}
@@ -151,17 +135,6 @@ func LoadConfigIntoEnv(trainloopConfigPathOpt string) {
 		} else {
 			os.Setenv("TRAINLOOP_LOG_LEVEL", "WARN") // Default log level
 		}
-	}
-	if !flushImmediatelySet {
-		flushVal := "true"
-		if configData.FlushImmediately != nil {
-			if *configData.FlushImmediately {
-				flushVal = "true"
-			} else {
-				flushVal = "false"
-			}
-		}
-		os.Setenv("TRAINLOOP_FLUSH_IMMEDIATELY", flushVal)
 	}
 	logger.SetLogLevel(os.Getenv("TRAINLOOP_LOG_LEVEL")) // Re-apply log level
 }

@@ -17,14 +17,12 @@ from .harness import (
 class TestAnthropicSDKIntegration:
     """Test Official Anthropic Python SDK integration."""
 
+    @require_library("anthropic")
     @require_anthropic_key()
     def test_anthropic_sdk_sync(self):
         """Test Anthropic SDK sync client."""
         with IntegrationTestHarness("anthropic_sdk_sync") as harness:
-            try:
-                import anthropic
-            except ImportError:
-                pytest.skip("anthropic library not installed. Install with: pip install anthropic")
+            import anthropic
 
             # Create Anthropic client
             client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -45,15 +43,13 @@ class TestAnthropicSDKIntegration:
             )
             assert "api.anthropic.com" in entry["url"]
 
+    @require_library("anthropic")
     @require_anthropic_key()
     @pytest.mark.asyncio
     async def test_anthropic_sdk_async(self):
         """Test Anthropic SDK async client."""
         with IntegrationTestHarness("anthropic_sdk_async") as harness:
-            try:
-                import anthropic
-            except ImportError:
-                pytest.skip("anthropic library not installed. Install with: pip install anthropic")
+            import anthropic
 
             # Create async Anthropic client
             client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))

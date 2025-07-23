@@ -6,12 +6,13 @@ Zero-touch HTTP instrumentation library for collecting LLM request/response data
 
 For complete Python SDK documentation, installation guides, and usage examples:
 
-**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai/reference/sdk/python/api)**
+**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
 
 ### Quick Links
-- **[Python SDK Guide](https://evals.docs.trainloop.ai/docs/python/quick-start)** - Complete integration guide
-- **[Installation](https://evals.docs.trainloop.ai/getting-started/installation#python-sdk)** - Install the SDK
-- **[Development](https://evals.docs.trainloop.ai/docs/python/development)** - Contributing to the SDK
+- **[Python SDK Guide](https://docs.trainloop.ai/guides/python-sdk)** - Complete integration guide
+- **[Installation](https://docs.trainloop.ai/getting-started/installation)** - Install the SDK
+- **[API Reference](https://docs.trainloop.ai/reference/sdk/python)** - Complete API documentation
+- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to the SDK
 
 ## Quick Start
 
@@ -30,14 +31,4 @@ collect("path/to/trainloop.config.yaml")
 # No code changes required!
 ```
 
-For detailed information, visit **[evals.docs.trainloop.ai/docs/python](https://evals.docs.trainloop.ai/docs/python)**
-
-## Development & Testing
-
-For SDK development and testing information:
-
-- **Unit Tests**: `poetry run pytest -m unit`
-- **Integration Tests**: `python run_integration_tests.py` (see [INTEGRATION_TESTING.md](./INTEGRATION_TESTING.md))
-- **Documentation**: See [docs/development/sdk-testing.md](../../docs/docs/development/sdk-testing.md)
-
-**Note**: Integration tests cannot use pytest due to import order requirements. Use the standalone test runner instead.
+For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**

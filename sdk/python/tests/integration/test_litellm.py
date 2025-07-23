@@ -17,14 +17,12 @@ from .harness import (
 class TestLiteLLMIntegration:
     """Test LiteLLM library integration."""
 
+    @require_library("litellm")
     @require_openai_key()
     def test_litellm_openai(self):
         """Test LiteLLM with OpenAI API."""
         with IntegrationTestHarness("litellm_openai") as harness:
-            try:
-                import litellm
-            except ImportError:
-                pytest.skip("litellm library not installed. Install with: pip install litellm")
+            import litellm
 
             # Configure LiteLLM
             litellm.api_key = os.getenv("OPENAI_API_KEY")
@@ -47,14 +45,12 @@ class TestLiteLLMIntegration:
             assert harness.validate_entry(entry, expected_model="gpt-4o-mini")
             assert "api.openai.com" in entry["url"]
 
+    @require_library("litellm")
     @require_anthropic_key()
     def test_litellm_anthropic(self):
         """Test LiteLLM with Anthropic API."""
         with IntegrationTestHarness("litellm_anthropic") as harness:
-            try:
-                import litellm
-            except ImportError:
-                pytest.skip("litellm library not installed. Install with: pip install litellm")
+            import litellm
 
             # Configure LiteLLM for Anthropic
             response = litellm.completion(

@@ -4,7 +4,7 @@
 import { patchFetch } from '../../src/instrumentation/fetch';
 import { FileExporter } from '../../src/exporter';
 import * as utils from '../../src/instrumentation/utils';
-import { getExpectedLlmProviderUrls } from '../../src/index';
+import { EXPECTED_LLM_PROVIDER_URLS } from '../../src/index';
 
 // Mock dependencies
 jest.mock('../../src/exporter');
@@ -272,8 +272,7 @@ describe('fetch instrumentation', () => {
     it('should handle all LLM provider URLs', async () => {
       patchFetch(mockExporter);
       
-      const expectedUrls = getExpectedLlmProviderUrls();
-      for (const host of expectedUrls) {
+      for (const host of EXPECTED_LLM_PROVIDER_URLS) {
         await globalThis.fetch(`https://${host}/test`);
       }
 
@@ -284,7 +283,7 @@ describe('fetch instrumentation', () => {
         call => call[0].isLLMRequest
       );
       
-      expect(llmCalls).toHaveLength(expectedUrls.length);
+      expect(llmCalls).toHaveLength(EXPECTED_LLM_PROVIDER_URLS.length);
     });
 
     it('should handle non-string request body', async () => {

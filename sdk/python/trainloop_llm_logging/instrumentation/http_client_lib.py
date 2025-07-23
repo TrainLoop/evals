@@ -7,6 +7,7 @@ request/response data and timing - *without* breaking streaming.
 from __future__ import annotations
 import functools
 from typing import Any, List, Optional, Dict
+import http.client as _http_client
 
 from .utils import (
     now_ms,
@@ -26,8 +27,6 @@ def install(exporter: FileExporter) -> None:
     through the standard library is duplicated into the TrainLoop exporter,
     while the original streaming semantics stay intact.
     """
-    import http.client as _http_client  # pylint: disable=import-outside-toplevel
-
     orig = _http_client.HTTPConnection.request
 
     @functools.wraps(orig)

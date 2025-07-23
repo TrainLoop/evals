@@ -87,17 +87,6 @@ describe('FileExporter', () => {
       exporter = new FileExporter();
       expect(setInterval).toHaveBeenCalledWith(expect.any(Function), 10000);
     });
-
-    it('should accept flushImmediately parameter', () => {
-      exporter = new FileExporter(undefined, undefined, true);
-      expect(exporter['flushImmediately']).toBe(true);
-    });
-
-    it('should not start interval when flushImmediately is true', () => {
-      jest.clearAllMocks();
-      exporter = new FileExporter(undefined, undefined, true);
-      expect(setInterval).not.toHaveBeenCalled();
-    });
   });
 
   describe('recordLLMCall', () => {
@@ -169,27 +158,6 @@ describe('FileExporter', () => {
       expect(exportSpy).not.toHaveBeenCalled();
 
       exporter.recordLLMCall(callData2);
-      expect(exportSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should export immediately when flushImmediately is true', () => {
-      exporter = new FileExporter(undefined, undefined, true);
-      const exportSpy = jest.spyOn(exporter as any, 'export');
-
-      const callData: LLMCallData = {
-        url: 'https://api.openai.com/v1/chat/completions',
-        isLLMRequest: true,
-        status: 200,
-        requestBodyStr: JSON.stringify({
-          model: 'gpt-4',
-          messages: [{ role: 'user', content: 'Test immediate' }]
-        }),
-        responseBodyStr: JSON.stringify({
-          choices: [{ message: { content: 'Response immediate' } }]
-        }),
-      };
-
-      exporter.recordLLMCall(callData);
       expect(exportSpy).toHaveBeenCalledTimes(1);
     });
   });
@@ -339,33 +307,6 @@ describe('FileExporter', () => {
       jest.advanceTimersByTime(5000);
 
       expect(exportSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not export on interval when flushImmediately is true', () => {
-      exporter = new FileExporter(5000, 10, true);
-      const exportSpy = jest.spyOn(exporter as any, 'export');
-
-      const call: LLMCallData = {
-        url: 'https://api.openai.com/v1/chat/completions',
-        isLLMRequest: true,
-        status: 200,
-        requestBodyStr: JSON.stringify({
-          model: 'gpt-4',
-          messages: [{ role: 'user', content: 'Test' }]
-        }),
-        responseBodyStr: JSON.stringify({
-          choices: [{ message: { content: 'Response' } }]
-        }),
-      };
-
-      exporter.recordLLMCall(call);
-      expect(exportSpy).toHaveBeenCalledTimes(1); // Should export immediately
-
-      exportSpy.mockClear();
-
-      // Advance time - should NOT trigger another export
-      jest.advanceTimersByTime(5000);
-      expect(exportSpy).not.toHaveBeenCalled();
     });
 
     it('should clear interval on shutdown', () => {

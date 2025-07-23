@@ -6,12 +6,13 @@ Zero-touch HTTP instrumentation library for collecting LLM request/response data
 
 For complete TypeScript SDK documentation, installation guides, and usage examples:
 
-**👉 [evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
+**👉 [docs.trainloop.ai](https://docs.trainloop.ai)**
 
 ### Quick Links
-- **[TypeScript SDK Guide](https://evals.docs.trainloop.ai/reference/sdk/typescript/api)** - Complete integration guide
-- **[Installation](https://evals.docs.trainloop.ai/getting-started/installation#typescriptjavascript-sdk)** - Install the SDK
-- **[Development](https://evals.docs.trainloop.ai/development/local-development)** - Contributing to the SDK
+- **[TypeScript SDK Guide](https://docs.trainloop.ai/guides/typescript-sdk)** - Complete integration guide
+- **[Installation](https://docs.trainloop.ai/getting-started/installation)** - Install the SDK
+- **[API Reference](https://docs.trainloop.ai/reference/sdk/typescript)** - Complete API documentation
+- **[Development](https://docs.trainloop.ai/development/local-development)** - Contributing to the SDK
 
 ## Quick Start
 
@@ -25,4 +26,4 @@ npm install trainloop-llm-logging
 NODE_OPTIONS="--require=trainloop-llm-logging" node index.js
 ```
 
-For detailed information, visit **[evals.docs.trainloop.ai](https://evals.docs.trainloop.ai)**
+For detailed information, visit **[docs.trainloop.ai](https://docs.trainloop.ai)**

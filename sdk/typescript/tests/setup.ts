@@ -12,7 +12,7 @@ global.TextDecoder = TextDecoder as any;
 // Set test environment variables before any modules are imported
 process.env.NODE_ENV = 'test';
 process.env.TRAINLOOP_DATA_FOLDER = path.join(os.tmpdir(), 'trainloop-test-data');
-process.env.TRAINLOOP_HOST_ALLOWLIST = 'api.openai.com,api.anthropic.com,generativelanguage.googleapis.com,api.cohere.ai,api.groq.com,api.mistral.ai,api.together.xyz,api.endpoints.anyscale.com,api.perplexity.ai,api.deepinfra.com,api.replicate.com,api-inference.huggingface.co,openai.azure.com';
+process.env.TRAINLOOP_HOST_ALLOWLIST = 'api.openai.com,api.anthropic.com';
 process.env.TRAINLOOP_LOG_LEVEL = 'ERROR'; // Suppress logs during tests
 
 // Mock the FileExporter to prevent background timer in tests
@@ -20,8 +20,7 @@ jest.mock('../src/exporter', () => ({
   FileExporter: jest.fn().mockImplementation(() => ({
     recordLLMCall: jest.fn(),
     shutdown: jest.fn(),
-    clear: jest.fn(),
-    flush: jest.fn()
+    clear: jest.fn()
   }))
 }));
 

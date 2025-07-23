@@ -30,7 +30,6 @@ export type TrainloopConfig = {
         data_folder: string;
         host_allowlist: string[];
         log_level: string;
-        flush_immediately?: boolean;
     }
 }
 

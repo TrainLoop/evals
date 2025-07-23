@@ -10,7 +10,6 @@ import { patchHttp } from '../src/instrumentation/http';
 import http from "http";
 import https from "https";
 import { FileExporter } from '../src/exporter';
-import { resetConfigState } from '../src/config';
 /**
  * Create a temporary directory for tests
  */
@@ -41,21 +40,7 @@ export function createMockConfig(dir: string, config?: any): string {
   const defaultConfig = {
     trainloop: {
       data_folder: './data',
-      host_allowlist: [
-        'api.openai.com',
-        'api.anthropic.com',
-        'generativelanguage.googleapis.com',
-        'api.cohere.ai',
-        'api.groq.com',
-        'api.mistral.ai',
-        'api.together.xyz',
-        'api.endpoints.anyscale.com',
-        'api.perplexity.ai',
-        'api.deepinfra.com',
-        'api.replicate.com',
-        'api-inference.huggingface.co',
-        'openai.azure.com'
-      ],
+      host_allowlist: ['api.openai.com', 'api.anthropic.com'],
       log_level: 'debug'
     }
   };
@@ -229,9 +214,6 @@ export function mockEnvVars(vars: Record<string, string>): () => void {
   // Set new vars
   Object.assign(process.env, vars);
 
-  // Reset config state
-  resetConfigState();
-
   // Return cleanup function
   return () => {
     Object.keys(process.env).forEach(key => {
@@ -240,7 +222,6 @@ export function mockEnvVars(vars: Record<string, string>): () => void {
       }
     });
     Object.assign(process.env, originalEnv);
-    resetConfigState(); // Reset config state on cleanup
   };
 }
 

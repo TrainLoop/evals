@@ -1,6 +1,6 @@
 {
   "name": "trainloop-llm-logging",
-  "version": "0.9.0",
+  "version": "0.8.0",
   "description": "TrainLoop Evaluations - header-based request tagging and zero-touch collection",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -48,21 +48,24 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/jest": "^29.5.6",
+    "@types/jest": "^29.5.11",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.17",
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.1.2",
     "jest": "^29.7.0",
     "nock": "^13.5.0",
-    "openai": "^5.10.1",
     "timekeeper": "^2.3.1",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.4.5",
-    "yalc": "^1.0.0-pre.53",
-    "ts-node": "^10.9.1"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.848.0",
+    "@flystorage/aws-s3": "^1.1.1",
+    "@flystorage/file-storage": "^1.1.0",
+    "@flystorage/google-cloud-storage": "^1.1.0",
+    "@flystorage/local-fs": "^1.1.0",
+    "@google-cloud/storage": "^7.16.0",
     "js-yaml": "^4.1.0"
   }
 }

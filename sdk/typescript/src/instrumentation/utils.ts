@@ -207,27 +207,11 @@ export function parseRequestBody(s: string): ParsedRequestBody | undefined {
  * @returns Object with just a 'content' key
  */
 export function parseResponseBody(s: string): ParsedResponseBody | undefined {
-    const body = safeJsonParse<any>(s);
-    if (!body) {
+    const body = safeJsonParse<ParsedResponseBody>(s);
+    if (!body || !body.content) {
         return undefined;
     }
-    
-    // If it already has content field, return that
-    if (body.content) {
-        return { content: body.content };
-    }
-    
-    // Try to extract content from OpenAI/Anthropic response format
-    const content = body?.choices?.[0]?.message?.content || 
-                   body?.choices?.[0]?.text ||
-                   body?.content?.[0]?.text || // Anthropic format
-                   null;
-    
-    if (typeof content === 'string') {
-        return { content };
-    }
-    
-    return undefined;
+    return body;
 }
 
 export const reqBodies = new WeakMap<ClientRequest, Buffer>();
@@ -264,26 +248,16 @@ export const getFetchHost = (resource: RequestInfo | URL): string | undefined =>
 // Format streamed responses into a meaningful summary for logging
 export function formatStreamedContent(raw: string): string {
     try {
-        // ----- Regular JSON response (non-streaming) -----
-        const js = JSON.parse(raw);
-        const first = js?.choices?.[0];
-        const content = first?.message?.content ?? (typeof first?.text === 'string' ? first.text : undefined);
-        if (typeof content === 'string') {
-            return JSON.stringify({ content });
-        }
-    } catch {
-        // not a plain JSON response, fall through to streaming handlers
-    }
-
-    try {
         // Special handling for OpenAI streaming format
         if (raw.includes('data:') && raw.includes('"choices"')) {
+            // Extract all content pieces from the stream
             const contentPieces: string[] = [];
             const dataLines = raw.split('\n');
 
             for (const line of dataLines) {
                 if (!line.startsWith('data:') || line.includes('[DONE]')) continue;
 
+                // Parse the JSON from each 'data:' line
                 const jsonStr = line.replace('data:', '').trim();
                 if (!jsonStr) continue;
 
@@ -293,9 +267,10 @@ export function formatStreamedContent(raw: string): string {
                 }
             }
 
+            // Join the content pieces to form the complete message
             const fullContent = contentPieces.join('');
             if (fullContent) {
-                return JSON.stringify({ content: fullContent });
+                return `{ "content": "${fullContent.replace(/"/g, '\\"')}" }`;
             }
         }
 
@@ -311,6 +286,7 @@ export function formatStreamedContent(raw: string): string {
                 if (!jsonStr) continue;
 
                 const data = JSON.parse(jsonStr);
+                // Extract text from content_block_delta events
                 if (data.type === 'content_block_delta' && data.delta?.text) {
                     contentPieces.push(data.delta.text);
                 }
@@ -318,13 +294,14 @@ export function formatStreamedContent(raw: string): string {
 
             const fullContent = contentPieces.join('');
             if (fullContent) {
-                return JSON.stringify({ content: fullContent });
+                return `{ "content": "${fullContent.replace(/"/g, '\\"')}" }`;
             }
         }
-    } catch {
+    } catch (e) {
         // Fall back to the raw response if parsing fails
     }
 
+    // For other types of responses or if parsing failed
     return raw.length > 500 ? raw.substring(0, 500) + '... [truncated]' : raw;
 }
 
@@ -332,9 +309,7 @@ export function formatStreamedContent(raw: string): string {
 export async function cloneResponseForLogging(res: Response): Promise<string> {
     // If it's not a streaming response or doesn't have a body, just use text()
     if (!res.body || !res.headers.get('content-type')?.includes('text/event-stream')) {
-        const text = await res.clone().text();
-        // Format non-streaming responses too
-        return formatStreamedContent(text);
+        return await res.clone().text();
     }
 
     // For streaming responses, we need to be careful to clone without consuming the stream

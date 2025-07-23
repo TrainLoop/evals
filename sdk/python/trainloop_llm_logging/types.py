@@ -54,7 +54,6 @@ class TrainLoopConfigObject(TypedDict):
     data_folder: Optional[str]
     host_allowlist: Optional[List[str]]
     log_level: Optional[str]
-    flush_immediately: Optional[bool]
 
 
 class TrainloopConfig(TypedDict):

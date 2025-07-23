@@ -1,4 +1,4 @@
-package trainloop
+package main
 
 import (
 	"net/http"
@@ -54,12 +54,7 @@ func Collect(trainloopConfigPathOpt ...string) {
 	if len(trainloopConfigPathOpt) > 0 {
 		configPath = trainloopConfigPathOpt[0]
 	}
-       config.LoadConfigIntoEnv(configPath) // Loads config and sets env vars
-
-       flushEnv := os.Getenv("TRAINLOOP_FLUSH_IMMEDIATELY")
-       if flushEnv == "" {
-               os.Setenv("TRAINLOOP_FLUSH_IMMEDIATELY", "true")
-       }
+	config.LoadConfigIntoEnv(configPath) // Loads config and sets env vars
 
 	// SDK is disabled if TRAINLOOP_DATA_FOLDER is not set.
 	dataFolder := os.Getenv("TRAINLOOP_DATA_FOLDER")

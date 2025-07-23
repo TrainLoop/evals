@@ -41,19 +41,6 @@ class IntegrationTestHarness:
             Path(self.temp_dir) / "trainloop" / "data"
         )
 
-        # Integration test fix: Some pytest decorators (like @require_library)
-        # may import HTTP libraries before this harness runs. The TrainLoop SDK
-        # requires that those libraries are not imported prior to calling collect().
-        # Remove any pre-imported libraries from sys.modules before calling collect().
-        import sys
-        for _mod in ("requests", "httpx", "openai"):
-            sys.modules.pop(_mod, None)
-
-        # Force re-initialization of TrainLoop SDK by resetting the global state
-        import trainloop_llm_logging.register as register_module
-        register_module._IS_INIT = False
-        register_module._EXPORTER = None
-
         # Initialize TrainLoop SDK with auto_flush for reliable testing
         tl.collect(flush_immediately=True)
 
@@ -61,16 +48,6 @@ class IntegrationTestHarness:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Before tearing down, make sure any buffered calls are written to disk
-        try:
-            import trainloop_llm_logging as tl
-
-            # Force a flush so that no buffered entries leak into the next test
-            tl.flush()
-        except Exception:
-            # Flushing is best-effort – never fail test cleanup
-            pass
-
         # Clean up
         if self.temp_dir and os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
