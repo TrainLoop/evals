@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -12,15 +11,10 @@ import (
 	"time"
 
 	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/logger"
-	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/storage"
 	"github.com/trainloop/evals/sdk/go/trainloop-llm-logging/internal/types"
 )
 
 var log = logger.CreateLogger("trainloop-store")
-
-func isCloudPath(path string) bool {
-	return strings.HasPrefix(path, "gs://") || strings.HasPrefix(path, "s3://")
-}
 
 func nowISO() string {
 	return time.Now().UTC().Format(time.RFC3339) // ISO 8601 format
@@ -28,14 +22,6 @@ func nowISO() string {
 
 // UpdateRegistry updates the _registry.json file.
 func UpdateRegistry(dataDir string, loc types.LLMCallLocation, tag string) {
-	if isCloudPath(dataDir) {
-		ctx := context.Background()
-		if err := storage.UpdateRegistry(ctx, dataDir, loc, tag); err != nil {
-			log.Error("Failed to update cloud registry: %v", err)
-		}
-		return
-	}
-
 	registryPath := filepath.Join(dataDir, "_registry.json")
 	log.Debug("Updating registry at %s", registryPath)
 
@@ -89,15 +75,14 @@ func UpdateRegistry(dataDir string, loc types.LLMCallLocation, tag string) {
 		entry.Count++
 	} else {
 		entry = types.RegistryEntry{
-			Tag:        tag,
 			LineNumber: loc.LineNumber,
+			Tag:        tag,
 			FirstSeen:  now,
 			LastSeen:   now,
 			Count:      1,
 		}
 	}
-
-	reg.Files[loc.File][loc.LineNumber] = entry
+	fileEntries[loc.LineNumber] = entry
 
 	if err := os.MkdirAll(filepath.Dir(registryPath), 0755); err != nil {
 		log.Error("Failed to create directory for registry: %v", err)
@@ -122,15 +107,6 @@ func SaveSamples(dataDir string, samples []types.CollectedSample) {
 	if len(samples) == 0 {
 		return
 	}
-
-	if isCloudPath(dataDir) {
-		ctx := context.Background()
-		if err := storage.SaveSamples(ctx, dataDir, samples); err != nil {
-			log.Error("Failed to save samples to cloud storage: %v", err)
-		}
-		return
-	}
-
 	eventDir := filepath.Join(dataDir, "events")
 	if err := os.MkdirAll(eventDir, 0755); err != nil {
 		log.Error("Failed to create events directory %s: %v", eventDir, err)

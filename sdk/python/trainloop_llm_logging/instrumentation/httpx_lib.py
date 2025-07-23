@@ -259,6 +259,15 @@ def install(exporter: FileExporter) -> None:
     # ------------------------------------------------------------------ #
     #  Swap the public Client classes                                    #
     # ------------------------------------------------------------------ #
+    # NOTE: Many third-party libraries import the Client classes from
+    # `httpx._client` directly (e.g. `from httpx._client import Client`).
+    # If we only monkey-patch `httpx.Client`, those imports will keep a
+    # reference to the *original* class and bypass our instrumentation.
+    # To guarantee universal coverage we also patch the internal module.
+    import importlib
+
+    _client_mod = importlib.import_module("httpx._client")
+
     def _wrap_sync(client_cls):
         class PatchedSync(client_cls):  # type: ignore[misc]
             def __init__(self, *a: Any, **kw: Any):
@@ -285,5 +294,13 @@ def install(exporter: FileExporter) -> None:
 
         return PatchedAsync
 
-    httpx.Client = _wrap_sync(httpx.Client)  # type: ignore[assignment]
-    httpx.AsyncClient = _wrap_async(httpx.AsyncClient)  # type: ignore[assignment]
+    # Patch both the public symbols *and* the internal module so that any
+    # import style picks up our wrapped versions.
+    PatchedClient = _wrap_sync(httpx.Client)
+    PatchedAsyncClient = _wrap_async(httpx.AsyncClient)
+
+    httpx.Client = PatchedClient  # type: ignore[assignment]
+    httpx.AsyncClient = PatchedAsyncClient  # type: ignore[assignment]
+
+    _client_mod.Client = PatchedClient  # type: ignore[attr-defined]
+    _client_mod.AsyncClient = PatchedAsyncClient  # type: ignore[attr-defined]

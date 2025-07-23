@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trainloop-llm-logging"
-version = "0.8.0"
+version = "0.9.0"
 description = "TrainLoop LLM Logging SDK for data collection"
 authors = ["Mason Pierce <masonpierce@trainloop.ai>"]
 readme = "README.md"
@@ -24,17 +24,17 @@ responses = "^0.24.1"
 black = "^23.3.0"
 mypy = "^1.5.0"
 httpx = "^0.28.1"
-requests = "^2.32.3"
+requests = "^2.32.4"
 python-dotenv = "^1.0.0"
 # LLM libraries for integration testing
-litellm = "^1.50.0"
-openai = "^1.50.0"
-anthropic = "^0.39.0"
-langchain-openai = "^0.2.0"
-langchain-anthropic = "^0.2.0"
-instructor = "^1.6.0"
+litellm = "^1.56.5"
+openai = "^1.97.0"
+anthropic = "^0.58.2"
+langchain-openai = "^0.3.28"
+langchain-anthropic = "^0.3.17"
+instructor = "^1.10.0"
 pydantic = "^2.9.0"
-browser-use = "^0.1.0"
+browser-use = "^0.5.5"
 playwright = "^1.40.0"
 
 [build-system]

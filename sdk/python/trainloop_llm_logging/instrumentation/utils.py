@@ -11,7 +11,22 @@ from ..types import ParsedRequestBody, ParsedResponseBody, LLMCallLocation
 from ..logger import instrumentation_utils_logger as logger
 
 _MAX_BODY = 2 * 1024 * 1024  # 2 MB
-DEFAULT_HOST_ALLOWLIST = ["api.openai.com", "api.anthropic.com"]
+DEFAULT_HOST_ALLOWLIST = [
+    # existing providers
+    "api.openai.com",
+    "api.anthropic.com",
+    "generativelanguage.googleapis.com",
+    "api.cohere.ai",
+    "api.groq.com",
+    "api.mistral.ai",
+    "api.together.xyz",
+    "api.endpoints.anyscale.com",
+    "api.perplexity.ai",
+    "api.deepinfra.com",
+    "api.replicate.com",
+    "api-inference.huggingface.co",
+    "openai.azure.com"
+]
 HEADER_NAME = "X-Trainloop-Tag"
 
 
@@ -91,6 +106,36 @@ def parse_response_body(s: Union[str, bytes]) -> Optional[ParsedResponseBody]:
             return {"content": str(body["content"]["content"])}
         return {"content": str(body["content"])}
 
+    # ---------------- OpenAI chat completion ------------------
+    # Standard (non-streaming) OpenAI responses look like:
+    # {
+    #   "id": "...", "choices": [{"message": {"content": "hello"}, ...}], ...
+    # }
+    if "choices" in body and isinstance(body["choices"], list):
+        try:
+            first_choice = body["choices"][0]
+            # Newer OpenAI format: choices[0].message.content
+            if (
+                isinstance(first_choice, dict)
+                and "message" in first_choice
+                and isinstance(first_choice["message"], dict)
+                and "content" in first_choice["message"]
+            ):
+                return {"content": str(first_choice["message"]["content"])}
+        except Exception:
+            pass
+
+    # ---------------- Anthropic messages API ------------------
+    # Typical response:
+    # { "id": "...", "content": [{"type":"text", "text":"hello"}, ...] }
+    if "content" in body and isinstance(body["content"], list):
+        try:
+            parts = [c.get("text", "") for c in body["content"] if isinstance(c, dict)]
+            if parts:
+                return {"content": "".join(parts)}
+        except Exception:
+            pass
+
     logger.warning(f"Skipping invalid response body: {s}")
     return None
 
@@ -116,10 +161,15 @@ def is_llm_call(url: str) -> bool:
         host_allowlist_env = os.environ.get("TRAINLOOP_HOST_ALLOWLIST")
         if host_allowlist_env:
             host_allowlist = set(host_allowlist_env.split(","))
-            logger.debug("Using custom host allowlist from TRAINLOOP_HOST_ALLOWLIST: %s", host_allowlist)
+            logger.debug(
+                "Using custom host allowlist from TRAINLOOP_HOST_ALLOWLIST: %s",
+                host_allowlist,
+            )
         else:
             host_allowlist = set(DEFAULT_HOST_ALLOWLIST)
-            logger.debug("TRAINLOOP_HOST_ALLOWLIST not set, using default: %s", host_allowlist)
+            logger.debug(
+                "TRAINLOOP_HOST_ALLOWLIST not set, using default: %s", host_allowlist
+            )
 
         return urlparse(url).hostname in host_allowlist
     except Exception:  # pragma: no cover
