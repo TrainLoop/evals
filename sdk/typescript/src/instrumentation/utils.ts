@@ -1,5 +1,5 @@
 import { ClientRequest } from "http";
-import { ExpectedRequestBody, LLMCallLocation, ParsedRequestBody, ParsedResponseBody } from "../types/shared";
+import { ExpectedRequestBody, LLMCallLocation, ParsedRequestBody, ParsedResponseBody, OpenAIRequestBody, GeminiRequestBody } from "../types/shared";
 import { Readable } from "stream";
 import { createLogger } from "../logger";
 
@@ -175,6 +175,20 @@ export function safeJsonParse<T>(s: string): T | undefined {
 }
 
 /**
+ * Type guard to check if a body is an OpenAI/Anthropic request
+ */
+function isOpenAIRequest(body: any): body is OpenAIRequestBody {
+    return body && Array.isArray(body.messages) && typeof body.model === 'string';
+}
+
+/**
+ * Type guard to check if a body is a Google Gemini request
+ */
+function isGeminiRequest(body: any): body is GeminiRequestBody {
+    return body && Array.isArray(body.contents);
+}
+
+/**
  * Parse a request body string into a structured format with messages array.
  * 
  * @param s JSON string to parse
@@ -186,18 +200,61 @@ export function parseRequestBody(s: string): ParsedRequestBody | undefined {
         return undefined;
     }
 
-    // Handle case where messages are directly provided
-    if (body.messages && body.model) {
+    // Handle OpenAI/Anthropic format (messages + model)
+    if (isOpenAIRequest(body)) {
         const { messages, model, ...modelParams } = body;
         return {
             messages,
             model,
             modelParams
         };
-    } else {
-        logger.warn(`Skipping invalid request body for: ${s}`);
-        return undefined
     }
+
+    // Handle Google Gemini format (contents + generationConfig)
+    if (isGeminiRequest(body)) {
+        // Convert Gemini contents to messages format
+        const messages = body.contents.map((content) => {
+            if (content.parts && Array.isArray(content.parts)) {
+                // Flatten parts into a single content string
+                const contentText = content.parts
+                    .map((part) => part.text || part.inlineData || part.fileData || '')
+                    .filter(Boolean)
+                    .join(' ');
+                
+                return {
+                    role: content.role || 'user',
+                    content: contentText
+                };
+            }
+            return { role: content.role || 'user', content: '' };
+        });
+
+        // Extract model from generationConfig or URL context 
+        // (Gemini model is often specified in the URL, not in the body)
+        const model = body.generationConfig?.model || 'gemini/unknown';
+        
+        // Use generationConfig as modelParams, excluding model field
+        const { model: _model, ...modelParams } = body.generationConfig || {};
+        
+        const additionalParams: Record<string, unknown> = {
+            ...modelParams
+        };
+        
+        // Include other top-level fields that might be relevant
+        if (body.safetySettings) additionalParams.safetySettings = body.safetySettings;
+        if (body.tools) additionalParams.tools = body.tools;
+        if (body.toolConfig) additionalParams.toolConfig = body.toolConfig;
+        if (body.systemInstruction) additionalParams.systemInstruction = body.systemInstruction;
+
+        return {
+            messages,
+            model,
+            modelParams: additionalParams
+        };
+    }
+
+    logger.warn(`Skipping invalid request body for: ${s}`);
+    return undefined;
 }
 
 /**
@@ -217,11 +274,31 @@ export function parseResponseBody(s: string): ParsedResponseBody | undefined {
         return { content: body.content };
     }
     
-    // Try to extract content from OpenAI/Anthropic response format
-    const content = body?.choices?.[0]?.message?.content || 
-                   body?.choices?.[0]?.text ||
-                   body?.content?.[0]?.text || // Anthropic format
-                   null;
+    // Try to extract content from OpenAI format
+    let content = body?.choices?.[0]?.message?.content || 
+                 body?.choices?.[0]?.text;
+    
+    // Try to extract content from Anthropic format
+    if (!content) {
+        content = body?.content?.[0]?.text;
+    }
+    
+    // Try to extract content from Google Gemini format
+    if (!content && body?.candidates?.[0]) {
+        const candidate = body.candidates[0];
+        if (candidate.content?.parts?.[0]?.text) {
+            content = candidate.content.parts[0].text;
+        }
+        // Handle streaming responses
+        else if (candidate.text) {
+            content = candidate.text;
+        }
+    }
+    
+    // Try to extract from direct text field (some Gemini responses)
+    if (!content && body?.text) {
+        content = body.text;
+    }
     
     if (typeof content === 'string') {
         return { content };

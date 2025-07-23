@@ -13,11 +13,38 @@ export type CollectedSample = {
 
 export type ParsedResponseBody = Record<"content", string>;
 
-export type ExpectedRequestBody = {
+// OpenAI/Anthropic format
+export type OpenAIRequestBody = {
     messages: Record<string, string>[];
     model: string;
     [key: string]: unknown;
 }
+
+// Google Gemini format
+export type GeminiRequestBody = {
+    contents: Array<{
+        role?: string;
+        parts: Array<{
+            text?: string;
+            inlineData?: string;
+            fileData?: string;
+        }>;
+    }>;
+    generationConfig?: {
+        model?: string;
+        temperature?: number;
+        maxOutputTokens?: number;
+        responseMimeType?: string;
+        [key: string]: unknown;
+    };
+    safetySettings?: unknown[];
+    tools?: unknown[];
+    toolConfig?: unknown;
+    systemInstruction?: unknown;
+    [key: string]: unknown;
+}
+
+export type ExpectedRequestBody = OpenAIRequestBody | GeminiRequestBody;
 
 export type ParsedRequestBody = {
     messages: Record<string, string>[];
