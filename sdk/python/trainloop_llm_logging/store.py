@@ -52,14 +52,15 @@ def update_registry(data_dir: str, loc: LLMCallLocation, tag: str) -> None:
     now = _now_iso()
 
     entry: RegistryEntry
-    if loc["lineNumber"] in files:  # already seen this line
-        entry = files[loc["lineNumber"]]
+    line_key = str(loc["lineNumber"])
+    if line_key in files:  # already seen this line
+        entry = files[line_key]
         if entry["tag"] != tag:  # tag changed in source
             entry["tag"] = tag
         entry["lastSeen"] = now
         entry["count"] += 1
     else:  # first time
-        entry = files[loc["lineNumber"]] = RegistryEntry(
+        entry = files[line_key] = RegistryEntry(
             lineNumber=loc["lineNumber"],
             tag=tag,
             firstSeen=now,
@@ -121,7 +122,13 @@ def save_samples(data_dir: str, samples: list[CollectedSample]) -> None:
         ts = now
     else:
         event_dir = Path(event_dir_str)
-        latest = max([int(f.stem) for f in event_dir.glob("*.jsonl")] + [0])
+        numeric_timestamps: list[int] = []
+        for f in event_dir.glob("*.jsonl"):
+            try:
+                numeric_timestamps.append(int(f.stem))
+            except ValueError:
+                continue
+        latest = max(numeric_timestamps + [0])
         ts = latest if now - latest < window else now
 
     # Use fsspec to write samples
