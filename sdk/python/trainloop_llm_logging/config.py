@@ -141,10 +141,13 @@ def load_config_into_env(trainloop_config_path: str | None = None) -> None:
     config_data = None
     if resolved_config_path and resolved_config_path.exists():
         try:
-            data: TrainloopConfig = yaml.safe_load(
+            data = yaml.safe_load(
                 resolved_config_path.read_text(encoding="utf-8")
             )
-            config_data = data.get("trainloop", {})
+            if isinstance(data, dict):
+                config_data = data.get("trainloop") or {}
+            else:
+                config_data = {}
             print(f"[TrainLoop] Loaded TrainLoop config from {resolved_config_path}")
         except Exception as e:
             print(f"[TrainLoop] Failed to load config file {resolved_config_path}: {e}")

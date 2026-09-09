@@ -123,3 +123,14 @@ trainloop:
             assert os.environ.get("TRAINLOOP_LOG_LEVEL") == "WARN"
         finally:
             os.chdir(original_cwd)
+
+    @pytest.mark.edge_case
+    def test_empty_yaml_config(self, mock_env_vars, temp_data_dir):
+        """Test behavior with empty or comment-only YAML file."""
+        config_path = Path(temp_data_dir) / "empty.yaml"
+        config_path.write_text("# Just comments\n", encoding="utf-8")
+        os.environ["TRAINLOOP_CONFIG_PATH"] = str(config_path)
+
+        with pytest.raises(ValueError, match="TRAINLOOP_DATA_FOLDER not set"):
+            load_config_into_env()
+
